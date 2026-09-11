@@ -70,13 +70,23 @@ in `.env` to models you do have — the server also retries automatically with y
 4. You land in the AI Prescreen. Intended audience → *Institutional investors only*, depth **Thorough**,
    **Start the pre-review**. It takes 2 to 5 minutes on a 28-page deck and streams its progress.
 5. Read the three tabs on the right: **Compliance** (wording), **Disclosures** (missing blocks and
-   triggered disclosures), **Summary** (what the deck already covers, the brief, the message to the banker).
-   Click any point to jump to the exact highlighted passage; press `j` / `k` to walk the points.
-6. Answer the high points, tick the acknowledgement, **Complete submission**.
-7. Switch to **Reviewer** (top right) to see the submission as Compliance receives it: the pre-review, the
-   banker's answers, the ready-to-send feedback, and a verdict per point.
+   triggered disclosures), **Summary** (your document in two lines, the points Compliance will ask you to
+   answer, and what happens when you submit). Click any point to jump to the exact highlighted passage;
+   press `j` / `k` to walk the points.
+6. Answer the high points, tick the acknowledgement, **Complete submission**. That is the whole banker side.
+7. Switch to the **Compliance desk** (top right) to see the same submission as Compliance receives it: the
+   full brief, what the deck already covers, the gut check, the banker's answers, the ready-to-send feedback,
+   a verdict per asserted point and Confirm / Dismiss on each pending one.
+
+The banker portal and the Compliance desk are two separate applications. This demo page hosts both behind
+one switch so you can play both roles; the accent colour, the header and the tabs change with the side you
+are on, and nothing reaches the desk before the banker submits.
 
 ![The setup step that opens after Submit](docs/screens/shot_setup.png)
+
+![The banker's Summary: the document in two lines, what Compliance will ask, nothing else](docs/screens/shot_summary_banker.png)
+
+![The same submission on the Compliance desk: the full brief](docs/screens/shot_desk_brief.png)
 
 ## 5. What is asserted, and what waits for a human
 
@@ -99,7 +109,7 @@ the reason it was not asserted, and never blocking the submission. The reviewer 
 Every reviewer verdict is stored as a structured precedent (rule, lane, document type, page, quote,
 correct/incorrect, reason). On the next pre-review the closest precedents are injected into the prompts,
 repeated rejections of the same rule are distilled by Claude into new calibration rules, and a rule the
-desk keeps rejecting is demoted or set aside automatically. The **Learning** view (reviewer side) shows the
+desk keeps rejecting is demoted or set aside automatically. The **Learning** view (Compliance desk) shows the
 track record per rule and exports the whole state as JSON.
 
 ## 7. Speed, cost, and what it costs you

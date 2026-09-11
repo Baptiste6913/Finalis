@@ -49,7 +49,7 @@ const UI = (() => {
   function show(view) {
     S.view = view;
     ['form', 'work', 'done', 'inbox', 'learning'].forEach((v) => { $('view-' + v).hidden = v !== view; });
-    $('crumb-ai').hidden = !(view === 'work' || view === 'done');
+    renderChrome();
     window.scrollTo(0, 0);
   }
   const STASH_KEYS = ['doc', 'form', 'facts', 'result', 'responses', 'steps', 'calib', 'reference', 'submission', 'ack', 'active', 'tab', 'filter', 'expanded', 'ai', 'phase', 'prefill'];
@@ -57,9 +57,7 @@ const UI = (() => {
     if (mode === S.mode) { if (mode === 'reviewer' && S.viewing) { S.viewing = null; renderInbox(); show('inbox'); } return; }
     if (mode === 'reviewer') { if (S.running && S.abort) S.abort.abort(); S.stash = {}; STASH_KEYS.forEach((k) => { S.stash[k] = S[k]; }); }
     S.mode = mode;
-    $('mode-banker').setAttribute('aria-pressed', String(mode === 'banker'));
-    $('mode-reviewer').setAttribute('aria-pressed', String(mode === 'reviewer'));
-    $('avatar').textContent = mode === 'reviewer' ? 'CO' : 'JD';
+    renderChrome();
     if (mode === 'reviewer') { S.viewing = null; renderInbox(); show('inbox'); return; }
     S.viewing = null;
     if (S.stash) { STASH_KEYS.forEach((k) => { S[k] = S.stash[k]; }); S.stash = null; }
@@ -67,6 +65,22 @@ const UI = (() => {
     if (S.result && S.doc) { show('work'); renderWorkspace(); } else show('form');
   }
   function renderWorkspace() { renderViewer(); renderHead(); renderStatus(); renderRail(); }
+  /* The banker portal and the Compliance desk are two applications that share one page here: the app bar,
+     the accent colour, the crumb and the tab labels change with the side you are on. */
+  function renderChrome() {
+    const desk = S.mode === 'reviewer';
+    document.body.setAttribute('data-platform', desk ? 'desk' : 'banker');
+    $('mode-banker').setAttribute('aria-pressed', String(!desk));
+    $('mode-reviewer').setAttribute('aria-pressed', String(desk));
+    $('avatar').textContent = desk ? 'CO' : 'JD';
+    $('avatar').title = desk ? 'Signed in to the Compliance desk as a reviewer' : 'Signed in to the banker portal';
+    $('product-name').textContent = desk ? 'Compliance desk' : 'Banker portal';
+    $('crumb-root').textContent = desk ? 'Inbox' : 'Marketing materials';
+    const ai = $('crumb-ai');
+    ai.querySelector('b').textContent = desk ? 'Submission' : 'AI Prescreen';
+    ai.hidden = !((S.view === 'work' || S.view === 'done') && (desk ? !!S.viewing : true));
+    $('tab-summary').textContent = desk ? 'Brief' : 'Summary';
+  }
 
   /* ---------- the Marketing materials modal (landing) ---------- */
   function readLanding() {
@@ -329,6 +343,7 @@ const UI = (() => {
         onPagesReplaced: (pages, facts) => { S.doc.pages = pages; S.facts = facts; renderViewer(); },
       });
       S.result = result;
+      result.meta.learning = S.learningUsed;
       setStep('assemble', { status: 'done', detail: result.findings.length + ' attention points' });
     } catch (e) {
       console.warn('pre-review failed', e);
@@ -921,26 +936,99 @@ const UI = (() => {
     renderSteps(body);
     const r = S.result;
     if (!r) { if (!S.running) body.append(el('div', { class: 'empty', text: 'The summary is written at the end of the pre-review.' })); return; }
+    if (S.viewing) renderSummaryDesk(body, findings, r); else renderSummaryBanker(body, findings, r);
+  }
+  function kvRow(label, value) {
+    const row = el('div', { class: 'kvrow' });
+    row.append(el('span', { class: 'k', text: label }), el('span', { class: 'v', text: value }));
+    return row;
+  }
+  /* What the banker sees: their document in two lines, what Compliance will ask them, and the way out. Every
+     detail (coverage map, brief, gut check, model calls) lives on the Compliance desk. */
+  function renderSummaryBanker(body, findings, r) {
     const c = Review.counts(findings);
     const g = gateState();
     const st = el('div', { class: 'summary-card' });
-    const h = el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:10px' });
+    const h = el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:6px' });
     const ic = el('span', { style: 'display:inline-flex;color:' + (g.ok ? 'var(--success)' : 'var(--warn)') }); ic.append(svg(g.ok ? 'checkCircle' : 'alert'));
-    h.append(ic, el('h4', { style: 'margin:0', text: S.viewing ? 'Submitted for review' : (g.ok ? 'Ready to submit' : 'Not ready to submit') }));
+    h.append(ic, el('h4', { style: 'margin:0', text: g.ok ? 'Ready to submit' : 'Not ready to submit' }));
+    st.append(h, el('p', { class: 'helper', style: 'margin:0', text: g.why }));
+    body.append(st);
+
+    const doc = el('div', { class: 'summary-card' });
+    doc.append(el('h4', { text: 'Your document' }));
+    const p = r.profile || {};
+    if (p.subject || p.material_kind) doc.append(el('p', { class: 'lede2', text: [p.material_kind ? p.material_kind.charAt(0).toUpperCase() + p.material_kind.slice(1) : '', p.subject].filter(Boolean).join(': ') }));
+    doc.append(kvRow('File', S.doc.name + ' · ' + S.doc.pages.length + (S.doc.kind === 'pdf' ? ' pages' : S.doc.kind === 'image' ? ' image' : ' sections')));
+    doc.append(kvRow('Type', Prompts.DOC_LABELS[S.form.docType] || S.form.docType));
+    doc.append(kvRow('Audience', (S.facts.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + S.facts.laneReason));
+    doc.append(kvRow('Distribution', (S.form.distribution || []).join(', ') || 'not stated'));
+    body.append(doc);
+
+    const ask = el('div', { class: 'summary-card' });
+    ask.append(el('h4', { text: 'What Compliance will ask you' }));
+    const highs = findings.filter((f) => f.severity === 'high' && Review.isCertain(f));
+    if (!highs.length) ask.append(el('p', { class: 'helper', style: 'margin:0 0 6px', text: 'No high point to answer before you submit.' }));
+    highs.forEach((f) => {
+      const resp = S.responses[f.id] || { status: 'none' };
+      const row = el('div', { class: 'askrow2' });
+      const t = el('div', { class: 'grow' });
+      t.append(el('div', { class: 't', text: f.title }));
+      t.append(el('div', { class: 'm', text: (LABELS[f.rule] || f.category) + (f.page ? ' · p. ' + f.page : '') }));
+      const chip = el('span', { class: 'tag ' + (resp.status !== 'none' ? 'ok' : 'high'), text: resp.status !== 'none' ? RESP[resp.status] : 'Answer needed' });
+      const go = pageBtn(f);
+      row.append(t, chip, go);
+      row.addEventListener('click', (e) => { if (e.target.closest('button')) return; selectFinding(f, { scrollPage: true, scrollPanel: true }); });
+      ask.append(row);
+    });
+    const others = c.certain - highs.length;
+    const lines = [];
+    if (others > 0) lines.push(others + ' further point' + (others === 1 ? '' : 's') + ' to read in the Compliance and Disclosures tabs (no answer required).');
+    if (c.verify) lines.push(c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' the Finalis reviewer verifies first; nothing for you to do.');
+    lines.forEach((t) => ask.append(el('p', { class: 'helper', style: 'margin:8px 0 0', text: t })));
+    body.append(ask);
+
+    const next = el('div', { class: 'summary-card' });
+    next.append(el('h4', { text: 'When you submit' }));
+    next.append(el('p', { class: 'helper', style: 'margin:0', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis Compliance desk, a separate application you do not see. The reviewer verifies the pending points, then approves or requests changes. This pre-review is advisory: it is not an approval and it changes no status.' }));
+    body.append(next);
+    if (Calibration.isReferenceDeck(S.doc.pages) && !S.reference && S.caps.sample) {
+      const b2 = el('button', { class: 'btn sm', type: 'button', text: 'Show the reference pre-review instead' });
+      b2.addEventListener('click', () => { S.result = Fixture.build(S.facts, S.form, S.doc.pages); S.reference = true; S.calib = Calibration.score(S.result.findings); S.expanded = {}; S.ai = {}; finishRun(); });
+      body.append(el('div', { style: 'padding:6px 4px' }, [b2]));
+    }
+  }
+  /* What the Compliance desk sees: everything. */
+  function renderSummaryDesk(body, findings, r) {
+    const sub = S.viewing;
+    const c = Review.counts(findings);
+    const st = el('div', { class: 'summary-card' });
+    const h = el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:10px' });
+    const ic = el('span', { style: 'display:inline-flex;color:var(--success)' }); ic.append(svg('checkCircle'));
+    h.append(ic, el('h4', { style: 'margin:0', text: 'Submitted for review' }));
     st.append(h);
-    if (!S.viewing) st.append(el('p', { class: 'helper', style: 'margin:-4px 0 10px', text: g.why }));
     const grid = el('div', { class: 'grid' });
-    [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s = el('div', { class: 'stat' }); s.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s); });
+    [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s2 = el('div', { class: 'stat' }); s2.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s2); });
     st.append(grid);
     st.append(el('p', { class: 'helper', text: 'Required blocks ' + c.A + ' · triggered disclosures ' + c.B + ' · language ' + c.C + (r.suppressed && r.suppressed.length ? ' · ' + r.suppressed.length + ' candidates set aside' : '') }));
     if (!r.meta.deterministicOnly) {
       const a = el('div', { class: 'gc', style: 'padding-top:8px' });
-      a.append(el('span', { class: 'tag ok', text: String(c.certain) }), el('span', { html: '<b style="font-weight:500">asserted</b> <span style="color:var(--text-3)">deterministic checks and points confirmed by the second pass with a verbatim quote located on the page</span>' }));
+      a.append(el('span', { class: 'tag ok', text: String(c.certain) }), el('span', { html: '<b style="font-weight:500">asserted to the banker</b> <span style="color:var(--text-3)">deterministic checks and points confirmed by the second pass with a verbatim quote located on the page</span>' }));
       const b = el('div', { class: 'gc' });
-      b.append(el('span', { class: 'tag vtag', text: String(c.verify) }), el('span', { html: '<b style="font-weight:500">for Finalis review</b> <span style="color:var(--text-3)">' + (S.viewing ? 'shown to the banker as pending your verification' : 'the reviewer confirms or dismisses them; no answer required from you') + '</span>' }));
+      b.append(el('span', { class: 'tag vtag', text: String(c.verify) }), el('span', { html: '<b style="font-weight:500">awaiting your verification</b> <span style="color:var(--text-3)">shown to the banker as pending, not as facts</span>' }));
       st.append(a, b);
     }
     body.append(st);
+    // the banker's side of the exchange
+    const bk = el('div', { class: 'summary-card' });
+    bk.append(el('h4', { text: 'What the banker saw and answered' }));
+    const answered = Object.keys(sub.responses || {}).filter((k) => sub.responses[k].status !== 'none').length;
+    const highs = findings.filter((f) => f.severity === 'high' && Review.isCertain(f)).length;
+    bk.append(kvRow('Submitted by', (sub.submitter || 'unknown') + (sub.form && sub.form.bankName ? ' · ' + sub.form.bankName : '')));
+    bk.append(kvRow('Asked to answer', highs + ' high point' + (highs === 1 ? '' : 's')));
+    bk.append(kvRow('Answered', answered + ' point' + (answered === 1 ? '' : 's')));
+    if (sub.form && sub.form.notes) bk.append(kvRow('Banker notes', sub.form.notes));
+    body.append(bk);
     if (S.calib) body.append(scoreCard(S.calib));
     if (r.gut_check && !r.meta.deterministicOnly) {
       const gc = el('div', { class: 'summary-card' });
@@ -973,15 +1061,10 @@ const UI = (() => {
       S.facts.required.forEach((q) => { const row = el('div', { class: 'covrow' }); row.append(el('span', { class: 'd ' + (q.status === 'present' || q.status === 'clear' ? 'ok' : 'miss') })); row.append(el('div', { html: '<span class="code">' + U.esc(q.id) + '</span> ' + U.esc(q.name) + '<div class="w">' + U.esc(q.status === 'present' ? 'Present on page ' + q.page : q.status === 'clear' ? 'Not present, as required' : q.status) + '</div>' })); cv.append(row); });
       body.append(cv);
     }
-    if (r.brief) { const b = el('div', { class: 'summary-card' }); b.append(el('h4', { text: 'Brief for the reviewer' }), el('div', { class: 'brief', text: r.brief })); body.append(b); }
+    if (r.brief) { const b = el('div', { class: 'summary-card' }); b.append(el('h4', { text: 'Brief' }), el('div', { class: 'brief', text: r.brief })); body.append(b); }
     if (r.banker_message) { const b = el('div', { class: 'summary-card' }); b.append(el('h4', { text: 'Comment to the banker' }), copyBox('Ready to paste', r.banker_message)); body.append(b); }
-    if (S.learningUsed && !S.viewing) body.append(el('div', { class: 'helper', style: 'padding:0 4px 6px', text: 'Learning applied: ' + S.learningUsed.rules + ' learned rule' + (S.learningUsed.rules === 1 ? '' : 's') + ', ' + S.learningUsed.precedents + ' precedent' + (S.learningUsed.precedents === 1 ? '' : 's') + ' from reviewer verdicts.' }));
+    if (r.meta && r.meta.learning) body.append(el('div', { class: 'helper', style: 'padding:0 4px 6px', text: 'Learning applied to this pre-review: ' + r.meta.learning.rules + ' learned rule' + (r.meta.learning.rules === 1 ? '' : 's') + ', ' + r.meta.learning.precedents + ' precedent' + (r.meta.learning.precedents === 1 ? '' : 's') + ' from reviewer verdicts.' }));
     if (r.meta && r.meta.calls && r.meta.calls.length) body.append(el('div', { class: 'helper', style: 'padding:0 4px', text: 'Model calls: ' + r.meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ' ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' images' : '')).join(' · ') }));
-    if (Calibration.isReferenceDeck(S.doc.pages) && !S.reference && S.caps.sample && !S.viewing) {
-      const b2 = el('button', { class: 'btn sm', type: 'button', text: 'Show the reference pre-review instead' });
-      b2.addEventListener('click', () => { S.result = Fixture.build(S.facts, S.form, S.doc.pages); S.reference = true; S.calib = Calibration.score(S.result.findings); S.expanded = {}; S.ai = {}; finishRun(); });
-      body.append(el('div', { style: 'padding:6px 4px' }, [b2]));
-    }
   }
   function scoreCard(c) {
     const wrap = el('div', { class: 'summary-card' });
@@ -1062,30 +1145,23 @@ const UI = (() => {
     const card = $('done-card');
     card.innerHTML = '';
     const c = Review.counts(sub.findings);
+    const answered = Object.keys(sub.responses).filter((k) => sub.responses[k].status !== 'none').length;
     const ic = el('div', { class: 'done-ic' }); ic.append(svg('checkCircle'));
-    card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: 'Submitted for compliance review' }));
-    card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.total + ' attention point' + (c.total === 1 ? '' : 's') + (c.verify ? ' (' + c.verify + ' for Finalis review)' : '') + ' · ' + Object.keys(sub.responses).filter((k) => sub.responses[k].status !== 'none').length + ' answered.' }));
+    card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: 'Sent to Finalis Compliance' }));
+    card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ', ' + answered + ' answered' + (c.verify ? ' · ' + c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' left to the reviewer' : '') + '.' }));
     const n = el('div', { class: 'note green', style: 'margin-bottom:16px' });
-    n.append(svg('inbox'), el('span', { class: 'grow', text: 'The reviewer' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received the pre-review automatically' + (mode === 'shared' ? ' in the shared compliance inbox' : ' in this browser\'s inbox') + ', with your answers and the brief.' + (mode === 'shared' ? '' : ' Open this page in the Claude app with the shared inbox to reach the whole desk.') }));
+    n.append(svg('inbox'), el('span', { class: 'grow', text: 'The Compliance desk' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received your document, the pre-review, your answers and the brief' + (mode === 'shared' ? '.' : ' (in this browser\'s demo inbox; open this page in the Claude app to reach the shared desk).') + ' It is a separate application: you will hear back from the reviewer, not from this page.' }));
     card.append(n);
-    card.append(el('div', { class: 'label', text: 'Feedback sent to the reviewer' }));
-    card.append(el('div', { class: 'mailpreview', text: 'Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body }));
-    const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center' });
-    const mail = el('a', { class: 'btn', href: Notify.mailto(sub.notification.to, sub.notification.subject, sub.notification.body) }); mail.append(svg('mail'), document.createTextNode('Open in your mail client'));
-    const copy = el('button', { class: 'btn', type: 'button' }); copy.append(svg('copy'), document.createTextNode('Copy feedback'));
-    copy.addEventListener('click', () => U.copyText('Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body));
-    row.append(mail, copy);
-    if (S.caps.downloads) {
-      const dl = el('button', { class: 'btn', type: 'button' }); dl.append(svg('download'), document.createTextNode('Save the report'));
-      dl.addEventListener('click', async () => { try { await S.caps.downloads.save({ filename: 'pre-review-' + sub.file.name.replace(/\.[^.]+$/, '') + '.md', data: Notify.reportMarkdown(sub) }); } catch (e) { if (!e || e.code !== 'cancelled') U.toast('Could not save'); } });
-      row.append(dl);
-    }
-    row.append(el('span', { style: 'flex:1' }));
-    const again = el('button', { class: 'btn ghost', type: 'button', text: 'New submission' });
+    const steps = el('div', { class: 'nextsteps' });
+    [['1', 'The reviewer verifies the pending points', c.verify ? c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' were flagged for verification, not asserted to you.' : 'Nothing was left pending on this document.'], ['2', 'The reviewer reads your answers', answered + ' answer' + (answered === 1 ? '' : 's') + ' travel with the submission.'], ['3', 'Approval or a request for changes', 'Comes back through the usual Compliance channel. This pre-review is advisory and is not an approval.']].forEach(([k, t, d]) => { const row = el('div'); row.append(el('span', { text: k }), el('div', { html: '<b>' + U.esc(t) + '</b><br>' + U.esc(d) })); steps.append(row); });
+    card.append(el('div', { class: 'label', text: 'What happens next' }), steps);
+    const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center' });
+    const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
     again.addEventListener('click', () => { resetForm(); show('form'); });
-    const inbox = el('button', { class: 'btn primary', type: 'button', text: 'Open the compliance inbox' });
+    row.append(again, el('span', { style: 'flex:1' }));
+    const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the Compliance desk (demo)' });
     inbox.addEventListener('click', () => setMode('reviewer'));
-    row.append(again, inbox);
+    row.append(inbox);
     card.append(row);
   }
 
@@ -1334,6 +1410,7 @@ const UI = (() => {
     window.addEventListener('resize', () => { if (!isMobile()) { $('rail').style.display = ''; $('viewer').style.display = ''; } if (S.view === 'work') { applyZoom(); rerenderVisible(); } });
   }
   function renderBrand() {
+    renderChrome();
     const logo = (typeof window !== 'undefined' && window.FINALIS_LOGO) || '';
     ['brand-logo', 'brand-logo-2'].forEach((id) => {
       const slot = $(id);
