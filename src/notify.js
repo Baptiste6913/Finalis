@@ -63,11 +63,50 @@ const Notify = (() => {
   }
 
 
-  /* ---- PDF reports: the banker's summary (what they saw, what they answered) and the desk's full brief ---- */
-  function fmtDay(iso) { try { return new Date(iso || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } }
+  /* ---- PDF reports: the banker's summary (what they saw and answered) and the desk's brief (everything the
+     pre-review produced, laid out as a desk memo the reviewer can annotate). ---- */
+  function fmtDay(iso) { try { return new Date(iso || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; } }
+  function ref(sub) { const d = new Date(sub.created_at || Date.now()); const ymd = d.toISOString().slice(2, 10).replace(/-/g, ''); return 'PRS-' + ymd + '-' + String(sub.id || 'draft').replace(/^sub-?/, '').slice(-6).toUpperCase(); }
   function where(f) { return f.page ? 'p. ' + (f.pages && f.pages.length > 1 ? f.pages.join(', ') : f.page) : 'document'; }
-  function sevLabel(f) { return f.severity === 'high' ? 'High' : f.severity === 'medium' ? 'Medium' : 'Low'; }
-  function respText(sub, f) { const r = sub.responses && sub.responses[f.id]; return r && r.status && r.status !== 'none' ? RESP_LABEL[r.status] + (r.note ? ' (' + r.note.slice(0, 160) + ')' : '') : ''; }
+  function resp(sub, f) { const r = sub.responses && sub.responses[f.id]; return r && r.status && r.status !== 'none' ? RESP_LABEL[r.status] + (r.note ? ': ' + r.note.slice(0, 200) : '') : ''; }
+  function verdictText(sub, f) { const v = sub.verdicts && sub.verdicts[f.id]; if (!v) return ''; return (Review.isCertain(f) ? (v.verdict === 'correct' ? 'Correct flag' : 'Incorrect flag') : (v.verdict === 'correct' ? 'Confirmed' : 'Dismissed')) + (v.reason ? ': ' + v.reason : ''); }
+  const ACTION_TEXT = { add: 'Add the disclosure', rewrite: 'Rewrite', source: 'Add a source', remove: 'Remove', confirm: 'Confirm with the banker', escalate: 'Escalate' };
+  function label(f) { return (RULES.CATEGORY_NAMES[f.rule] || f.category || f.rule); }
+  function metaRows(sub, desk) {
+    const p = (sub.result && sub.result.profile) || {};
+    const rows = [];
+    rows.push(['Reference', ref(sub)]);
+    rows.push(['Submitted', fmtDay(sub.created_at)]);
+    rows.push(['Document type', Prompts.DOC_LABELS[sub.form.docType] || sub.form.docType]);
+    rows.push(['Audience', (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + (sub.facts && sub.facts.laneReason ? ' (' + sub.facts.laneReason + ')' : '')]);
+    rows.push(['Distribution', (sub.form.distribution || []).join(', ') || 'not stated']);
+    rows.push(['Prepared by', (Prompts.INVOLVED_LABELS && Prompts.INVOLVED_LABELS[sub.form.involvement]) || sub.form.involvement || 'not stated']);
+    if (desk) { rows.push(['Submitted by', (sub.submitter || 'unknown') + (sub.form.bankName ? ', ' + sub.form.bankName : '')]); rows.push(['Depth', sub.form.depth === 'default' ? 'Fast (one pass)' : 'Thorough (three passes)']); }
+    else if (sub.form.bankName) rows.push(['Bank / DBA', sub.form.bankName]);
+    return rows;
+  }
+  function pointDetail(sub, f, n, desk) {
+    const rows = [];
+    if (f.quote) rows.push(['Passage', '“' + f.quote + '”']);
+    rows.push(['Issue', f.issue || '']);
+    rows.push(['Action', (ACTION_TEXT[f.action] || 'Confirm') + (f.placement ? ' — ' + f.placement : '')]);
+    if (f.text_to_add) rows.push(['Text to add', f.text_to_add]);
+    if (f.rewrite) rows.push(['Suggested wording', f.rewrite]);
+    if (desk && f.basis) rows.push(['Basis', f.basis]);
+    if (desk) rows.push(['Confidence', (f.confidence || 'medium') + (f.det ? ' (deterministic check)' : '')]);
+    if (f.note) rows.push(['Note', f.note]);
+    if (!Review.isCertain(f)) rows.push([desk ? 'Not asserted' : 'Why pending', (f.why_verify || 'left to the reviewer')]);
+    const r = resp(sub, f);
+    if (r) rows.push([desk ? 'Banker' : 'Your answer', r, { bold: true }]);
+    else if (desk) rows.push(['Banker', Review.isCertain(f) ? 'no answer' : 'no comment (not asked)', { muted: true }]);
+    const v = desk ? verdictText(sub, f) : '';
+    if (v) rows.push(['Verification', v, { bold: true }]);
+    return { t: 'detail', n, sev: Review.isCertain(f) ? f.severity : 'pending', title: f.title, where: label(f) + ' · ' + f.rule + ' · ' + where(f), rows };
+  }
+  function indexTable(sub, list, desk, startN) {
+    return { t: 'table', size: 8.8, cols: [{ w: 0.45, label: '#' }, { w: 4.2, label: 'Point' }, { w: 1.25, label: 'Where' }, { w: 2.0, label: 'Rule' }, { w: 1.5, label: 'Severity' }, { w: desk ? 2.4 : 2.1, label: desk ? 'Banker / verification' : 'Your answer' }],
+      rows: list.map((f, i) => [{ text: String(startN + i), grey: true }, f.title, where(f), f.rule + ' ' + label(f), { sev: Review.isCertain(f) ? f.severity : 'pending' }, desk ? [resp(sub, f) || '—', verdictText(sub, f)].filter(Boolean).join('\n') : (resp(sub, f) || (f.severity === 'high' && Review.isCertain(f) ? 'answer needed' : '—'))]) };
+  }
   function reportBlocks(sub, kind) {
     const desk = kind === 'desk';
     const r = sub.result || {};
@@ -79,69 +118,94 @@ const Notify = (() => {
     const highs = certain.filter((f) => f.severity === 'high');
     const others = certain.filter((f) => f.severity !== 'high');
     const answered = Object.keys(sub.responses || {}).filter((k) => sub.responses[k].status !== 'none').length;
-    const laneLabel = sub.lane === 'institutional' ? 'Institutional' : 'Retail';
     const b = [];
-    b.push({ t: 'h1', text: sub.file.name });
-    b.push({ t: 'small', text: [laneLabel, sub.file.pages + (sub.file.kind === 'pdf' ? ' pages' : sub.file.kind === 'image' ? ' image' : ' sections'), Prompts.DOC_LABELS[sub.form.docType] || sub.form.docType, fmtDay(sub.created_at)].join(' · ') });
-    b.push({ t: 'h2', text: desk ? 'Submission' : 'Your document' });
-    if (p.material_kind || p.subject) b.push({ t: 'kv', k: 'What it is', v: [p.material_kind ? p.material_kind.charAt(0).toUpperCase() + p.material_kind.slice(1) : '', p.subject].filter(Boolean).join(': ') });
-    if (desk) b.push({ t: 'kv', k: 'Submitted by', v: (sub.submitter || 'unknown') + (sub.form.bankName ? ' · ' + sub.form.bankName : '') });
-    b.push({ t: 'kv', k: 'Audience', v: laneLabel + (sub.facts && sub.facts.laneReason ? ' · ' + sub.facts.laneReason : '') });
-    b.push({ t: 'kv', k: 'Distribution', v: (sub.form.distribution || []).join(', ') || 'not stated' });
-    b.push({ t: 'kv', k: 'Prepared by', v: Prompts.INVOLVED_LABELS ? (Prompts.INVOLVED_LABELS[sub.form.involvement] || sub.form.involvement || 'not stated') : (sub.form.involvement || 'not stated') });
-    if (sub.form.notes) b.push({ t: 'kv', k: 'Banker notes', v: sub.form.notes });
-    b.push({ t: 'h2', text: desk ? 'Attention points' : 'What Compliance will ask you' });
-    b.push({ t: 'p', text: c.total + ' attention point' + (c.total === 1 ? '' : 's') + ': ' + c.certain + ' asserted' + (desk ? ' to the banker' : '') + ' (' + highs.length + ' high), ' + c.verify + ' left to the Finalis reviewer' + (desk ? ' for verification' : '') + '. ' + (answered ? answered + ' answer' + (answered === 1 ? '' : 's') + ' given by the banker.' : desk ? 'No answer from the banker yet.' : '') });
-    if (highs.length) {
-      if (desk) b.push({ t: 'h2', text: 'Asserted, high' });
-      highs.forEach((f, i) => b.push({ t: 'li', mark: String(i + 1), bold: true, text: f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 200) + '”' : '', (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, desk ? 400 : 220), respText(sub, f) ? 'Banker: ' + respText(sub, f) : (desk ? 'Banker: no answer' : 'Your answer: none yet')].filter(Boolean).join('\n') }));
-    } else b.push({ t: 'p', text: 'No high point' + (desk ? ' asserted.' : ' to answer.') });
-    if (others.length) {
-      b.push({ t: 'h2', text: desk ? 'Asserted, medium and low' : 'Further points (no answer required)' });
-      others.forEach((f) => b.push({ t: 'li', text: '[' + sevLabel(f) + '] ' + f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 160) + '”' : '', desk ? (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, 300) : '', respText(sub, f) ? 'Banker: ' + respText(sub, f) : ''].filter(Boolean).join('\n') }));
-    }
-    if (pending.length) {
-      b.push({ t: 'h2', text: desk ? 'Awaiting your verification' : 'Left to the Finalis reviewer' });
-      if (!desk) b.push({ t: 'p', text: 'Possible points the pre-review was not certain enough to assert. The reviewer confirms or dismisses them; nothing for you to do.' });
-      pending.forEach((f) => {
-        const v = desk && sub.verdicts && sub.verdicts[f.id];
-        b.push({ t: 'li', text: '[' + sevLabel(f) + '] ' + f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 160) + '”' : '', desk ? (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, 300) : '', 'Not asserted' + (f.why_verify ? ': ' + f.why_verify : ''), respText(sub, f) ? 'Banker: ' + respText(sub, f) : '', v ? 'Verification: ' + (v.verdict === 'correct' ? 'confirmed' : 'dismissed') + (v.reason ? ' (' + v.reason + ')' : '') : ''].filter(Boolean).join('\n') });
-      });
-    }
+    let sec = 0;
+    const section = (t) => { sec += 1; b.push({ t: 'section', n: sec, text: t }); };
+    b.push({ t: 'title', text: sub.file.name.replace(/\.[^.]+$/, ''), sub: [p.material_kind ? p.material_kind.charAt(0).toUpperCase() + p.material_kind.slice(1) : (Prompts.DOC_LABELS[sub.form.docType] || 'Marketing material'), sub.file.pages + (sub.file.kind === 'pdf' ? ' pages' : sub.file.kind === 'image' ? ' image' : ' sections'), sub.file.name].join(' · '), meta: metaRows(sub, desk) });
+
     if (!desk) {
-      b.push({ t: 'h2', text: 'When you submit' });
-      b.push({ t: 'p', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis Compliance desk, a separate application. The reviewer verifies the pending points, then approves or requests changes through the usual Compliance channel.' });
-    } else {
-      const cov = p.coverage || {};
-      const keys = Object.keys(cov);
-      if (keys.length) {
-        b.push({ t: 'h2', text: 'Already covered in the material' });
-        keys.forEach((k) => { const x = cov[k] || {}; b.push({ t: 'li', mark: x.covered ? '✓' : '✗', text: k.replace(/_/g, ' ') + (x.covered ? '' : ' · not covered') + (x.where ? ' · ' + String(x.where).slice(0, 120) : ''), sub: x.quote ? '“' + String(x.quote).slice(0, 140) + '”' : '' }); });
-      }
-      if (r.gut_check && !(r.meta && r.meta.deterministicOnly)) {
-        b.push({ t: 'h2', text: '60-second gut check' });
-        [['inaccurate_picture', 'Could an investor walk away with an inaccurate picture?'], ['unsupported_claims', 'Claims the banker could not back up right now?'], ['promised_results', 'A result promised instead of a target?']].forEach(([k, q]) => { const x = r.gut_check[k] || {}; b.push({ t: 'li', mark: x.flag ? 'Yes' : 'No', text: q, sub: x.why || '' }); });
-      }
-      if (r.brief) { b.push({ t: 'h2', text: 'Brief' }); b.push({ t: 'p', text: r.brief }); }
-      if (r.banker_message) { b.push({ t: 'h2', text: 'Comment to the banker' }); b.push({ t: 'p', text: r.banker_message }); }
-      if (r.suppressed && r.suppressed.length) {
-        b.push({ t: 'h2', text: 'Set aside (' + r.suppressed.length + ' candidates a naive scan would have raised)' });
-        r.suppressed.slice(0, 14).forEach((s) => b.push({ t: 'small', text: s.rule + ' · p. ' + ((s.pages || []).join(', ') || '–') + (s.quote ? ' · “' + s.quote.slice(0, 80) + '”' : '') + ' · ' + (s.reason || '').slice(0, 220) }));
-        if (r.suppressed.length > 14) b.push({ t: 'small', text: '… and ' + (r.suppressed.length - 14) + ' more.' });
-      }
-      if (r.meta && r.meta.calls && r.meta.calls.length) b.push({ t: 'small', text: 'Model calls: ' + r.meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ' ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' images' : '')).join(' · ') });
+      section('What this document is');
+      b.push({ t: 'p', text: p.subject ? p.subject : 'Described by the pre-review as: ' + (p.material_kind || 'a marketing communication') + '.' });
+      b.push({ t: 'p', text: 'The pre-review found ' + c.total + ' attention point' + (c.total === 1 ? '' : 's') + '. ' + c.certain + ' ' + (c.certain === 1 ? 'is' : 'are') + ' asserted to you (' + highs.length + ' high' + (highs.length === 1 ? ' point needs' : ' points need') + ' an answer before submission); ' + c.verify + ' ' + (c.verify === 1 ? 'is' : 'are') + ' left to the Finalis reviewer to verify and ' + (c.verify === 1 ? 'does' : 'do') + ' not require anything from you.', muted: false });
+      section('Points to answer before submission');
+      if (highs.length) { b.push(indexTable(sub, highs, false, 1)); highs.forEach((f, i) => b.push(pointDetail(sub, f, i + 1, false))); }
+      else b.push({ t: 'p', text: 'None: no high point was asserted on this document.', muted: true });
+      section('Points to read');
+      if (others.length) b.push(indexTable(sub, others, false, highs.length + 1)); else b.push({ t: 'p', text: 'None.', muted: true });
+      others.forEach((f, i) => b.push(pointDetail(sub, f, highs.length + i + 1, false)));
+      section('Left to the Finalis reviewer');
+      if (pending.length) {
+        b.push({ t: 'p', text: 'Possible points the pre-review was not certain enough to assert. The reviewer confirms or dismisses each one; no answer is required from you.', muted: true });
+        b.push(indexTable(sub, pending, false, highs.length + others.length + 1));
+      } else b.push({ t: 'p', text: 'None.', muted: true });
+      section('After submission');
+      b.push({ t: 'p', text: 'The document, the attention points, your answers and a brief go to the Finalis Compliance desk, a separate application. The reviewer verifies the pending points and reads your answers, then approves or requests changes through the usual Compliance channel. This pre-review is advisory: it is not an approval and it changes no status.' });
+      return b;
     }
-    b.push({ t: 'gap', h: 6 });
-    b.push({ t: 'small', text: 'Finalis AI Prescreen · machine-generated pre-submission scan, calibrated on the desk\'s verdicts. Advisory: it is not an approval and it does not change any status.' });
+
+    // ---- the desk brief: everything
+    section('Overview');
+    b.push({ t: 'table', size: 9, cols: [{ w: 2.2, label: 'Asserted to the banker' }, { w: 1, label: 'High', align: 'right' }, { w: 1, label: 'Medium', align: 'right' }, { w: 1, label: 'Low', align: 'right' }, { w: 1.6, label: 'Pending', align: 'right' }, { w: 1.6, label: 'Answered', align: 'right' }, { w: 1.6, label: 'Set aside', align: 'right' }],
+      rows: [[String(c.certain) + ' of ' + c.total, String(highs.length), String(others.filter((f) => f.severity === 'medium').length), String(others.filter((f) => f.severity === 'low').length), String(c.verify), String(answered), String((r.suppressed || []).length)]] });
+    b.push({ t: 'p', text: 'Asserted points are deterministic checks (SOP blocks matched on the text layer) or model points located verbatim on the page, rated high confidence, kept by the second pass and corroborated by an independent signal; the banker saw them as facts and had to answer the high ones. Pending points were shown to the banker as awaiting your verification, never as facts, and did not block the submission.', muted: true });
+    if (r.gut_check && !(r.meta && r.meta.deterministicOnly)) {
+      b.push({ t: 'table', size: 9, cols: [{ w: 1, label: 'Gut check' }, { w: 5, label: 'Question' }, { w: 5, label: 'Why' }], rows: [['inaccurate_picture', 'Could an investor walk away with an inaccurate picture?'], ['unsupported_claims', 'Claims the banker could not back up right now?'], ['promised_results', 'A result promised instead of a target?']].map(([k, q]) => { const x = r.gut_check[k] || {}; return [{ sev: x.flag ? 'flag' : 'no' }, q, { text: x.why || '', grey: !x.why }]; }) });
+    }
+    let n = 0;
+    section('Points awaiting your verification');
+    if (pending.length) { b.push(indexTable(sub, pending, true, 1)); pending.forEach((f) => { n += 1; b.push(pointDetail(sub, f, n, true)); }); }
+    else b.push({ t: 'p', text: 'None: every point was asserted.', muted: true });
+    section('Points asserted to the banker');
+    if (certain.length) { b.push(indexTable(sub, certain, true, n + 1)); certain.forEach((f) => { n += 1; b.push(pointDetail(sub, f, n, true)); }); }
+    else b.push({ t: 'p', text: 'None.', muted: true });
+    section('What the material already covers');
+    const cov = p.coverage || {};
+    const ck = Object.keys(cov);
+    if (ck.length) b.push({ t: 'table', size: 9, cols: [{ w: 2.1, label: 'Item' }, { w: 1.35, label: 'Covered' }, { w: 3.1, label: 'Where' }, { w: 4.1, label: 'Wording' }], rows: ck.map((k) => { const x = cov[k] || {}; return [k.replace(/_/g, ' '), { sev: x.covered ? 'ok' : 'no' }, x.where || '', { text: x.quote ? '“' + String(x.quote).slice(0, 220) + '”' : '', grey: true }]; }) });
+    else if (sub.facts && sub.facts.required) b.push({ t: 'table', size: 9, cols: [{ w: 1, label: 'Block' }, { w: 4, label: 'Name' }, { w: 3, label: 'Status' }], rows: sub.facts.required.map((q) => [q.id, q.name, q.status === 'present' ? 'Present on page ' + q.page + ' (match ' + q.score + '%)' : q.status === 'clear' ? 'Not present, as required' : q.status]) });
+    else b.push({ t: 'p', text: 'No coverage map (the model was not available for this run).', muted: true });
+    section('Document map');
+    const roles = p.page_roles || {};
+    const rk = Object.keys(roles);
+    if (rk.length) {
+      const src = p.sources_on_pages || {};
+      b.push({ t: 'table', size: 8.8, cols: [{ w: 0.8, label: 'Page' }, { w: 2.4, label: 'Role' }, { w: 6.8, label: 'Sources and footnotes on the page' }], rows: rk.sort((a, z) => +a - +z).map((k) => [k, roles[k], { text: src[k] || '', grey: !src[k] }]) });
+    }
+    if (p.lane_basis) b.push({ t: 'kv', k: 'Lane basis', v: p.lane_basis });
+    if (Array.isArray(p.audience_signals) && p.audience_signals.length) b.push({ t: 'kv', k: 'Audience signals', v: p.audience_signals.join('\n') });
+    if (p.third_party_prepared !== undefined && p.third_party_prepared !== null) b.push({ t: 'kv', k: 'Third-party material', v: p.third_party_prepared ? 'yes' : 'no' });
+    if (Array.isArray(p.notes) && p.notes.length) b.push({ t: 'kv', k: 'Notes from the first pass', v: p.notes.join('\n') });
+    section('Brief');
+    b.push({ t: 'p', text: r.brief || 'No brief (the model was not available for this run).' });
+    section('Suggested comment to the banker');
+    b.push({ t: 'p', text: r.banker_message || 'None.' });
+    section('Candidates set aside');
+    if (r.suppressed && r.suppressed.length) {
+      b.push({ t: 'p', text: 'What a naive scanner would have raised and why a reviewer would not; kept here so a set-aside point can be reinstated in one look.', muted: true });
+      b.push({ t: 'table', size: 8.5, cols: [{ w: 0.9, label: 'Rule' }, { w: 1.1, label: 'Pages' }, { w: 3, label: 'Passage' }, { w: 5, label: 'Reason' }], rows: r.suppressed.map((x) => [x.rule, (x.pages || []).join(', ') || '—', { text: x.quote ? '“' + x.quote.slice(0, 120) + '”' : '', grey: true }, x.reason || '']) });
+    } else b.push({ t: 'p', text: 'None.', muted: true });
+    section('Run details');
+    const meta = r.meta || {};
+    const details = [];
+    if (meta.calls && meta.calls.length) details.push(['Model calls', meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ': ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' page images' : '')).join('; ')]);
+    if (meta.learning) details.push(['Learning applied', meta.learning.rules + ' learned rule' + (meta.learning.rules === 1 ? '' : 's') + ', ' + meta.learning.precedents + ' precedent' + (meta.learning.precedents === 1 ? '' : 's') + ' from reviewer verdicts']);
+    if (meta.reference) details.push(['Source', 'Reference pre-review (the reviewer\'s verdicts on the calibration deck), not a live run']);
+    if (meta.deterministicOnly) details.push(['Source', 'Deterministic checks only: the model was not available']);
+    if (sub.calibration) details.push(['Calibration', sub.calibration.recall + '/' + sub.calibration.expectedTotal + ' validated flags found, ' + sub.calibration.fpCount + ' rejected flags raised']);
+    if (sub.file && sub.file.sha) details.push(['File hash', String(sub.file.sha).slice(0, 16) + '…']);
+    details.forEach(([k, v]) => b.push({ t: 'kv', k, v }));
+    b.push({ t: 'sign' });
     return b;
   }
   function reportPdf(sub, kind) {
     const desk = kind === 'desk';
     return PdfOut.blob({
-      title: (desk ? 'Compliance brief · ' : 'Pre-review summary · ') + sub.file.name,
-      header: 'Finalis AI Prescreen · ' + (desk ? 'Compliance desk brief' : 'Pre-review summary'),
-      headerRight: fmtDay(sub.created_at),
-      footer: desk ? 'Confidential · Compliance desk' : 'Advisory: not an approval',
+      title: (desk ? 'Compliance brief ' : 'Pre-review summary ') + ref(sub) + ' ' + sub.file.name,
+      brand: 'finalis', product: desk ? 'Compliance desk' : 'Marketing materials',
+      kicker: desk ? 'Compliance brief' : 'Pre-review summary', date: fmtDay(sub.created_at),
+      accent: desk ? [0.06, 0.48, 0.42] : [0.18, 0.37, 0.89],
+      footerLeft: desk ? 'Confidential. Machine-prepared pre-review for the Compliance desk; the reviewer decides.' : 'Advisory pre-review. Not an approval; it changes no status.',
+      footerRight: ref(sub),
       blocks: reportBlocks(sub, kind),
     });
   }
