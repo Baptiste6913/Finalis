@@ -1,0 +1,831 @@
+{
+  "version": "0.4.0-local",
+  "source": "Finalis Disclaimer SOPs for LMM + Language Guide, read verbatim. Every required_text and every fix below is quoted from those two documents. Nothing here is invented, and nothing is paraphrased: if the wording is wrong, it is wrong in the same way the SOP is, and Compliance ratifies the fix.",
+  "tiers": {
+    "A": "Deterministic. A block of required text is present, correct and legible, or it is not.",
+    "B": "Conditional. The rule fires because of what a page carries, then the same presence test runs.",
+    "C": "Flagged for a human. Never cleared, never passed, never counted as clean."
+  },
+  "rules": [
+    {
+      "id": "A1a",
+      "tier": "A",
+      "severity": "high",
+      "name": "Incorporation by reference of the Finalis Disclaimers",
+      "citation": "SOP Mandatory Disclaimers (a)(i) / WSP 5.4",
+      "lane": "any",
+      "scope": "document",
+      "match": "fuzzy",
+      "threshold": 82,
+      "required_text": "The reader agrees to the provisions set forth on those certain \"Disclaimers\" located at https://www.finalis.com/disclaimers and the terms thereof are incorporated by reference as though fully set forth herein",
+      "fix": "The reader agrees to the provisions set forth on those certain “Disclaimers” located at https://www.finalis.com/disclaimers and the terms thereof are incorporated by reference as though fully set forth herein, and references therein to (i) “Company” means the entity in connection with this transaction (together with its affiliates, subsidiaries, successors and assigns), (ii) “Banker” means the registered representative of Finalis Securities LLC in connection with this transaction and (iii) “Bank” means {Bank Name}. Securities are offered through Finalis Securities, LLC member FINRA/SIPC.",
+      "applies_to": [
+        "pitch deck",
+        "teaser",
+        "one-pager",
+        "memo",
+        "other"
+      ],
+      "recommended_page": "last"
+    },
+    {
+      "id": "A1b",
+      "tier": "A",
+      "severity": "high",
+      "name": "Broker-dealer line",
+      "citation": "SOP Mandatory Disclaimers (a)(i)",
+      "lane": "any",
+      "scope": "document",
+      "match": "fuzzy",
+      "threshold": 88,
+      "required_text": "Securities are offered through Finalis Securities, LLC member FINRA/SIPC",
+      "alternates": [
+        "Securities offered through Finalis Securities LLC Member FINRA/SIPC"
+      ],
+      "fix": "Securities are offered through Finalis Securities, LLC member FINRA/SIPC.",
+      "applies_to": [
+        "pitch deck",
+        "teaser",
+        "one-pager",
+        "memo",
+        "email",
+        "article",
+        "linkedin post",
+        "other"
+      ]
+    },
+    {
+      "id": "A2",
+      "tier": "A",
+      "severity": "high",
+      "name": "Separate and unaffiliated entities",
+      "citation": "SOP Mandatory Disclaimers, MMR institutional",
+      "lane": "any",
+      "scope": "document",
+      "match": "fuzzy",
+      "threshold": 84,
+      "required_text": "and Finalis Securities LLC are separate, unaffiliated entities",
+      "alternates": [
+        "are separate and unaffiliated entities"
+      ],
+      "fix": "[Firm Name] and Finalis Securities LLC are separate, unaffiliated entities.",
+      "applies_to": [
+        "pitch deck",
+        "teaser",
+        "one-pager",
+        "memo",
+        "article",
+        "linkedin post",
+        "other"
+      ]
+    },
+    {
+      "id": "A3",
+      "tier": "A",
+      "severity": "high",
+      "name": "Institutional legend on the first page",
+      "citation": "SOP Mandatory Disclaimers (d) / FINRA 2210(b)(3)",
+      "lane": "institutional",
+      "scope": "first_page",
+      "match": "fuzzy",
+      "threshold": 88,
+      "required_text": "For institutional investors only",
+      "alternates": [
+        "For Institutional Use Only"
+      ],
+      "fix": "For institutional investors only",
+      "recommended_page": 1
+    },
+    {
+      "id": "A4",
+      "tier": "A",
+      "severity": "high",
+      "name": "Institutional legend must not appear on retail material",
+      "citation": "WSP 5.2, 5.7 / FINRA 2210(a)",
+      "lane": "retail",
+      "scope": "document",
+      "match": "fuzzy",
+      "threshold": 88,
+      "forbidden_text": "For institutional investors only",
+      "alternates": [
+        "For Institutional Use Only"
+      ],
+      "fix": "Remove the institutional legend: the audience includes natural persons, so the material is a retail communication and needs the retail treatment instead."
+    },
+    {
+      "id": "A5",
+      "tier": "A",
+      "severity": "high",
+      "name": "Not an offer, retail audience",
+      "citation": "SOP Mandatory Disclaimers (e) / 10(a)",
+      "lane": "retail",
+      "scope": "document",
+      "match": "fuzzy",
+      "threshold": 82,
+      "required_text": "This communication is intended only to provide general information about potential investment opportunities and to gather indications of interest. It does not constitute an offer to sell or a solicitation of an offer to buy any security",
+      "fix": "This communication is intended only to provide general information about potential investment opportunities and to gather indications of interest. It does not constitute an offer to sell or a solicitation of an offer to buy any security. Securities offered through Finalis Securities LLC Member FINRA/SIPC. [Firm Name] and Finalis Securities LLC are separate, unaffiliated entities."
+    },
+    {
+      "id": "A6",
+      "tier": "A",
+      "severity": "high",
+      "name": "Disclaimer too small to read",
+      "citation": "WSP 5.14 / Language Guide 2(c)",
+      "lane": "any",
+      "scope": "legibility",
+      "min_pt": 7,
+      "recommended_pt": 10,
+      "fix": "Set the disclaimer at a readable size. FINRA recommends font size 10 for a general-size advertisement; a legend the reader cannot read is not a legend."
+    },
+    {
+      "id": "A7",
+      "tier": "A",
+      "severity": "medium",
+      "name": "Source on a statistical exhibit",
+      "citation": "SOP (b) Market Data / WSP 5.7",
+      "lane": "any",
+      "scope": "page",
+      "trigger": "statistics",
+      "match": "fuzzy",
+      "threshold": 90,
+      "required_text": "Source:",
+      "fix": "Source: Information provided by Sponsoring/Issuing Company."
+    },
+    {
+      "id": "B1",
+      "tier": "B",
+      "severity": "high",
+      "name": "Forecast, forward-looking statement or projection",
+      "citation": "SOP (a) Financial forecasts / WSP 5.6",
+      "scope": "page",
+      "trigger_regex": "\\b(IRR|MOIC|TVPI|DPI|projected|projection[s]?|forecast(ed)?|forward[- ]looking|expected (revenue|return|sales|growth)|target(ed)? (return|IRR)|waterfall|pro ?forma|run[- ]rate|ARR by|will reach|expects to reach)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 82,
+      "required_text": "Fundamental data and forecast supplied by management of the Company. Such projections may not be realized. Past performance may not recur, and there is no guarantee of future results",
+      "cross_reference": "Please see important forecast disclosures at the end of this presentation",
+      "fix": "Fundamental data and forecast supplied by management of the Company. Such projections may not be realized. Past performance may not recur, and there is no guarantee of future results."
+    },
+    {
+      "id": "B2",
+      "tier": "B",
+      "severity": "medium",
+      "name": "Projection chart or illustration",
+      "citation": "SOP (24) Illustrations",
+      "scope": "page",
+      "trigger_regex": "\\b(IRR|MOIC|projected|projection[s]?|forecast|hypothetical|illustrative|scenario)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 82,
+      "required_text": "This is an illustration only and is not intended to forecast the performance of a specific investment or strategy",
+      "fix": "The issuer and/or sponsor believe that the hypothetical illustration provided is reasonable based on comparable peer valuations and/or applying mathematical principles. This is an illustration only and is not intended to forecast the performance of a specific investment or strategy."
+    },
+    {
+      "id": "B3",
+      "tier": "B",
+      "severity": "high",
+      "name": "Past or present performance",
+      "citation": "SOP (b) Historical or present data of performance",
+      "scope": "page",
+      "trigger_regex": "\\b(track record|prior fund|fund [IVX]+\\b|realized (returns?|gains?)|historical (returns?|performance)|net (IRR|return)|since inception|vintage|exited|our returns)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 86,
+      "required_text": "Past performance may not recur, and there is no guarantee of future results",
+      "must_be_bold": true,
+      "fix": "Past performance may not recur, and there is no guarantee of future results."
+    },
+    {
+      "id": "B4",
+      "tier": "B",
+      "severity": "high",
+      "name": "Preferred return",
+      "citation": "SOP (c) Preferred Returns",
+      "scope": "page",
+      "trigger_regex": "\\b(pref(erred)? return|preferred equity|pref rate|\\d+% pref\\b|preferred distribution)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 82,
+      "required_text": "Preferred returns are part of the deal structure and indicate the sequence of how distributions",
+      "fix": "Preferred returns are part of the deal structure and indicate the sequence of how distributions (from operations or a capital event) are disbursed. They are not guaranteed and should not be considered a financial projection. Actual cash flow projections and distributions from the sponsor may differ from the preferred return."
+    },
+    {
+      "id": "B5",
+      "tier": "B",
+      "severity": "medium",
+      "name": "Distributions",
+      "citation": "SOP (3)(a) Material fair and balanced",
+      "scope": "page",
+      "trigger_regex": "\\b(distributions? (of|yield|rate)|monthly distributions?|quarterly distributions?|paid distributions?|distribution history|cash distributions?|are paid quarterly|are paid monthly)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 86,
+      "required_text": "Distributions are not guaranteed and may be discontinued at any time",
+      "fix": "Distributions are not guaranteed and may be discontinued at any time. Additionally, the presentation must disclose the components of the distribution rate (fund operations, return of capital, borrowings, or proceeds, etc.)."
+    },
+    {
+      "id": "B6",
+      "tier": "B",
+      "severity": "medium",
+      "name": "Corporate logos",
+      "citation": "SOP (7) Corporate Logos",
+      "scope": "page",
+      "trigger_regex": "\\b(strategic partners?|our (partners|clients|investors)|backed by|trusted by|portfolio companies|as seen in|selected (clients|investors))\\b",
+      "trigger_min": 1,
+      "needs_images": 3,
+      "match": "fuzzy",
+      "threshold": 86,
+      "required_text": "Corporate logos do not represent endorsements",
+      "alternates": [
+        "displayed for illustrative purposes"
+      ],
+      "fix": "Corporate logos do not represent endorsements."
+    },
+    {
+      "id": "B7",
+      "tier": "B",
+      "severity": "high",
+      "name": "Testimonial or endorsement",
+      "citation": "SOP Testimonials",
+      "scope": "page",
+      "trigger_regex": "\\b(testimonial|endorse(d|ment)?|what our (clients|investors) say|client (quote|story))\\b",
+      "trigger_quote": true,
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 84,
+      "required_text": "This testimonial may not be representative of the experience of other customers. There is no guarantee of future performance or success",
+      "fix": "This testimonial may not be representative of the experience of other customers. There is no guarantee of future performance or success. Each individual customer experience may differ and vary, and may not always be representative of the services paid for.",
+      "action": "Ask the banker whether this was a paid testimonial. If the individual was paid more than $100 in value, add: “The customer featured in this testimonial was paid more than $100.”"
+    },
+    {
+      "id": "B8",
+      "tier": "B",
+      "severity": "medium",
+      "name": "Award, ranking or recognition",
+      "citation": "SOP 5(a)",
+      "scope": "page",
+      "trigger_regex": "\\b(award(ed|s)?|ranked|ranking|top \\d+|best (of|in)|recognized by|winner|named (one of|the))\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 80,
+      "required_text": "criteria used to determine the award",
+      "fix": "Add a disclosure naming the awarding organization and its role in the selection process, the criteria used to determine the award or ranking, the time period covered, and whether any fees were paid for participation, consideration or receipt of the award.",
+      "action": "ask_banker"
+    },
+    {
+      "id": "B9",
+      "tier": "B",
+      "severity": "high",
+      "name": "Private real-estate offering",
+      "citation": "SOP (i) Real Estate",
+      "scope": "document",
+      "trigger_regex": "\\b(real estate|multifamily|cap rate|NOI\\b|square feet|sq\\.? ?ft|property portfolio|rent roll)\\b",
+      "trigger_min": 2,
+      "trigger_pages": 2,
+      "match": "fuzzy",
+      "threshold": 84,
+      "required_text": "Investments in private offerings are illiquid and speculative and you must be able to sustain a full loss of your investments",
+      "fix": "Investments in private offerings are illiquid and speculative and you must be able to sustain a full loss of your investments."
+    },
+    {
+      "id": "B10",
+      "tier": "B",
+      "severity": "high",
+      "name": "Audience cross-check",
+      "citation": "WSP 5.2 / FINRA 2210(a)",
+      "scope": "audience",
+      "fix": "The declared audience and the material disagree. Correct the questionnaire, or correct the deck, before the review goes further: this single answer decides whether pre-use principal approval is legally required."
+    },
+    {
+      "id": "B11",
+      "tier": "B",
+      "severity": "high",
+      "name": "LinkedIn call to action",
+      "citation": "SOP 5(b)",
+      "scope": "document",
+      "applies_to": [
+        "linkedin post"
+      ],
+      "trigger_regex": "\\b(comment below|send me a (direct message|dm)|reach out privately|dm me|message me|drop a comment)\\b",
+      "trigger_min": 1,
+      "match": "fuzzy",
+      "threshold": 84,
+      "required_text": "Finalis does not permit interactive activities related to securities business on social media",
+      "fix": "Please note that Finalis does not permit interactive activities related to securities business on social media. Accordingly, you may not interact with this LinkedIn post for securities-related purposes."
+    },
+    {
+      "id": "B12",
+      "tier": "B",
+      "severity": "high",
+      "name": "Email about an offering",
+      "citation": "SOP Mandatory Disclaimers (e)",
+      "scope": "document",
+      "applies_to": [
+        "email"
+      ],
+      "match": "fuzzy",
+      "threshold": 84,
+      "required_text": "This communication is only intended to provide general information about a particular investment opportunity and to gather indications of interest. It does not constitute an offer of a security",
+      "fix": "This communication is only intended to provide general information about a particular investment opportunity and to gather indications of interest. It does not constitute an offer of a security."
+    },
+    {
+      "id": "B13",
+      "tier": "B",
+      "severity": "medium",
+      "name": "Article, newsletter or educational content",
+      "citation": "SOP 9",
+      "scope": "document",
+      "applies_to": [
+        "article"
+      ],
+      "match": "fuzzy",
+      "threshold": 80,
+      "required_text": "This material has been prepared for information and educational purposes only, and it is not intended to provide, nor should it be relied on for tax, legal, or investment advice",
+      "fix": "This material has been prepared for information and educational purposes only, and it is not intended to provide, nor should it be relied on for tax, legal, or investment advice. You should consult with your own tax, legal, and financial professionals for your specific situation. The views and opinions expressed in this article are those of the author and do not necessarily reflect the views or opinions of Finalis Securities, LLC. Securities offered through Finalis Securities LLC Member FINRA/SIPC. [Firm Name] and Finalis Securities LLC are separate, unaffiliated entities."
+    },
+    {
+      "id": "C1",
+      "tier": "C",
+      "severity": "high",
+      "name": "Superlative or absolute claim",
+      "citation": "Language Guide 2(a) / FINRA 2210(d)(1)",
+      "scope": "phrase",
+      "action": "ask_banker",
+      "terms": [
+        {
+          "phrase": "best in class",
+          "suggested": "one of the stronger"
+        },
+        {
+          "phrase": "best-in-class",
+          "suggested": "one of the stronger"
+        },
+        {
+          "phrase": "world class",
+          "suggested": "experienced"
+        },
+        {
+          "phrase": "world-class",
+          "suggested": "experienced"
+        },
+        {
+          "phrase": "industry leading",
+          "suggested": "one of the industry leading"
+        },
+        {
+          "phrase": "industry-leading",
+          "suggested": "one of the industry leading"
+        },
+        {
+          "phrase": "market leading",
+          "suggested": "one of the market leading"
+        },
+        {
+          "phrase": "market-leading",
+          "suggested": "one of the market leading"
+        },
+        {
+          "phrase": "unmatched",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "unparalleled",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "unsurpassed",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "exceptional",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "superior",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "premium",
+          "suggested": "quality"
+        },
+        {
+          "phrase": "unique",
+          "suggested": "differentiated"
+        },
+        {
+          "phrase": "the best",
+          "suggested": "strives to be among the best"
+        },
+        {
+          "phrase": "proven",
+          "suggested": "demonstrated to date"
+        },
+        {
+          "phrase": "guaranteed",
+          "suggested": "intended"
+        },
+        {
+          "phrase": "guarantee",
+          "suggested": "intend"
+        },
+        {
+          "phrase": "first ever",
+          "suggested": "among the first"
+        },
+        {
+          "phrase": "the first in",
+          "suggested": "among the first in"
+        },
+        {
+          "phrase": "number 1",
+          "suggested": "among the leading"
+        },
+        {
+          "phrase": "number one",
+          "suggested": "among the leading"
+        },
+        {
+          "phrase": "#1",
+          "suggested": "among the leading"
+        },
+        {
+          "phrase": "top tier",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "top-tier",
+          "suggested": "strong"
+        },
+        {
+          "phrase": "cutting edge",
+          "suggested": "current"
+        },
+        {
+          "phrase": "cutting-edge",
+          "suggested": "current"
+        },
+        {
+          "phrase": "state of the art",
+          "suggested": "current"
+        },
+        {
+          "phrase": "de-risk",
+          "suggested": "reduce certain risks, with the risks that remain described"
+        },
+        {
+          "phrase": "de-risked",
+          "suggested": "with certain risks reduced, and the remaining risks described"
+        },
+        {
+          "phrase": "risk free",
+          "suggested": "lower risk than"
+        },
+        {
+          "phrase": "risk-free",
+          "suggested": "lower risk than"
+        },
+        {
+          "phrase": "significant growth",
+          "suggested": "strong growth"
+        },
+        {
+          "phrase": "explosive growth",
+          "suggested": "strong growth"
+        },
+        {
+          "phrase": "massive",
+          "suggested": "large"
+        },
+        {
+          "phrase": "revolutionary",
+          "suggested": "new"
+        },
+        {
+          "phrase": "game changing",
+          "suggested": "significant"
+        },
+        {
+          "phrase": "game-changing",
+          "suggested": "significant"
+        }
+      ],
+      "fix": "Confirm the statement is true and add a source. If it cannot be substantiated, replace it with a non-absolute term."
+    },
+    {
+      "id": "C2",
+      "tier": "C",
+      "severity": "high",
+      "name": "Promissory language",
+      "citation": "Language Guide 2(h)",
+      "scope": "phrase",
+      "action": "escalate",
+      "terms": [
+        {
+          "phrase": "will deliver",
+          "suggested": "aims to deliver"
+        },
+        {
+          "phrase": "will achieve",
+          "suggested": "aims to achieve"
+        },
+        {
+          "phrase": "will generate",
+          "suggested": "is projected to generate, subject to the forecast disclosure"
+        },
+        {
+          "phrase": "will double",
+          "suggested": "the sponsor projects growth of"
+        },
+        {
+          "phrase": "will triple",
+          "suggested": "the sponsor projects growth of"
+        },
+        {
+          "phrase": "guarantees",
+          "suggested": "intends"
+        },
+        {
+          "phrase": "always delivers",
+          "suggested": "has delivered to date"
+        },
+        {
+          "phrase": "mitigates the risk",
+          "suggested": "is intended to reduce certain risks"
+        },
+        {
+          "phrase": "eliminates the risk",
+          "suggested": "is intended to reduce certain risks"
+        },
+        {
+          "phrase": "downside protection",
+          "suggested": "structural features intended to reduce downside, which are not a guarantee"
+        },
+        {
+          "phrase": "principal protected",
+          "suggested": "structured with features intended to reduce loss of principal, which are not a guarantee"
+        },
+        {
+          "phrase": "certainly",
+          "suggested": "we believe"
+        },
+        {
+          "phrase": "historic buying opportunity",
+          "suggested": ""
+        }
+      ],
+      "fix": "Flag to the Compliance Officer. Promissory language about returns, cash flow or risk is not resolved by a disclaimer."
+    },
+    {
+      "id": "C3",
+      "tier": "C",
+      "severity": "high",
+      "name": "Fear, urgency or scare tactics",
+      "citation": "Language Guide 3(b)",
+      "scope": "phrase",
+      "action": "ask_banker",
+      "terms": [
+        {
+          "phrase": "invest now",
+          "suggested": ""
+        },
+        {
+          "phrase": "don't miss",
+          "suggested": ""
+        },
+        {
+          "phrase": "do not miss",
+          "suggested": ""
+        },
+        {
+          "phrase": "act now",
+          "suggested": ""
+        },
+        {
+          "phrase": "limited time",
+          "suggested": ""
+        },
+        {
+          "phrase": "closing soon",
+          "suggested": "the offering period is expected to close on [date]"
+        },
+        {
+          "phrase": "last chance",
+          "suggested": ""
+        },
+        {
+          "phrase": "only one of its kind",
+          "suggested": ""
+        },
+        {
+          "phrase": "there are no other investments like this",
+          "suggested": ""
+        },
+        {
+          "phrase": "sleep at night",
+          "suggested": ""
+        },
+        {
+          "phrase": "you don't want to lose out",
+          "suggested": ""
+        },
+        {
+          "phrase": "minimum investment requirements are being waived",
+          "suggested": ""
+        },
+        {
+          "phrase": "fewer worries",
+          "suggested": ""
+        }
+      ],
+      "fix": "Remove the content or replace it with a neutral statement of fact. Intimidation and urgency are not permitted."
+    },
+    {
+      "id": "C4",
+      "tier": "C",
+      "severity": "medium",
+      "name": "Comparison to another fund, investment or firm",
+      "citation": "Language Guide 3(f)",
+      "scope": "phrase",
+      "action": "escalate",
+      "terms": [
+        {
+          "phrase": "compared to competitors",
+          "suggested": ""
+        },
+        {
+          "phrase": "versus our peers",
+          "suggested": ""
+        },
+        {
+          "phrase": "outperform",
+          "suggested": ""
+        },
+        {
+          "phrase": "outperforms",
+          "suggested": ""
+        },
+        {
+          "phrase": "unlike other funds",
+          "suggested": ""
+        },
+        {
+          "phrase": "better than",
+          "suggested": ""
+        },
+        {
+          "phrase": "beats the market",
+          "suggested": ""
+        }
+      ],
+      "fix": "Flag to the Compliance Officer. Comparisons need an identified benchmark, a measurement period and equal prominence."
+    },
+    {
+      "id": "C5",
+      "tier": "C",
+      "severity": "medium",
+      "name": "Disparaging statement",
+      "citation": "Language Guide 3(e)",
+      "scope": "phrase",
+      "action": "escalate",
+      "terms": [
+        {
+          "phrase": "crowded with investor fraud",
+          "suggested": ""
+        },
+        {
+          "phrase": "unscrupulous",
+          "suggested": ""
+        },
+        {
+          "phrase": "broken industry",
+          "suggested": ""
+        },
+        {
+          "phrase": "legacy players fail",
+          "suggested": ""
+        },
+        {
+          "phrase": "incumbents cannot",
+          "suggested": ""
+        }
+      ],
+      "fix": "Flag to the Compliance Officer. Disparaging remarks about competitors, the industry or regulators are not permitted."
+    },
+    {
+      "id": "C6",
+      "tier": "C",
+      "severity": "medium",
+      "name": "Legal or disciplinary history",
+      "citation": "Language Guide 3(g)",
+      "scope": "phrase",
+      "action": "escalate",
+      "terms": [
+        {
+          "phrase": "litigation",
+          "suggested": ""
+        },
+        {
+          "phrase": "lawsuit",
+          "suggested": ""
+        },
+        {
+          "phrase": "settlement with",
+          "suggested": ""
+        },
+        {
+          "phrase": "arbitration",
+          "suggested": ""
+        },
+        {
+          "phrase": "judgment against",
+          "suggested": ""
+        },
+        {
+          "phrase": "bankruptcy",
+          "suggested": ""
+        },
+        {
+          "phrase": "regulatory action",
+          "suggested": ""
+        }
+      ],
+      "fix": "Flag to the Compliance Officer."
+    },
+    {
+      "id": "C7",
+      "tier": "C",
+      "severity": "medium",
+      "name": "Complex or technical for a retail audience",
+      "citation": "Language Guide 3(c)",
+      "lane": "retail",
+      "scope": "phrase",
+      "action": "ask_banker",
+      "terms": [
+        {
+          "phrase": "correlation",
+          "suggested": "explain the term or remove it"
+        },
+        {
+          "phrase": "derivative",
+          "suggested": "explain the term or remove it"
+        },
+        {
+          "phrase": "bear market",
+          "suggested": "a period of falling prices"
+        },
+        {
+          "phrase": "bull market",
+          "suggested": "a period of rising prices"
+        },
+        {
+          "phrase": "carried interest",
+          "suggested": "explain the term or remove it"
+        },
+        {
+          "phrase": "gp catch-up",
+          "suggested": "explain the term or remove it"
+        },
+        {
+          "phrase": "hurdle rate",
+          "suggested": "explain the term or remove it"
+        },
+        {
+          "phrase": "basis points",
+          "suggested": "explain the term or use percentages"
+        }
+      ],
+      "fix": "The audience includes natural persons. Explain the term in plain language or remove it."
+    },
+    {
+      "id": "C8",
+      "tier": "C",
+      "severity": "low",
+      "name": "Indiscriminate bolding or underlining",
+      "citation": "Language Guide 2(b)",
+      "scope": "emphasis",
+      "action": "ask_banker",
+      "threshold_ratio": 0.3,
+      "fix": "Reserve bolding for headings and subheadings. Emphasis spread through the body copy unbalances the material in favour of the benefits."
+    },
+    {
+      "id": "C9",
+      "tier": "C",
+      "severity": "medium",
+      "name": "Benefits without risks on the same page",
+      "citation": "Language Guide 3(a) / WSP 5.6",
+      "scope": "balance",
+      "action": "ask_banker",
+      "benefit_min": 5,
+      "fix": "Risks and benefits must be presented with equal prominence. Add the balancing risk language to this page."
+    }
+  ],
+  "statistics_trigger": {
+    "number_density": 8,
+    "regex": "(\\d[\\d,\\.]*\\s?%|\\$\\s?\\d|\\bCAGR\\b|\\bx\\b\\s?\\d|\\bmillion\\b|\\bbillion\\b|\\bbn\\b|\\bm\\b\\s?\\+)"
+  },
+  "not_implemented_locally": [
+    "Promissory images (money trees, gold, yachts): needs vision, out of scope for the local engine.",
+    "Substantiation of a factual claim: needs judgement and outside sources.",
+    "Cherry-picked realized holdings: needs the full set of holdings to compare against."
+  ]
+}

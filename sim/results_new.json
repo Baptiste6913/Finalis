@@ -1,0 +1,2357 @@
+{
+ "S1_inst_clean": {
+  "lane": "institutional",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "B3",
+    "tier": "B",
+    "severity": "low",
+    "page": 2,
+    "pages": [
+     2,
+     5
+    ],
+    "quote": "Past performance is not indicative of future results; the performance of Fund I and Fund II may not be repeated by Fund III.",
+    "title": "Past-performance line present but not bold and standalone",
+    "issue": "The deck carries a track record on page 5 and the past-performance language is present on pages 2 and 5, but it runs inside a paragraph and inside a source footnote rather than bold and standalone as the SOP prescribes. Substance is covered; presentation only.",
+    "action": "add",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence; the SOP wording for B3 was found elsewhere in the material",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Past performance may not recur, and there is no guarantee of future results.",
+    "rewrite": ""
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "B1",
+    "pages": [
+     5
+    ],
+    "reason": "Historical audited data, not a forecast; forward-looking coverage on page 2 (\"Such projections may not be realized\") applies document-wide (calibration rule 3)."
+   },
+   {
+    "rule": "B1",
+    "pages": [
+     7
+    ],
+    "reason": "Target is labelled and cross-references page 2, which carries the SOP forecast wording; document-level coverage (rules 3 and 9(e))."
+   },
+   {
+    "rule": "B3",
+    "pages": [
+     1,
+     3,
+     5
+    ],
+    "reason": "Past-performance language is present on page 2 and again in the page 5 source footnote; only the bold/standalone note is raised."
+   },
+   {
+    "rule": "B4",
+    "pages": [
+     7
+    ],
+    "reason": "Full SOP preferred-return text sits verbatim on page 2 and the terms page points to it; the desk accepts this placement (rule 3)."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     5
+    ],
+    "reason": "Exhibit page carries an audited-statement source line with net-of-fees basis (rule 5)."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     6
+    ],
+    "reason": "Exhibit page carries an original third-party source (rule 5)."
+   },
+   {
+    "rule": "C19",
+    "pages": [
+     7
+    ],
+    "reason": "Institutional lane: target is labelled, stated net, and its assumptions, non-guarantee and risk language are on page 2 (rule 15)."
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     6
+    ],
+    "reason": "Figures sourced on the same page to PitchBook (rule 9(d))."
+   },
+   {
+    "rule": "C6",
+    "pages": [
+     6
+    ],
+    "reason": "Framed as a view and supported by the sourced market data on the same page; not a peer comparison stated as fact."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     4
+    ],
+    "reason": "Biography and experience, not flagged (rule 9(c))."
+   },
+   {
+    "rule": "C9",
+    "pages": [],
+    "reason": "Risk of loss, illiquidity, no-secondary-market and no-guarantee language all appear on page 2; fair-and-balanced judged once at document level on institutional "
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     1
+    ],
+    "reason": "Material legend matches the declared institutional audience; no contradicting audience statement."
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     3
+    ],
+    "reason": "Verifier: The claim is explicitly framed as belief (\"We believe\") with no unsourced figure attached, which calibration rule 9(a) and the instruction that belief"
+   },
+   {
+    "rule": "C8",
+    "pages": [
+     5
+    ],
+    "reason": "Verifier: Both prior funds are shown with a full audited, net-of-fees source rather than a selection of investments or representative deals, so calibration rule"
+   }
+  ],
+  "brief": "Material: Harbor Growth Fund III pitch deck (growth equity, European software), 8 pages, deal-related, prepared by the banker.\nLane: institutional - declared institutional-only, controlled distribution (email and meetings), legend on page 1 and every footer. Lighter review applies; no formatting, emphasis or complexity points.\nTier A is satisfied: Finalis disclaimer with the broker-dealer line on page 2 (repeated page 8) and the institutional legend on page 1, both at 8.5 pt.\nCoverage is strong: page 2 carries forward-looking/projection wording, past performance, risk of loss, illiquidity, no-secondary-market, the full SOP preferred-return text and the logo line; page 7 cross-references page 2 twice; pages 5 and 6 each carry a source line.\nAs a result the scanner candidates (B1 p5/p7, B3, B4 p7, A7 p5/p6) are all suppressed under the coverage logic.\nThree points remain: one language point on page 3 (unsourced \"attractive risk-adjusted return potential\"), one low presentation note that the past-performance line is not bold and standalone, and one close call on page 5 where DPI is given for Fund II but not for Fund I.\nEscalate: the page 5 metric asymmetry - a fund-level track record with all funds shown and an audited source is normally protected, so the reviewer should decide whether to ask for Fund I DPI or leave it.\nNo testimonials, awards, logos, real-estate offering or retail distribution issues; nothing suggests forwarding to retail investors.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": false,
+    "why": ""
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The page 3 \"attractive risk-adjusted return potential\" claim has no basis on the page."
+   },
+   "promised_results": {
+    "flag": false,
+    "why": ""
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 13678,
+     "bytes": 8485
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 82511,
+     "bytes": 33136,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 15995,
+     "bytes": 17827
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (8 pages read)",
+   "blocks:done (lane institutional \u00b7 0 required blocks to fix)",
+   "profile:done (fund pitch deck \u00b7 lane institutional \u00b7 9 disclosures already covered)",
+   "findings:done (3 points, 12 candidates set aside)",
+   "verify:done (2 candidates set aside, 1 points kept)",
+   "assemble:done (1 attention points)"
+  ],
+  "cost": 0.3810024,
+  "calls": 3,
+  "error": null,
+  "seconds": 113
+ },
+ "S2_inst_gaps": {
+  "lane": "institutional",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "",
+    "title": "Institutional legend on the first page is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "For Institutional Investors Only",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Finalis disclaimer (incorporation by reference and broker-dealer line) is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "The reader agrees to the provisions set forth on those certain \"Disclaimers\" loc",
+    "rewrite": ""
+   },
+   {
+    "id": "f3",
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 9,
+    "pages": [
+     9
+    ],
+    "quote": "Projected deployment schedule 2026 EUR 250m 2027 EUR 450m 2028 EUR 550m 2029 EUR 250m",
+    "title": "Deployment schedule exhibit without a source line",
+    "issue": "Page 9 is a statistical exhibit (years paired with amounts) and carries no source attribution for the figures.",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 10,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Source: Information provided by Sponsoring/Issuing Company.",
+    "rewrite": ""
+   },
+   {
+    "id": "f4",
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Winner, Infrastructure Investor Awards 2025: Emerging Manager of the Year",
+    "title": "Award cited without awarding body, criteria, period or fee disclosure",
+    "issue": "The award is stated on the cover with no footnote giving the awarding organization and its role in the selection, the criteria, the period covered and whether any fee was paid for participation, consideration or receipt.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Award granted by [awarding organization], which selects recipients based on [cri",
+    "rewrite": ""
+   },
+   {
+    "id": "f5",
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 7,
+    "pages": [
+     7
+    ],
+    "quote": "Strategic partners and lenders. We work with a group of relationship banks, advisers and co-investors:",
+    "title": "Logo grid of partners/lenders without logo disclosure",
+    "issue": "Six third-party logos are presented as relationships of the sponsor with no endorsement disclaimer, which may imply endorsement by those institutions.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 2,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Corporate logos do not represent endorsements.",
+    "rewrite": ""
+   },
+   {
+    "id": "f6",
+    "rule": "B4",
+    "tier": "B",
+    "severity": "medium",
+    "page": 8,
+    "pages": [
+     8
+    ],
+    "quote": "Preferred return 8% compounded annually",
+    "title": "Preferred return without the SOP preferred-return disclosure",
+    "issue": "The preferred return is stated as a term with no disclosure that it is part of the distribution waterfall, is not guaranteed and is not a projection; the page 2 cross-reference does not carry the item-specific text.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Preferred returns are part of the deal structure and indicate the sequence of ho",
+    "rewrite": ""
+   },
+   {
+    "id": "f7",
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 3,
+    "pages": [
+     3
+    ],
+    "quote": "Our proprietary sourcing engine delivers superior returns through off-market transactions.",
+    "title": "\"Delivers superior returns\" stated as fact",
+    "issue": "An unqualified superlative and outcome claim about the firm's own process, stated as present fact with no basis, is an exaggerated and unwarranted claim under 2210(d)(1)(B).",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Our proprietary sourcing engine is designed to access off-market transactions, which we believe supports attractive risk"
+   },
+   {
+    "id": "f8",
+    "rule": "C1",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "The leading mid-market infrastructure platform in Europe",
+    "title": "Cover superlative about the firm without substantiation",
+    "issue": "\"The leading ... platform in Europe\" is an unqualified superlative about the sponsor stated as fact with no source or criteria on the page.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "A mid-market infrastructure platform in Europe"
+   },
+   {
+    "id": "f9",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 3,
+    "pages": [
+     3
+    ],
+    "quote": "Infrastructure assets attracted $1.2 trillion of capital in 2025, and the mid-market remains fragmented.",
+    "title": "Market figure stated as fact with no source",
+    "issue": "A specific market statistic is stated as fact with no source on the page; no other page cites a source for it.",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Infrastructure assets attracted approximately $1.2 trillion of capital in 2025 (Source: [name of data provider, year]), "
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "B1",
+    "pages": [
+     2,
+     5,
+     8,
+     9
+    ],
+    "reason": "Page 2 already states projections are assumption-based, not guarantees, and that actual results may differ materially, plus past performance language; page 8 cr"
+   },
+   {
+    "rule": "B3",
+    "pages": [
+     5,
+     8
+    ],
+    "reason": "Equivalent past-performance wording appears on both the disclaimers page 2 and on the track-record page 5 itself; not bold/standalone is at most a non-issue her"
+   },
+   {
+    "rule": "B6",
+    "pages": [
+     6
+    ],
+    "reason": "Logos inside the fund's own (target) portfolio list are excluded from B6 by calibration rule 6."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     5
+    ],
+    "reason": "The exhibit already carries an audited-statement source line with the net-of-fees basis (rule 5)."
+   },
+   {
+    "rule": "C2",
+    "pages": [
+     2
+    ],
+    "reason": "Disclaimers-page wording; never flagged (calibration rule 2), and the hit is protective language, not a promise."
+   },
+   {
+    "rule": "C15",
+    "pages": [
+     8,
+     9
+    ],
+    "reason": "Institutional lane: the return is labelled a target and cross-references the disclaimers page covering assumptions, non-guarantee and material divergence (rules"
+   },
+   {
+    "rule": "C19",
+    "pages": [
+     8
+    ],
+    "reason": "Not raised where a disclaimers page covers criteria, assumptions and reasons results may differ; page 5 supplies the net-of-fees basis for the track record."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     4
+    ],
+    "reason": "Biography and experience figures are not flagged (calibration rule 9(c))."
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     2
+    ],
+    "reason": "B10 never fires on risk language, and there is no explicit audience statement contradicting the questionnaire (rule 8)."
+   },
+   {
+    "rule": "B9",
+    "pages": [
+     2
+    ],
+    "reason": "Not a real-estate offering, and the illiquidity/full-loss language is already present (rule 3)."
+   },
+   {
+    "rule": "C18",
+    "pages": [
+     2
+    ],
+    "reason": "Institutional lane; key risks appear in the communication itself on page 2 (rule 4)."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     3
+    ],
+    "reason": "Labelled opinion (\"we believe\") with no figure attached \u2014 not flagged under calibration rule 9(a)."
+   },
+   {
+    "rule": "C8",
+    "pages": [
+     6
+    ],
+    "reason": "Verifier: The page shows only a selection of holdings with the required 'not all investments are shown' disclosure and no accompanying returns, so calibration r"
+   }
+  ],
+  "brief": "Material: nine-page institutional marketing deck for Meridian Infrastructure Partners IV, a European mid-market infrastructure fund, prepared by the banker at Northbridge Advisors and distributed by email. Lane: institutional (banker declaration, controlled email distribution, deal-related), so lighter review \u2014 no formatting, emphasis or complexity points.\nAlready covered: page 2 carries forward-looking/targets-not-guaranteed, past performance, full-loss and illiquidity language; page 5 carries an audited source line with a net-of-fees basis and repeats the past-performance line; page 8 cross-references page 2 for the target IRR.\nWhat matters: both required blocks are absent \u2014 the Finalis disclaimer with the broker-dealer line and the \"For institutional investors only\" legend on the cover. The deck's only distribution marking is a CONFIDENTIAL footer, so nothing in the document itself supports the institutional limitation.\nItem-specific disclosures missing: B6 on the page 7 partner/lender logo grid, B8 for the cover award, B4 for the 8% preferred return on page 8. Page 9 (projected deployment schedule) is a statistical exhibit with no source line \u2014 A7.\nLanguage: page 3 \"delivers superior returns\" and page 1 \"the leading ... platform in Europe\" are unqualified claims about the firm; the $1.2 trillion figure needs a source or softening.\nEscalate/confirm: page 6 \"Selected portfolio investments\" \u2014 the text discloses that not all investments are shown, but confirm with the banker that no returns or outcome language sit next to those logos in the designed file, which would make it a C8 selection.\nNo C15/C17/C19 points: institutional lane and the target is labelled and cross-referenced.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": false,
+    "why": ""
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "\"The leading mid-market infrastructure platform in Europe\", \"delivers superior returns\" and the $1.2 trillion market figure are stated as fact with no source or criteria."
+   },
+   "promised_results": {
+    "flag": false,
+    "why": ""
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 40199,
+     "bytes": 6041
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 68220,
+     "bytes": 31643,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 19463,
+     "bytes": 20708
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (9 pages read)",
+   "blocks:done (lane institutional \u00b7 2 required blocks to fix)",
+   "profile:done (private fund marketing deck / pitch presentation \u00b7 lane institutional \u00b7 8 disclosures already covered)",
+   "findings:done (10 points, 12 candidates set aside)",
+   "verify:done (1 candidate set aside, 9 points kept)",
+   "assemble:done (9 attention points)"
+  ],
+  "cost": 0.4001774,
+  "calls": 3,
+  "error": null,
+  "seconds": 129
+ },
+ "S3_retail_projections": {
+  "lane": "retail",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Finalis disclaimer (incorporation by reference and broker-dealer line) is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "The reader agrees to the provisions set forth on those certain \"Disclaimers\" loc",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 4,
+    "pages": [
+     4,
+     7
+    ],
+    "quote": "Cash yield 6.0% 7.0% 7.5% 8.0% 8.5% Cumulative distributions $60,000 $130,000 $205,000 $285,000 $370,000",
+    "title": "Projection and track-record exhibits carry no source line",
+    "issue": "Pages 4 and 7 are statistical exhibits (periods paired with values; sponsor performance figures) and neither carries a source attribution, so the reader has no basis for the figures.",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 2,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Source: Information provided by Sponsoring/Issuing Company.",
+    "rewrite": ""
+   },
+   {
+    "id": "f3",
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1,
+     4
+    ],
+    "quote": "Projected 18% IRR \u00b7 8% preferred return \u00b7 7% annual yield paid monthly",
+    "title": "No forward-looking / forecast disclosure for the projected figures",
+    "issue": "The cover and the five-year projection page state projected IRR, equity multiple, cash yields and cumulative distributions, and the deck contains no forward-looking or forecast disclosure of any kind (no disclaimers page).",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Fundamental data and forecast supplied by management of the Company. Such projec",
+    "rewrite": ""
+   },
+   {
+    "id": "f4",
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "pages": [
+     2,
+     2
+    ],
+    "quote": "Guaranteed 8% preferred return to investors before the sponsor receives any profit.",
+    "title": "Preferred return disclosure missing on the pages carrying the number",
+    "issue": "Pages 1 and 2 state an 8% preferred return with no disclosure that it is a distribution-sequencing term, not guaranteed and not a projection; B4 is item-specific and nothing in the deck covers it.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 2,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "Quote found on page 2, not 2 as first cited.",
+    "text_to_add": "Preferred returns are part of the deal structure and indicate the sequence of ho",
+    "rewrite": ""
+   },
+   {
+    "id": "f5",
+    "rule": "B7",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "pages": [
+     5
+    ],
+    "quote": "\"Best sponsor I have ever worked with. My returns beat the market every single year.\" J.R., investor since 2019",
+    "title": "Investor testimonials with no testimonial legend (retail)",
+    "issue": "Retail material carrying client testimonials must display the SOP legend; without it the quotes suggest the featured experience and returns are typical.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "This testimonial may not be representative of the experience of other customers.",
+    "rewrite": ""
+   },
+   {
+    "id": "f6",
+    "rule": "B5",
+    "tier": "B",
+    "severity": "high",
+    "page": 6,
+    "pages": [
+     6
+    ],
+    "quote": "7% annualized distribution yield, paid monthly since inception",
+    "title": "Past distributions: missing not-guaranteed line and full component breakdown",
+    "issue": "The page reports paid distributions but does not state that distributions are not guaranteed and may be discontinued, and it discloses only that a portion came from offering proceeds without breaking out the components (operations, return of capital, borrowings) of the rate.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Distributions are not guaranteed and may be discontinued at any time.",
+    "rewrite": "Distributions have been paid monthly since the first closing in 2023. Distributions have been funded from operations and"
+   },
+   {
+    "id": "f7",
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "pages": [
+     7,
+     7
+    ],
+    "quote": "Completed deals returned an average 21% IRR (Deals 3, 7 and 11).",
+    "title": "Past performance data with no past-performance disclosure",
+    "issue": "Pages 6 and 7 present historical distributions and realized sponsor returns, and the deck carries no past-performance line anywhere, so nothing tempers the implication that these results will recur.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 2,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "Quote found on page 7, not 7 as first cited.",
+    "text_to_add": "Past performance may not recur, and there is no guarantee of future results.",
+    "rewrite": ""
+   },
+   {
+    "id": "f8",
+    "rule": "B9",
+    "tier": "B",
+    "severity": "high",
+    "page": null,
+    "pages": [
+     1,
+     3,
+     4,
+     7
+    ],
+    "quote": "",
+    "title": "Missing private-offering illiquidity / risk-of-loss disclosure",
+    "issue": "The material offers a private real estate fund to accredited natural persons but carries no illiquidity or full-loss disclosure anywhere; the SOP B9 text is required for real-estate private offerings and nothing in the deck is equivalent.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "wording for B9 was found in the material",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Investments in private offerings are illiquid and speculative and you must be ab",
+    "rewrite": ""
+   },
+   {
+    "id": "f9",
+    "rule": "C16",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1,
+     6
+    ],
+    "quote": "7% annual yield paid monthly",
+    "title": "Distribution rate presented as a yield and annualized",
+    "issue": "The distribution rate is labelled a \"yield\" on pages 1 and 6 and presented as an annualized rate, while page 6 acknowledges part of it was funded from offering proceeds; RN 20-21 prohibits calling a distribution rate a yield and requires the components before any annualization.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Current annualized distribution rate of 7%, paid monthly; distributions have been funded from operations and in part fro"
+   },
+   {
+    "id": "f10",
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "pages": [
+     2
+    ],
+    "quote": "Guaranteed 8% preferred return to investors before the sponsor receives any profit.",
+    "title": "Preferred return described as \"Guaranteed\"",
+    "issue": "A preferred return is a distribution priority, not a guarantee; stating it as guaranteed is a promissory and misleading claim under 2210(d)(1)(B).",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "8% preferred return: investors receive distributions up to an 8% annual rate before the sponsor participates in profits."
+   },
+   {
+    "id": "f11",
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "pages": [
+     2
+    ],
+    "quote": "This is a can't-miss opportunity to own institutional-quality apartments in the Sun Belt.",
+    "title": "Unwarranted superlative claim about the offering",
+    "issue": "\"Can't-miss\" states an outcome as certain and \"institutional-quality\" is an unsubstantiated characterization of the asset; both are exaggerated claims under 2210(d)(1)(B).",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "no term of the language guide appears in the quote",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "An opportunity to invest in Sun Belt multifamily apartments; all investments involve risk, including the loss of princip"
+   },
+   {
+    "id": "f12",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "high",
+    "page": 5,
+    "pages": [
+     5
+    ],
+    "quote": "\"Best sponsor I have ever worked with. My returns beat the market every single year.\"",
+    "title": "Testimonial asserts market-beating returns every year",
+    "issue": "A performance claim inside a testimonial is still a performance claim: it is unsubstantiated, unbenchmarked and implies typical results, which the legend alone does not cure.",
+    "action": "remove",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Remove the performance sentence (\"My returns beat the market every single year.\") and retain only non-performance servic"
+   },
+   {
+    "id": "f13",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "high",
+    "page": 7,
+    "pages": [
+     7
+    ],
+    "quote": "Our sponsor has never lost investor capital across 14 completed deals.",
+    "title": "\"Never lost investor capital\" stated as fact",
+    "issue": "An absolute no-loss claim, unsourced and with no statement that prior results do not indicate future performance, implies safety of principal in a speculative private offering.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Across 14 completed deals since 2012, the sponsor reports that no deal returned less than invested capital (source: spon"
+   },
+   {
+    "id": "f14",
+    "rule": "C8",
+    "tier": "C",
+    "severity": "high",
+    "page": 7,
+    "pages": [
+     7
+    ],
+    "quote": "Completed deals returned an average 21% IRR (Deals 3, 7 and 11).",
+    "title": "Cherry-picked realized returns (3 of 14 deals)",
+    "issue": "An average IRR drawn from three named deals out of fourteen is a selection presented as the track record; the full set of completed deals, on a consistent net basis, is required for a sound basis.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "a judgement category (C8) is always left to the reviewer",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Show the realized results of all 14 completed deals (or state the aggregate net IRR across all completed deals, with the"
+   },
+   {
+    "id": "f15",
+    "rule": "C18",
+    "tier": "C",
+    "severity": "high",
+    "page": 8,
+    "pages": [
+     8
+    ],
+    "quote": "Risk factors are detailed in the private placement memorandum, available on request.",
+    "title": "Risks left entirely to the PPM",
+    "issue": "For a retail private-placement communication the material itself must carry the key risks; a cross-reference to the PPM does not substitute, and this deck presents only upside.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "a judgement category (C18) is always left to the reviewer",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Key risks: this is an illiquid, speculative private offering with no public market for the interests; investors may lose"
+   },
+   {
+    "id": "f16",
+    "rule": "C3",
+    "tier": "C",
+    "severity": "medium",
+    "page": 2,
+    "pages": [
+     2
+    ],
+    "quote": "Invest now: limited allocation, closing June 30.",
+    "title": "Urgency and scarcity pressure on a retail audience",
+    "issue": "\"Invest now\" combined with limited allocation and a closing date pressures a retail reader to act; state the offering deadline factually without the call to act.",
+    "action": "rewrite",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "The current allocation is limited and the offering is scheduled to close on June 30, 2026."
+   },
+   {
+    "id": "f17",
+    "rule": "C15",
+    "tier": "C",
+    "severity": "medium",
+    "page": 4,
+    "pages": [
+     4,
+     4
+    ],
+    "quote": "Projected equity multiple 2.1x \u00b7 projected IRR 18%",
+    "title": "Projected investor returns in a retail private-placement communication",
+    "issue": "This is a retail communication about a private placement, so projected IRR, equity multiple, cash yields, cumulative distributions and the projected exit value may not be shown at all; none of the RN 20-21 exceptions (completed program, actual realized holding, GIPS-consistent presentation) applies to this new offering.",
+    "action": "escalate",
+    "confidence": "low",
+    "located": true,
+    "boxes": 2,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it low confidence; the second pass downgraded it; it is a close call to escalate",
+    "unverified": false,
+    "note": "Quote found on page 4, not 4 as first cited. Verifier: Projection framing under RN 20-21 for a labelled projected figure is exactly the close-call scenario rule 13 directs to escalate rather than assert removal.",
+    "text_to_add": "",
+    "rewrite": "Remove the projected IRR, projected equity multiple, projected cash yields, cumulative distribution figures and projecte"
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "B1",
+    "pages": [
+     7
+    ],
+    "reason": "Page 7 IRR is realized past performance, not a forecast; handled under B3 and C8 rather than the forecast disclaimer."
+   },
+   {
+    "rule": "B2",
+    "pages": [
+     4
+    ],
+    "reason": "The page 4 projected investor returns are to be removed under C15/RN 20-21; an illustration legend would not cure a prohibited retail return projection, and B1 "
+   },
+   {
+    "rule": "B9",
+    "pages": [
+     3,
+     4,
+     7
+    ],
+    "reason": "Raised once at document level with placement on pages 1 and 8 (calibration rules 3 and 12: document-level disclosure, grouped)."
+   },
+   {
+    "rule": "B3",
+    "pages": [
+     6
+    ],
+    "reason": "Grouped into the single B3 finding listing pages 6 and 7."
+   },
+   {
+    "rule": "B4",
+    "pages": [
+     2
+    ],
+    "reason": "Grouped into the single B4 finding covering pages 1 and 2; the word \"Guaranteed\" is raised separately as C2."
+   },
+   {
+    "rule": "B5",
+    "pages": [
+     6
+    ],
+    "reason": "Partial component disclosure already on the page; raised once as B5 asking for the not-guaranteed line and the full component breakdown, not as a second finding"
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     7
+    ],
+    "reason": "Grouped into the single A7 finding listing pages 4 and 7."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     3
+    ],
+    "reason": "\"Premium\" here is a technical real-estate term for the rent increase, not a superlative about the firm or deal (calibration rule 9)."
+   },
+   {
+    "rule": "C3",
+    "pages": [
+     5
+    ],
+    "reason": "Customer's own words in a testimonial, not the firm's fear or urgency language; addressed by the B7 legend."
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     7
+    ],
+    "reason": "Duplicate lexicon hit on the same sentence already raised as the C4 \"never lost investor capital\" finding."
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     5
+    ],
+    "reason": "Same sentence as the testimonial performance claim already raised for page 5."
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     1
+    ],
+    "reason": "Accredited-investor wording is not an explicit institutional audience statement contradicting the questionnaire; B10 never fires on risk or eligibility language"
+   },
+   {
+    "rule": "B12",
+    "pages": [
+     1
+    ],
+    "reason": "The material under review is a deck, not an email; B12 is never raised for the transmittal email of a deck."
+   }
+  ],
+  "brief": "Material: eight-page marketing deck for the Lakeside Multifamily Income Fund, a private real estate offering sponsored and distributed by Northbridge Advisors, prepared by the banker.\nLane: retail \u2014 the questionnaire declares natural persons / more than 25 retail investors and distribution is by email and website, so RN 20-21 and the full SOP checklist apply notwithstanding the \"accredited investors\" line on the cover.\nAlready covered: essentially nothing. There is no disclaimers page, no forward-looking language, no past-performance line, no illiquidity or logo/testimonial legends and no source line on any page; the only risk reference is a pointer to the PPM on page 8, and page 6 partially discloses that some distributions came from offering proceeds.\nPoints that matter: page 1 and page 4 project investor returns (18% IRR, 2.1x, cash yields, cumulative distributions, exit value) \u2014 prohibited outright in a retail private-placement communication with no RN 20-21 exception available; the 7% distribution rate is called a yield and annualized while partly funded from offering proceeds; page 2 calls the preferred return \"Guaranteed\" and adds \"can't-miss\" plus a closing-date push; page 7 asserts the sponsor has never lost investor capital and averages 21% IRR from three of fourteen deals; page 5 testimonials claim market-beating returns with no legend.\nRequired additions: B9 illiquidity, B1 forecast, B3 past performance, B4 preferred return, B5 distributions, B7 testimonial legend, and A7 source lines on pages 4 and 7. The Tier A Finalis block is separately flagged as missing by the deterministic check.\nEscalate: the volume and character of the issues \u2014 prohibited retail return projections plus a guarantee and a no-loss claim \u2014 go beyond wording fixes; recommend the reviewer treat this as a rebuild of pages 1, 2, 4, 5 and 7 rather than a mark-up, and confirm whether the website channel is intended before any revised version is re-submitted.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": true,
+    "why": "The deck shows only upside \u2014 projected 18% IRR, a \"guaranteed\" preferred return, an unbroken distribution history and a no-loss track record \u2014 with no risks, assumptions or illiquidity disclosure anywhere."
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The no-loss claim, the 21% IRR from three of fourteen deals, the $600 million acquired, the property metrics and the testimonial's market-beating returns are all stated as fact with no source or basis."
+   },
+   "promised_results": {
+    "flag": true,
+    "why": "\"Guaranteed 8% preferred return\", \"7% annual yield paid monthly\" and \"can't-miss opportunity\" present returns to investors as assured outcomes."
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 31822,
+     "bytes": 5238
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 150281,
+     "bytes": 31542,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 107713,
+     "bytes": 26721
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (8 pages read)",
+   "blocks:done (lane retail \u00b7 1 required block to fix)",
+   "profile:done (private placement marketing deck (real estate fund pitch) \u00b7 lane retail \u00b7 1 disclosures already covered)",
+   "findings:done (16 points, 13 candidates set aside)",
+   "verify:done (all 17 points confirmed)",
+   "assemble:done (17 attention points)"
+  ],
+  "cost": 0.6629292,
+  "calls": 3,
+  "error": null,
+  "seconds": 290
+ },
+ "S4_firm_mmr": {
+  "lane": "institutional",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Separate and unaffiliated entities is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Northbridge Advisors and Finalis Securities LLC are separate, unaffiliated entit",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 3,
+    "pages": [
+     3
+    ],
+    "quote": "Clients include:",
+    "title": "Client logos on page 3 without the logo disclosure",
+    "issue": "Page 3 displays third-party corporate logos presented as clients of the firm, but carries no statement that the logos are not endorsements; B6 is item-specific and is not covered anywhere else in the deck.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Corporate logos do not represent endorsements.",
+    "rewrite": ""
+   },
+   {
+    "id": "f3",
+    "rule": "B3",
+    "tier": "B",
+    "severity": "low",
+    "page": 3,
+    "pages": [
+     3
+    ],
+    "quote": "Selected transactions ... Transactions completed by the Northbridge team since 2019.",
+    "title": "Track-record page without a past-performance line",
+    "issue": "Page 3 presents a completed-transaction track record and the deck carries no past-performance or no-guarantee wording anywhere (no disclaimers page), so nothing qualifies the historical record.",
+    "action": "add",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 3,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Past performance may not recur, and there is no guarantee of future results.",
+    "rewrite": ""
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "A7",
+    "pages": [
+     3
+    ],
+    "reason": "Logo/tombstone page, no chart, graph, table of figures or statistical exhibit; deterministic facts mark no page EXHIBIT (calibration rule 5)"
+   },
+   {
+    "rule": "C8",
+    "pages": [
+     3
+    ],
+    "reason": "No returns or performance figures shown next to the selection, so no cherry-picked performance (calibration rule 9(i))"
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     4
+    ],
+    "reason": "Biography and experience figures are not flagged (calibration rule 9(c))"
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "reason": "Legend matches the declared institutional audience; no contradicting audience statement (calibration rule 8)"
+   },
+   {
+    "rule": "C12",
+    "pages": [
+     2
+    ],
+    "reason": "Complexity and formatting categories do not apply on institutional material (framework v4, calibration rule 4)"
+   },
+   {
+    "rule": "C9",
+    "pages": [
+     3
+    ],
+    "reason": "Verifier: This raises a speculative, text-unsupported hypothesis (deals possibly done at prior employers) rather than an actual misleading claim in the material"
+   }
+  ],
+  "brief": "Material: a five-page Northbridge Advisors firm capabilities deck (non-deal firm marketing), distributed by email.\nLane: institutional - declared institutional-only, controlled distribution, and \"For Institutional Use Only\" appears on page 1 and as a footer on every page.\nAlready covered: the institutional legend (p1) and the Finalis broker-dealer line (p5, 8.5 pt, legible).\nThe deck has no disclaimers page, but it also carries no projections, targets, returns, preferred returns, distributions, testimonials or awards, so most Tier B items simply do not trigger.\nPoints that matter: page 3 shows client logos with no \"Corporate logos do not represent endorsements.\" line - item-specific, must sit on that page.\nPage 3 also presents a completed-transaction record with no past-performance wording anywhere in the material; a single bold standalone line on page 3 (or with the page 5 disclosure text) resolves it.\nOne item to confirm rather than assert: whether the logos are Northbridge client relationships or transactions the team executed at prior firms, since the caption says \"the Northbridge team\".\nNo language findings: no superlatives, no promissory wording, no unsourced market figures; the bio figures on page 4 are experience, not claims.\nNo formatting, emphasis or complexity points raised (institutional lane).\nEscalate only if the reviewer disagrees on the page 3 attribution; nothing else here is a close call.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": false,
+    "why": ""
+   },
+   "unsupported_claims": {
+    "flag": false,
+    "why": ""
+   },
+   "promised_results": {
+    "flag": false,
+    "why": ""
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 13719,
+     "bytes": 3899
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 73317,
+     "bytes": 27435,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 35422,
+     "bytes": 15420
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (5 pages read)",
+   "blocks:done (lane institutional \u00b7 1 required block to fix)",
+   "profile:done (firm capabilities deck \u00b7 lane institutional \u00b7 1 disclosures already covered)",
+   "findings:done (3 points, 5 candidates set aside)",
+   "verify:done (1 candidate set aside, 3 points kept)",
+   "assemble:done (3 attention points)"
+  ],
+  "cost": 0.3363544,
+  "calls": 3,
+  "error": null,
+  "seconds": 123
+ },
+ "S5_linkedin": {
+  "lane": "retail",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A1p",
+    "tier": "A",
+    "severity": "low",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Investment opportunity mentioned in a post",
+    "issue": "Applies only when investment opportunities are mentioned. Not found in the text.",
+    "action": "confirm",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "This communication is intended only to provide general information about potenti",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "B11",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "DM me for the teaser, or comment below and I will reach out.",
+    "title": "LinkedIn call to action requires the B11 legend (or removal)",
+    "issue": "The post invites securities-related interaction on social media (\"DM me\", \"comment below\"), which triggers the SOP B11 disclosure; without it the post solicits interactive securities activity Finalis does not permit.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Please note that Finalis does not permit interactive activities related to secur",
+    "rewrite": "Contact details are available on our website for those who would like to learn more about our advisory practice."
+   },
+   {
+    "id": "f3",
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "ranked #3 in the Mid-Market Advisor League Table 2026 by MergerLink",
+    "title": "League table ranking cited without criteria, period or fee disclosure",
+    "issue": "The ranking names the awarding organization only; the criteria, its role in the selection, the period covered and whether any fee was paid for participation or receipt are not disclosed, so the reader cannot evaluate the claim (Rule 2210(d)(1)(A)).",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "The Mid-Market Advisor League Table 2026 is compiled by MergerLink based on [cri",
+    "rewrite": ""
+   },
+   {
+    "id": "f4",
+    "rule": "C9",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "We are currently raising for an exciting healthcare opportunity: a profitable diagnostics company with 40% revenue growth. DM me for the teaser, or comment below and I will reach out.",
+    "title": "Live private raise solicited publicly with only upside and no risks",
+    "issue": "A specific ongoing offering is promoted on an uncontrolled public channel with positive attributes only and no risk, illiquidity or \"no offer\" language anywhere in the communication, which is not fair and balanced under Rule 2210(d)(1)(A)/(D) and RN 20-21 (risks in a teaser or PPM do not substitute for risks in the communication); the public solicitation of a private placement also raises a general-solicitation question the desk should decide.",
+    "action": "escalate",
+    "confidence": "low",
+    "located": true,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it low confidence; the second pass downgraded it; it is a close call to escalate; a judgement category (C9) is always left to the reviewer",
+    "unverified": false,
+    "note": "Verifier: This is a fair-and-balanced/general-solicitation close call that calibration rule 13 directs to be raised as an escalation rather than a firm violation assertion.",
+    "text_to_add": "",
+    "rewrite": "Northbridge Advisors is active in healthcare services M&A and capital raising. This post is for general information only"
+   },
+   {
+    "id": "f5",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "a profitable diagnostics company with 40% revenue growth",
+    "title": "Issuer financial figures stated as fact with no source",
+    "issue": "Profitability and the 40% revenue growth figure are presented as established facts about the target company with no source, period or basis on the page, so the reader has no sound basis to evaluate them (Rule 2210(d)(1)(A)/(B)).",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Source: Information provided by the issuing company. Figures are unaudited and r",
+    "rewrite": "a healthcare diagnostics company that reported revenue growth of approximately 40% for [period] (company-provided, unaud"
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "B1",
+    "pages": [
+     1
+    ],
+    "reason": "Scanner matched \"will reach\" in \"I will reach out\", which is a contact commitment, not a forecast or projection; no forward-looking financial statement is made,"
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     1
+    ],
+    "reason": "Verifier: \"Exciting\" is subjective enthusiasm/opinion language, not an unqualified factual superiority claim like the rule 10(a) examples (pioneers, best-in-cla"
+   }
+  ],
+  "brief": "Material: a single LinkedIn post by a registered representative of Northbridge Advisors, combining a league table ranking with an active capital raise for a healthcare diagnostics issuer.\nLane: retail. LinkedIn is a public channel and the audience cannot be controlled, so the full SOP checklist applies regardless of who the banker intends to reach.\nCoverage: essentially none. No forward-looking, risk-of-loss, past-performance, illiquidity or broker-dealer wording appears anywhere; the only attribution is the name \"MergerLink\".\nPoints that matter: (1) B11 legend is required for the \"DM me / comment below\" call to action, or the call to action comes out; (2) B8 disclosure for the league table ranking (organization role, criteria, period, fees); (3) the issuer financials are unsourced and need a company-provided source line or softening; (4) \"exciting\" should be neutralised.\nEscalation: the post promotes a live private offering on an uncontrolled public channel with upside only and no risk language. The balance defect is clear under 2210(d)(1)(D) and RN 20-21, but whether the desk permits a public deal solicitation at all (general solicitation / offering-status question) is a supervisory call, not a machine call.\nTier A required blocks are handled deterministically and are not repeated here.\nNo projected investor returns appear, so C15/C16 are not engaged.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": true,
+    "why": "The offering is described only through favourable attributes (profitable, 40% growth) with no risk, illiquidity or loss language anywhere in the communication."
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The #3 league table ranking and the profitability/40% growth figures are stated as fact with no methodology, period or source."
+   },
+   "promised_results": {
+    "flag": false,
+    "why": ""
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 12085,
+     "bytes": 3106
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 66773,
+     "bytes": 26020,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 27438,
+     "bytes": 17942
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (1 sections)",
+   "blocks:done (lane retail \u00b7 0 required blocks to fix)",
+   "profile:done (LinkedIn post \u00b7 lane retail \u00b7 2 disclosures already covered)",
+   "findings:done (5 points, 1 candidates set aside)",
+   "verify:done (1 candidate set aside, 5 points kept)",
+   "assemble:done (5 attention points)"
+  ],
+  "cost": 0.32336400000000004,
+  "calls": 3,
+  "error": null,
+  "seconds": 107
+ },
+ "S6_email": {
+  "lane": "institutional",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "",
+    "title": "Institutional legend on the first page is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "For Institutional Investors Only",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "A1e",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Email offering disclaimer is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "This communication is only intended to provide general information about a parti",
+    "rewrite": ""
+   },
+   {
+    "id": "f3",
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Fund III will deliver 2.5x net to limited partners over the fund term",
+    "title": "Forward-looking disclosure missing for the 2.5x return figure",
+    "issue": "The email carries a forward-looking return figure with no forecast/forward-looking disclosure anywhere in the material, so the reader has no basis to evaluate it under Rule 2210(d)(1)(F).",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Fundamental data and forecast supplied by management of the Company. Such projec",
+    "rewrite": ""
+   },
+   {
+    "id": "f4",
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Fund III will deliver 2.5x net to limited partners over the fund term",
+    "title": "Return stated as a certainty rather than a target",
+    "issue": "\"will deliver\" states a future investor return as fact, which is a promissory and unwarranted claim under Rule 2210(d)(1)(B) and (F).",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Fund III targets 2.5x net to limited partners over the fund term. This is a target only, is not guaranteed and may not b"
+   },
+   {
+    "id": "f5",
+    "rule": "C9",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "We are pleased to share the Harbor Growth Fund III opportunity. Fund III will deliver 2.5x net to limited partners over the fund term, building on the 2.3x TVPI of Fund II.",
+    "title": "Upside only: no risk or loss-of-capital language in the email",
+    "issue": "The communication presents a return, a prior-fund multiple and a close date with no risk, assumption or loss-of-capital language anywhere in it, so the overall impression is not balanced under Rule 2210(d)(1)(A) and (D).",
+    "action": "escalate",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence; it is a close call to escalate; a judgement category (C9) is always left to the reviewer",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": ""
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "C15",
+    "pages": [
+     1
+    ],
+    "reason": "C15 is a retail private-placement category (RN 20-21); the lane is institutional, so the projected return is handled under C2/C19, not C15."
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     1
+    ],
+    "reason": "B10 never fires on generic salutations or risk wording; there is no explicit audience statement contradicting the questionnaire."
+   },
+   {
+    "rule": "B3",
+    "pages": [
+     1
+    ],
+    "reason": "Coverage guard: the whole-document pass found past-performance coverage (p1). Calibration rule 3."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     1
+    ],
+    "reason": "Verifier: Rule 5 requires an actual chart/graph/table/statistical exhibit or text structured as periods/categories paired with values; this is narrative prose i"
+   },
+   {
+    "rule": "C19",
+    "pages": [
+     1
+    ],
+    "reason": "Verifier: This restates the same certainty-vs-target problem already captured by f5/C2 in hypothetical form (\"if restated as a target\"), and rule 12 prefers few"
+   }
+  ],
+  "brief": "Material: a short capital-raise email from the banker for Harbor Growth Fund III, first close in June, with a fund presentation attached (the attachment text is not in scope of this pass and its disclaimers are unverified).\nLane: institutional, deal-related, prepared by the banker; light review, no formatting or complexity points.\nAlready covered: the Finalis broker-dealer line is present on page 1.\nDeterministic gaps already known to the desk: A1e email offering disclaimer missing, A3 institutional legend missing on page 1.\nThe point that matters most is the promissory framing: \"Fund III will deliver 2.5x net\" is an outcome stated as certainty and must be relabelled as a target.\nNothing in the email carries forward-looking, past-performance or risk wording, and there is no disclaimers page, so B1 and B3 have no coverage and must be added to the email body.\nThe three figures on page 1 carry no source line; A7 asks for the standard source text, not a disclaimer.\nEscalate: the overall balance of an upside-only email (C9) and, once the return is relabelled a target, whether the criteria, assumptions and fee basis need to sit in the email or can rest on the attached deck (C19).\nRecommend confirming that the attached presentation carries the disclaimers page and the institutional legend before release.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": true,
+    "why": "A one-paragraph email states a future multiple, a prior-fund multiple and a close size with no assumptions, basis or risk, giving a more certain picture than the facts support."
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The 2.5x, the 2.3x TVPI and the EUR 250 million are stated as fact with no source, as-of date or net/gross basis."
+   },
+   "promised_results": {
+    "flag": true,
+    "why": "\"Fund III will deliver 2.5x net\" promises a specific investor return."
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 9949,
+     "bytes": 3567
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 97246,
+     "bytes": 26447,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 30727,
+     "bytes": 18220
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (1 sections)",
+   "blocks:done (lane institutional \u00b7 2 required blocks to fix)",
+   "profile:done (email with attached fund presentation \u00b7 lane institutional \u00b7 2 disclosures already covered)",
+   "findings:done (6 points, 2 candidates set aside)",
+   "verify:done (2 candidates set aside, 5 points kept)",
+   "assemble:done (5 attention points)"
+  ],
+  "cost": 0.3874394,
+  "calls": 3,
+  "error": null,
+  "seconds": 139
+ },
+ "S7_article": {
+  "lane": "retail",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A1r",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Article, newsletter and educational content disclaimer is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "This material has been prepared for information and educational purposes only, a",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Investors who allocate 10% of a portfolio to private credit can expect higher income with lower volatility.",
+    "title": "Promissory statement of investor outcome",
+    "issue": "A stated expectation of higher income and lower volatility from a specific 10% allocation is a prediction of performance presented as fact, prohibited under 2210(d)(1)(B) and (F), and it also reads as a personalized allocation recommendation to a retail audience.",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "no term of the language guide appears in the quote",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Private credit allocations have historically offered income and volatility characteristics that differ from public fixed"
+   },
+   {
+    "id": "f3",
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "private credit outperforms public bonds in every rate environment because floating-rate loans reprice with the market",
+    "title": "Absolute outperformance claim stated as fact",
+    "issue": "\"In every rate environment\" is an unqualified absolute about future and past performance with no substantiation, and the headline repeats it; this is an exaggerated and unwarranted claim under 2210(d)(1)(B).",
+    "action": "rewrite",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Floating-rate loans reprice with the market, which has historically supported private credit income when rates rise; rel"
+   },
+   {
+    "id": "f4",
+    "rule": "C9",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "The asset class is now a core holding for pension funds and insurers, and the opportunity set for middle-market lenders keeps widening as banks retreat.",
+    "title": "Benefits only: no risk, illiquidity or loss language anywhere",
+    "issue": "The article discusses income, outperformance and allocation with no mention of credit risk, illiquidity, valuation uncertainty or loss of principal, so the overall impression is not balanced under 2210(d)(1)(A) and (D).",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "a judgement category (C9) is always left to the reviewer",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Private credit investments are illiquid and speculative, are subject to borrower",
+    "rewrite": ""
+   },
+   {
+    "id": "f5",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Direct lending funds returned 11.4% in 2025 against 3.1% for the Bloomberg Aggregate",
+    "title": "Performance and market figures stated with no source",
+    "issue": "The 2025 return figures, the Bloomberg Aggregate comparison, \"fastest-growing corner of fixed income\" and \"core holding for pension funds and insurers\" are specific factual claims with no citation on the page, leaving no sound basis for the reader under 2210(d)(1)(A).",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Add a source line, e.g. \"Source: [index/data provider], [universe and period]\", for the 11.4% and 3.1% figures and for t"
+   },
+   {
+    "id": "f6",
+    "rule": "C6",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "Why private credit outperforms bonds in a rising-rate world",
+    "title": "Comparison to public bonds without material differences disclosed",
+    "issue": "The piece compares private credit with public fixed income throughout without disclosing the material differences in liquidity, costs, credit quality, valuation frequency and fluctuation of principal, as 2210(d)(2) requires for a retail communication.",
+    "action": "add",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Private credit and publicly traded fixed income differ materially in liquidity, ",
+    "rewrite": ""
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "C1",
+    "pages": [
+     1
+    ],
+    "reason": "Not raised as a separate language point; folded into the C4 sourcing finding, which asks for a citation or softening of the same phrase (rule 12, group repeated"
+   },
+   {
+    "rule": "C4",
+    "pages": [
+     1
+    ],
+    "reason": "Same phrase handled in the grouped C4 sourcing finding rather than as a second flag."
+   },
+   {
+    "rule": "C6",
+    "pages": [
+     1
+    ],
+    "reason": "The headline verb is covered by the C1 absolute-claim finding and the C6 comparison finding; not raised a third time."
+   },
+   {
+    "rule": "C15",
+    "pages": [
+     1
+    ],
+    "reason": "No projected investor return for a specific private placement (no IRR, TVPI, MOIC, target return or distribution rate); the promissory framing is raised under C"
+   },
+   {
+    "rule": "B10",
+    "pages": [
+     1
+    ],
+    "reason": "No explicit audience statement in the material contradicts the questionnaire; B10 never fires on inference (rule 8)."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     1
+    ],
+    "reason": "Two figures inside running text are not a chart, graph or statistical exhibit; the missing citation is raised as C4 instead (rule 5)."
+   }
+  ],
+  "brief": "Single-page article by Jane Doe (Northbridge Advisors) on private credit versus public bonds, ending with an implied 10% allocation suggestion. Lane is retail: public website, natural persons in the audience, full SOP checklist applies. Nothing is currently covered: the page carries no disclaimer block, no forward-looking or past-performance language, no risk-of-loss or illiquidity line and no source footnote. The A1r article/newsletter/educational disclaimer is deterministically missing and is the first required addition. The substantive points are the promissory outcome sentence (\"can expect higher income with lower volatility\"), the absolute \"outperforms public bonds in every rate environment\" repeated in the headline, the unsourced 2025 return figures and market characterizations, the absence of any risk or illiquidity language, and a bond-versus-private-credit comparison without the material differences 2210(d)(2) requires. Six findings; no institutional carve-outs apply. Nothing needs escalation on interpretation, but the headline itself has to change, so please confirm you are comfortable with the reframed title before it goes back to the banker.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": true,
+    "why": "An unqualified claim that private credit outperforms bonds in every rate environment, with no risk, illiquidity or loss language, gives a one-sided and misleading overall impression."
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The 11.4% and 3.1% return figures, the Bloomberg Aggregate comparison and the growth and institutional-adoption statements carry no source on the page."
+   },
+   "promised_results": {
+    "flag": true,
+    "why": "\"Investors who allocate 10% ... can expect higher income with lower volatility\" states a future investor outcome as certainty."
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 11095,
+     "bytes": 3473
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 61278,
+     "bytes": 26822,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 31543,
+     "bytes": 19205
+    }
+   ],
+   "truncated": false
+  },
+  "calib": null,
+  "steps": [
+   "extract:done (1 sections)",
+   "blocks:done (lane retail \u00b7 1 required block to fix)",
+   "profile:done (single-page article/newsletter post \u00b7 lane retail \u00b7 1 disclosures already covered)",
+   "findings:done (6 points, 6 candidates set aside)",
+   "verify:done (all 6 points confirmed)",
+   "assemble:done (6 attention points)"
+  ],
+  "cost": 0.3213094000000001,
+  "calls": 3,
+  "error": null,
+  "seconds": 105
+ },
+ "quartus": {
+  "lane": "institutional",
+  "findings": [
+   {
+    "id": "f1",
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "",
+    "title": "Institutional legend on the first page is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "For Institutional Investors Only",
+    "rewrite": ""
+   },
+   {
+    "id": "f2",
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "pages": [],
+    "quote": "",
+    "title": "Finalis disclaimer (incorporation by reference and broker-dealer line) is missing",
+    "issue": "Required by the SOP for this lane and document type; not found in the text layer.",
+    "action": "add",
+    "confidence": "high",
+    "located": false,
+    "boxes": 0,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "The reader agrees to the provisions set forth on those certain \"Disclaimers\" loc",
+    "rewrite": ""
+   },
+   {
+    "id": "f3",
+    "rule": "A7",
+    "tier": "A",
+    "severity": "low",
+    "page": 16,
+    "pages": [
+     16
+    ],
+    "quote": "SWEET SPOT ... Stage / Liquidity / Risk / Value Key Target Metrics \u2022 $5M+ in ARR \u2022 50%+ YoY Revenue Growth ... \u2022 Base Case 10x Exit Potential 1 FOR ILLUSTRATIVE PURPOSES ONLY",
+    "title": "Stage/value chart on page 16 has no source line",
+    "issue": "Page 16 plots stages and value/risk/liquidity against target metrics and figures but carries no source attribution; the \"FOR ILLUSTRATIVE PURPOSES ONLY\" legend and the underwriting-assumption footnote are not a source.",
+    "action": "source",
+    "confidence": "low",
+    "located": false,
+    "boxes": 0,
+    "assurance": "verify",
+    "why_verify": "the quoted text could not be located on the page; the review pass rated it low confidence",
+    "unverified": true,
+    "note": "The quoted text was not found in the text layer; check the page before sending this point.",
+    "text_to_add": "Source: Information provided by Sponsoring/Issuing Company.",
+    "rewrite": ""
+   },
+   {
+    "id": "f4",
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1
+    ],
+    "quote": "US Emerging Manager Best Performance Award 2024",
+    "title": "Award on the cover carries no substantiation footnote",
+    "issue": "The award line on the cover has no footnote identifying the awarding organization, its role in the selection, the criteria, the period covered or whether fees were paid for participation, consideration or receipt, which the SOP requires whenever an award or ranking is displayed.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Disclose the awarding organization and its role in the selection, the selection ",
+    "rewrite": ""
+   },
+   {
+    "id": "f5",
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 23,
+    "pages": [
+     23
+    ],
+    "quote": "Quartus Technology Stack & Service Providers ... Firm's Technology Stack & Service Providers ... Funds' Technology Stack & Service Providers ... Allocators, Consultants & Industry Data Providers",
+    "title": "Service-provider logos on page 23 need the logo disclosure",
+    "issue": "Page 23 displays third-party corporate logos as the firm's and the funds' service providers, data providers and consultants; the SOP requires the logo disclosure on the page where such logos appear, and no equivalent wording exists anywhere in the deck.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 5,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Corporate logos do not represent endorsements.",
+    "rewrite": ""
+   },
+   {
+    "id": "f6",
+    "rule": "B4",
+    "tier": "B",
+    "severity": "medium",
+    "page": 27,
+    "pages": [
+     27
+    ],
+    "quote": "Preferred Return 8%",
+    "title": "Preferred return stated with no preferred-return disclosure",
+    "issue": "The 8% preferred return is shown as a terms-table entry with no explanation that it is a distribution-sequencing feature, not guaranteed and not a projection; the general forward-looking and \"no assurance of targeted returns\" language on pages 3 and 4 does not cover this item-specific disclosure.",
+    "action": "add",
+    "confidence": "high",
+    "located": true,
+    "boxes": 1,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "Preferred returns are part of the deal structure and indicate the sequence of ho",
+    "rewrite": ""
+   },
+   {
+    "id": "f7",
+    "rule": "B10",
+    "tier": "B",
+    "severity": "low",
+    "page": 27,
+    "pages": [
+     27
+    ],
+    "quote": "Minimum Commitment $1M for institutional and $100K for individual investors",
+    "title": "Terms page states a minimum for individual investors",
+    "issue": "The questionnaire declares institutional investors only, but the terms page sets an explicit commitment minimum for individual investors, an express audience statement in tension with the declared lane.",
+    "action": "confirm",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": ""
+   },
+   {
+    "id": "f8",
+    "rule": "C1",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "pages": [
+     1,
+     6,
+     21,
+     22
+    ],
+    "quote": "Quartus AI Fund II Led by AI pioneers, technologists and seasoned operators",
+    "title": "Unqualified self-characterizations (pioneers, state-of-the-art, investor of choice)",
+    "issue": "Several unsourced superlatives characterize the firm and its process as fact: \"AI pioneers\" (p1), \"state-of-the-art technology infrastructure\" (p6), \"Investor of choice for many companies\" (p21) and \"growth stage companies with proven business models\" (p22). Under 2210(d)(1)(B) these are unwarranted or unsubstantiated claims unless softened or sourced.",
+    "action": "rewrite",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 3,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Page 1: \"Led by an experienced team of AI technologists and operators\"; p6: \"technology infrastructure\"; p21: \"sought ou"
+   },
+   {
+    "id": "f9",
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 6,
+    "pages": [
+     6
+    ],
+    "quote": "Vertical AI is strategically positioned to benefit from the trillions of dollars being poured into foundational AI infrastructure.",
+    "title": "Market figure on page 6 stated as fact with no source on the page",
+    "issue": "The \"trillions of dollars\" market figure is asserted on page 6 with no source on that page; the Goldman Sachs attribution appears only on page 15, and a source elsewhere in the deck does not substantiate the claim where it is made.",
+    "action": "source",
+    "confidence": "high",
+    "located": true,
+    "boxes": 4,
+    "assurance": "certain",
+    "why_verify": "",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Add the page-6 source line \"Source: Goldman Sachs, Powering the AI Era and Navigating the AI Era reports\" or soften to \""
+   },
+   {
+    "id": "f10",
+    "rule": "C6",
+    "tier": "C",
+    "severity": "medium",
+    "page": 22,
+    "pages": [
+     22
+    ],
+    "quote": "Investing at a lower valuation than our VC/PE peers allows for a return of capital",
+    "title": "Peer valuation comparison stated as fact without basis",
+    "issue": "The deck asserts that the fund invests at lower valuations than its VC/PE peers and links that to a return of capital, a comparison to other investment vehicles stated as fact with no basis, peer set or data on the page (2210(d)(1)(B) and (d)(2)).",
+    "action": "source",
+    "confidence": "medium",
+    "located": true,
+    "boxes": 1,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it medium confidence",
+    "unverified": false,
+    "note": "",
+    "text_to_add": "",
+    "rewrite": "Either footnote the peer set, period and data source supporting the valuation comparison, or soften to \"We seek entry va"
+   },
+   {
+    "id": "f11",
+    "rule": "C2",
+    "tier": "C",
+    "severity": "low",
+    "page": 6,
+    "pages": [
+     6,
+     11,
+     18
+    ],
+    "quote": "We have deep AI and technology expertise, active value creation and stewardship, and institutional-grade investment discipline to deliver strong risk-adjusted returns.",
+    "title": "Return outcomes stated as delivered rather than sought",
+    "issue": "The executive summary, the mission statement (\"a strategy that delivers superior risk-adjusted returns\", p11) and the diversification page (\"designed to deliver strong risk-adjusted returns and return stability\", p18) state return outcomes as facts rather than objectives, which reads as promissory under 2210(d)(1)(B) and unbalanced under (d)(1)(D).",
+    "action": "escalate",
+    "confidence": "low",
+    "located": true,
+    "boxes": 2,
+    "assurance": "verify",
+    "why_verify": "the review pass rated it low confidence; the second pass downgraded it; it is a close call to escalate",
+    "unverified": false,
+    "note": "Verifier: Two of the three cited instances use 'mission' (p11) and 'designed to' (p18), both explicitly protected aspirational terms under calibration rule 9(a), weakening the finding to a close call.",
+    "text_to_add": "",
+    "rewrite": "Page 6: \"...investment discipline, through which we seek to deliver strong risk-adjusted returns.\" Page 11: \"...a strate"
+   }
+  ],
+  "suppressed": [
+   {
+    "rule": "B1",
+    "pages": [
+     9,
+     16,
+     20,
+     25,
+     27
+    ],
+    "reason": "Forward-looking coverage exists on the Disclaimers page 3 (\"...are based on current expectations, estimates, projections, opinions and beliefs\") and slide footn"
+   },
+   {
+    "rule": "B2",
+    "pages": [
+     9,
+     16,
+     18,
+     20,
+     22,
+     25
+    ],
+    "reason": "Illustrations are labelled and their assumptions are footnoted (p16 fn1, p20 fn1, p18 fn1, p25 fn3); the p3 forward-looking block covers the illustration disclo"
+   },
+   {
+    "rule": "B3",
+    "pages": [
+     1,
+     6,
+     7,
+     9,
+     25
+    ],
+    "reason": "Equivalent past-performance wording already sits on the Disclaimers page 3; not bold/standalone is at most a note, not a finding (rule 3)."
+   },
+   {
+    "rule": "B6",
+    "pages": [
+     7
+    ],
+    "reason": "Prior-employer and education logos inside team bios do not trigger B6 (rule 6)."
+   },
+   {
+    "rule": "B6",
+    "pages": [
+     25
+    ],
+    "reason": "Logos inside the list of target portfolio companies and their investors and clients are excluded from B6 (rule 6)."
+   },
+   {
+    "rule": "B6",
+    "pages": [
+     27
+    ],
+    "reason": "Service providers on the terms page are named in text, not presented as third-party corporate logos."
+   },
+   {
+    "rule": "B6",
+    "pages": [
+     22
+    ],
+    "reason": "No third-party logos presented as relationships; page is narrative strategy text (rule 6)."
+   },
+   {
+    "rule": "B8",
+    "pages": [
+     6
+    ],
+    "reason": "Benchmark statement, not an award, and footnote 1 cites the Cambridge Associates Benchmark Index and vintage (rule 7)."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     9
+    ],
+    "reason": "Footnote 1 references audited financial statements 2016-2021 and footnote 2 states the basis of the projections; audited-statement and sponsor-analysis referenc"
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     25
+    ],
+    "reason": "Footnote 1 is exactly the accepted source form for a sponsor-provided exhibit (rule 5)."
+   },
+   {
+    "rule": "A7",
+    "pages": [
+     27
+    ],
+    "reason": "Fund terms tables are expressly not statistical exhibits for A7 (rule 5)."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     6,
+     15
+    ],
+    "reason": "Framed as opinion (\"we believe\") and, on p15, sourced on the same page; opinions are not flagged (rule 9(a), 9(d))."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     6,
+     7
+    ],
+    "reason": "\"Largest\" used descriptively about third parties the team worked with, inside biography content (rules 9(c), 9(g))."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     15
+    ],
+    "reason": "\"#1\" is a layer label in the market map, not a superlative claim."
+   },
+   {
+    "rule": "C1",
+    "pages": [
+     20
+    ],
+    "reason": "Aspirational description of the selection process, not a claim about the firm's results (rule 9(a))."
+   },
+   {
+    "rule": "C2",
+    "pages": [
+     21,
+     22
+    ],
+    "reason": "The same sentence labels the figure as a target (\"Target Fund Returns\", \"Target 4x in Fund Term\") and p3/p4 state there is no assurance targeted returns will be"
+   },
+   {
+    "rule": "C7",
+    "pages": [
+     25
+    ],
+    "reason": "The restructuring history of a portfolio company is disclosed in a footnote with its consequences, not presented incompletely."
+   },
+   {
+    "rule": "C8",
+    "pages": [
+     9,
+     25
+    ],
+    "reason": "Page 9 shows every prior fund with an audited source and gross/net basis; page 25 is a forward-looking target portfolio, not a selection of realized winners (ru"
+   },
+   {
+    "rule": "C19",
+    "pages": [
+     27
+    ],
+    "reason": "Labelled as a target, fee treatment stated on the line, and p3/p4 carry the basis, assumptions and the \"no assurance that any of the funds or Opportunities will"
+   }
+  ],
+  "brief": "Material: Quartus AI Fund II LP venture growth equity pitch deck, 28 pages, deal-related, prepared by the issuer/GP (Quartus Capital Partners LLC) and distributed by the banker. Lane: institutional (declared institutional-only, controlled distribution by email and meetings), so the lighter review applies: no formatting, emphasis or complexity points, fair-and-balanced judged once at document level.\nAlready covered: page 3 disclaimers (forward-looking statements, past performance not indicative, risk of loss, no assurance of targeted returns) and page 4 key risk factors including illiquidity; pages 9 and 25 footnotes cross-reference page 3 and state the basis of the projections; page 15 carries a Goldman Sachs source line; page 6 footnotes the Cambridge Associates benchmark. B1, B2, B3 and the illiquidity language are therefore not raised.\nRequired blocks (deterministic): the Finalis disclaimer with the broker-dealer line and the \"For institutional investors only\" legend on page 1 are both absent. Since the deck was prepared by the issuer, the Finalis disclaimer may instead go in the transmittal email, which must then also state that some or all of the attached material was prepared by a third party.\nPoints that matter: item-specific disclosures missing (B4 preferred return on page 27, B6 logo disclosure on page 23, B8 award substantiation on page 1); A7 source line missing on the page 16 chart; language points on pages 1/6/11/18/21/22 (pioneers, state-of-the-art, investor of choice, proven, delivers strong returns) and the unsourced \"trillions of dollars\" figure on page 6 and the peer-valuation comparison on page 22.\nTo confirm/escalate: page 27 sets a $100K minimum for individual investors while the questionnaire declares institutional-only, confirm the audience and the distribution controls before release. If the reviewer wants a second look at anything, it is the prominence of the 6.53x/7.65x Projected TVPI headline on page 9 next to the realized figures, which the desk currently treats as covered by footnotes 2 and 3 and page 3.",
+  "gut": {
+   "inaccurate_picture": {
+    "flag": false,
+    "why": ""
+   },
+   "unsupported_claims": {
+    "flag": true,
+    "why": "The \"trillions of dollars\" market figure on page 6, the \"AI pioneers\" cover line, the award on page 1 and the \"lower valuation than our VC/PE peers\" comparison are stated as fact with no source or basis on the page."
+   },
+   "promised_results": {
+    "flag": true,
+    "why": "\"delivers superior risk-adjusted returns\" (p11) and \"designed to deliver strong risk-adjusted returns and return stability\" (p18) state outcomes rather than objectives, though targets elsewhere are labelled and carry no-assurance language."
+   }
+  },
+  "meta": {
+   "calls": [
+    {
+     "pass": "profile",
+     "ms": 44159,
+     "bytes": 38869
+    },
+    {
+     "pass": "findings",
+     "batch": 1,
+     "ms": 170233,
+     "bytes": 61209,
+     "images": 0
+    },
+    {
+     "pass": "verify",
+     "ms": 68318,
+     "bytes": 27607
+    }
+   ],
+   "truncated": false
+  },
+  "calib": {
+   "recall": 8,
+   "expectedTotal": 9,
+   "fp": 3,
+   "open": 3,
+   "missed": [
+    "C \u00b7 \"attractive long-term growth potential\", page 17"
+   ],
+   "raised": [
+    "\"We believe \u2026 best\" or \"largest global institutions\", page 6",
+    "\"superior\" in the mission statement, page 11",
+    "\"designed to deliver\" with the illustrative legend, page 18"
+   ]
+  },
+  "steps": [
+   "extract:done (28 pages read)",
+   "blocks:done (lane institutional \u00b7 2 required blocks to fix)",
+   "profile:done (fund pitch deck (venture growth equity fund marketing presentation) \u00b7 lane institutional \u00b7 7 disclosures already covered)",
+   "findings:done (9 points, 19 candidates set aside)",
+   "verify:done (all 11 points confirmed)",
+   "assemble:done (11 attention points)"
+  ],
+  "cost": 0.8170126000000001,
+  "calls": 3,
+  "error": null,
+  "seconds": 284
+ }
+}

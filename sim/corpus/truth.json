@@ -1,0 +1,277 @@
+{
+ "S1_inst_clean": {
+  "file": "S1_inst_clean.pdf",
+  "kind": "pdf",
+  "docType": "deal-deck",
+  "audience": "institutional",
+  "distribution": [
+   "Email",
+   "Meeting (in person or virtual)"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [],
+  "must_not": [
+   "A1a",
+   "A1b",
+   "A2",
+   "A3",
+   "A7",
+   "B1",
+   "B2",
+   "B3",
+   "B4",
+   "B6",
+   "B8",
+   "B9",
+   "C13",
+   "C12",
+   "C9"
+  ],
+  "note": "Clean institutional deck: every disclosure present, sources on every exhibit, team bios, 'we believe' statements. A reviewer would send nothing, or at most one low confirmation."
+ },
+ "S2_inst_gaps": {
+  "file": "S2_inst_gaps.pdf",
+  "kind": "pdf",
+  "docType": "deal-deck",
+  "audience": "institutional",
+  "distribution": [
+   "Email"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "A1a"
+   },
+   {
+    "rule": "A3"
+   },
+   {
+    "rule": "B8",
+    "page": 1
+   },
+   {
+    "rule": "B6",
+    "page": 7
+   },
+   {
+    "rule": "B4",
+    "page": 8
+   },
+   {
+    "rule": "A7",
+    "page": 9
+   },
+   {
+    "rule": "C1|C4",
+    "page": 1,
+    "quote": "leading mid-market"
+   },
+   {
+    "rule": "C1|C4|C2",
+    "page": 3,
+    "quote": "superior returns"
+   },
+   {
+    "rule": "C4",
+    "page": 3,
+    "quote": "1.2 trillion"
+   }
+  ],
+  "must_not": [
+   "B1",
+   "B2",
+   "B3",
+   "B9",
+   "C13",
+   "C12",
+   "A1b",
+   "A2"
+  ],
+  "must_not_pages": {
+   "C4": [
+    4
+   ],
+   "C1": [
+    4
+   ],
+   "B6": [
+    6
+   ]
+  },
+  "note": "Institutional deck with gaps: no Finalis disclaimer, no legend, award without disclosure, third-party partner logos, preferred return without the disclosure, a chart without a source, two superlatives and an unsourced market figure. Clean elements: the issuer's own disclaimer page covers projections and past performance, bios, own-portfolio logos, sourced track record."
+ },
+ "S3_retail_projections": {
+  "file": "S3_retail_projections.pdf",
+  "kind": "pdf",
+  "docType": "deal-deck",
+  "audience": "retail",
+  "distribution": [
+   "Email",
+   "Website"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "A1a"
+   },
+   {
+    "rule": "B1|B2|C15",
+    "page": 4
+   },
+   {
+    "rule": "B4"
+   },
+   {
+    "rule": "B5|C16",
+    "page": 6
+   },
+   {
+    "rule": "B7",
+    "page": 5
+   },
+   {
+    "rule": "B9"
+   },
+   {
+    "rule": "C2",
+    "quote": "guaranteed"
+   },
+   {
+    "rule": "C3",
+    "page": 2
+   },
+   {
+    "rule": "C15|B1",
+    "page": 1
+   },
+   {
+    "rule": "C18|C9",
+    "page": 8
+   },
+   {
+    "rule": "C2|C1",
+    "page": 7,
+    "quote": "never lost"
+   },
+   {
+    "rule": "C6|C1|C4",
+    "page": 5
+   }
+  ],
+  "must_not": [
+   "A3",
+   "A2"
+  ],
+  "note": "Retail private-placement real-estate deck: projected IRR and yield on the cover, guaranteed preferred return, urgency, testimonials without legend, distribution yield partly funded by offering proceeds, cherry-picked deals, risks only in the PPM, no Finalis disclaimer."
+ },
+ "S4_firm_mmr": {
+  "file": "S4_firm_mmr.pdf",
+  "kind": "pdf",
+  "docType": "firm-marketing",
+  "audience": "institutional",
+  "distribution": [
+   "Email"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "A2"
+   },
+   {
+    "rule": "B6",
+    "page": 3
+   }
+  ],
+  "must_not": [
+   "A1b",
+   "A3",
+   "A1a",
+   "B1",
+   "B3"
+  ],
+  "note": "Institutional non-deal firm overview: legend and broker-dealer line present, the 'separate, unaffiliated entities' line missing, client logos without the logo disclosure."
+ },
+ "S5_linkedin": {
+  "file": "S5_linkedin.txt",
+  "kind": "text",
+  "docType": "linkedin-post",
+  "audience": "retail",
+  "distribution": [
+   "LinkedIn"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "B8"
+   },
+   {
+    "rule": "B11"
+   },
+   {
+    "rule": "A1p|B12|A5"
+   }
+  ],
+  "must_not": [
+   "A3",
+   "A1a"
+  ],
+  "note": "LinkedIn post with a ranking, calls to action (DM me, comment below) and an investment opportunity."
+ },
+ "S6_email": {
+  "file": "S6_email.txt",
+  "kind": "text",
+  "docType": "email",
+  "audience": "institutional",
+  "distribution": [
+   "Email"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "A1e|B12"
+   },
+   {
+    "rule": "C2",
+    "quote": "will deliver"
+   }
+  ],
+  "must_not": [
+   "A1b"
+  ],
+  "note": "Email about an offering with a promissory 'will deliver 2.5x' and only the broker-dealer line (the email disclaimer is missing)."
+ },
+ "S7_article": {
+  "file": "S7_article.txt",
+  "kind": "text",
+  "docType": "article",
+  "audience": "retail",
+  "distribution": [
+   "Website"
+  ],
+  "involvement": "banker",
+  "bankName": "Northbridge Advisors",
+  "expected": [
+   {
+    "rule": "A1r|B13"
+   },
+   {
+    "rule": "C6|C1|C4",
+    "quote": "outperforms"
+   },
+   {
+    "rule": "C4|C2",
+    "quote": "can expect"
+   }
+  ],
+  "must_not": [
+   "A3"
+  ],
+  "note": "Educational article without the section 9 disclaimer, a comparison stated as fact and an expected-return statement."
+ }
+}

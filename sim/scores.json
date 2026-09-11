@@ -1,0 +1,806 @@
+{
+ "docs": {
+  "S1_inst_clean": {
+   "old": {
+    "findings": 18,
+    "expected": 0,
+    "hits": 0,
+    "misses": [],
+    "false_positives": 11,
+    "fp_list": [
+     {
+      "rule": "A2",
+      "page": null
+     },
+     {
+      "rule": "B1",
+      "page": 2
+     },
+     {
+      "rule": "B1",
+      "page": 5
+     },
+     {
+      "rule": "B1",
+      "page": 7
+     },
+     {
+      "rule": "B2",
+      "page": 2
+     },
+     {
+      "rule": "B2",
+      "page": 7
+     },
+     {
+      "rule": "B3",
+      "page": 1
+     },
+     {
+      "rule": "B3",
+      "page": 2
+     },
+     {
+      "rule": "B3",
+      "page": 3
+     },
+     {
+      "rule": "B3",
+      "page": 5
+     },
+     {
+      "rule": "B4",
+      "page": 7
+     }
+    ],
+    "extras": 7,
+    "extra_list": [
+     {
+      "rule": "A6",
+      "page": 2,
+      "sev": "low",
+      "quote": "the reader agrees to the provisions set forth on those certain \"discla"
+     },
+     {
+      "rule": "A6",
+      "page": 2,
+      "sev": "low",
+      "quote": "securities are offered through finalis securities, llc member finra/si"
+     },
+     {
+      "rule": "A6",
+      "page": 1,
+      "sev": "low",
+      "quote": "for institutional investors only"
+     },
+     {
+      "rule": "B7",
+      "page": 2,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "B7",
+      "page": 8,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "C1",
+      "page": 2,
+      "sev": "high",
+      "quote": "\u2026nce of how distributions (from operations or a capital event) are dis"
+     },
+     {
+      "rule": "C2",
+      "page": 2,
+      "sev": "high",
+      "quote": "\u2026tions may not be realized. they are based on assumptions that may pro"
+     }
+    ],
+    "recall": null,
+    "precision": 0.0
+   },
+   "new": {
+    "findings": 1,
+    "expected": 0,
+    "hits": 0,
+    "misses": [],
+    "false_positives": 1,
+    "fp_list": [
+     {
+      "rule": "B3",
+      "page": 2
+     }
+    ],
+    "extras": 0,
+    "extra_list": [],
+    "recall": null,
+    "precision": 0.0
+   },
+   "new_meta": {
+    "seconds": 113,
+    "cost": 0.3810024,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    1,
+    1
+   ],
+   "assurance": {
+    "certain": 0,
+    "verify": 1
+   }
+  },
+  "S2_inst_gaps": {
+   "old": {
+    "findings": 22,
+    "expected": 9,
+    "hits": 6,
+    "misses": [
+     {
+      "rule": "A7",
+      "page": 9
+     },
+     {
+      "rule": "C1|C4",
+      "page": 1,
+      "quote": "leading mid-market"
+     },
+     {
+      "rule": "C4",
+      "page": 3,
+      "quote": "1.2 trillion"
+     }
+    ],
+    "false_positives": 13,
+    "fp_list": [
+     {
+      "rule": "A1b",
+      "page": null
+     },
+     {
+      "rule": "A2",
+      "page": null
+     },
+     {
+      "rule": "B1",
+      "page": 2
+     },
+     {
+      "rule": "B1",
+      "page": 5
+     },
+     {
+      "rule": "B1",
+      "page": 8
+     },
+     {
+      "rule": "B1",
+      "page": 9
+     },
+     {
+      "rule": "B2",
+      "page": 2
+     },
+     {
+      "rule": "B2",
+      "page": 5
+     },
+     {
+      "rule": "B2",
+      "page": 8
+     },
+     {
+      "rule": "B2",
+      "page": 9
+     },
+     {
+      "rule": "B3",
+      "page": 5
+     },
+     {
+      "rule": "B3",
+      "page": 8
+     },
+     {
+      "rule": "B6",
+      "page": 6
+     }
+    ],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "A7",
+      "page": 6,
+      "sev": "medium",
+      "quote": ""
+     },
+     {
+      "rule": "A7",
+      "page": 7,
+      "sev": "medium",
+      "quote": ""
+     },
+     {
+      "rule": "C2",
+      "page": 2,
+      "sev": "high",
+      "quote": "\u2026ed returns and projected deployment; such statements are based on ass"
+     }
+    ],
+    "recall": 0.6666666666666666,
+    "precision": 0.2727272727272727
+   },
+   "new": {
+    "findings": 9,
+    "expected": 9,
+    "hits": 9,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 0,
+    "extra_list": [],
+    "recall": 1.0,
+    "precision": 1.0
+   },
+   "new_meta": {
+    "seconds": 129,
+    "cost": 0.4001774,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    9,
+    9
+   ],
+   "assurance": {
+    "certain": 9,
+    "verify": 0
+   }
+  },
+  "S3_retail_projections": {
+   "old": {
+    "findings": 22,
+    "expected": 12,
+    "hits": 8,
+    "misses": [
+     {
+      "rule": "B9"
+     },
+     {
+      "rule": "C2",
+      "quote": "guaranteed"
+     },
+     {
+      "rule": "C18|C9",
+      "page": 8
+     },
+     {
+      "rule": "C6|C1|C4",
+      "page": 5
+     }
+    ],
+    "false_positives": 1,
+    "fp_list": [
+     {
+      "rule": "A2",
+      "page": null
+     }
+    ],
+    "extras": 13,
+    "extra_list": [
+     {
+      "rule": "A1b",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "A5",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "A7",
+      "page": 4,
+      "sev": "medium",
+      "quote": ""
+     },
+     {
+      "rule": "B1",
+      "page": 7,
+      "sev": "high",
+      "quote": "\u2026lost investor capital across 14 completed deals. completed deals retu"
+     },
+     {
+      "rule": "B2",
+      "page": 1,
+      "sev": "medium",
+      "quote": "lakeside multifamily income fund projected 18% irr \u00b7 8% preferred retu"
+     },
+     {
+      "rule": "B2",
+      "page": 4,
+      "sev": "medium",
+      "quote": "five-year projections year 1 year 2 year 3 year 4 year 5 cash yield 6."
+     },
+     {
+      "rule": "B2",
+      "page": 7,
+      "sev": "medium",
+      "quote": "\u2026lost investor capital across 14 completed deals. completed deals retu"
+     },
+     {
+      "rule": "B3",
+      "page": 6,
+      "sev": "high",
+      "quote": "distributions 7% annualized distribution yield, paid monthly since inc"
+     },
+     {
+      "rule": "B4",
+      "page": 2,
+      "sev": "high",
+      "quote": "why invest now invest now: limited allocation, closing june 30. guaran"
+     },
+     {
+      "rule": "C1",
+      "page": 3,
+      "sev": "high",
+      "quote": "\u2026elve months) purchase cap rate 6.1% business plan value-add renovatio"
+     },
+     {
+      "rule": "C1",
+      "page": 2,
+      "sev": "high",
+      "quote": "why invest now invest now: limited allocation, closing june 30. guaran"
+     },
+     {
+      "rule": "C3",
+      "page": 2,
+      "sev": "high",
+      "quote": "why invest now invest now: limited allocation, closing june 30. guaran"
+     },
+     {
+      "rule": "C3",
+      "page": 5,
+      "sev": "high",
+      "quote": "\u2026rket every single year.\" j.r., investor since 2019 \"they take care of"
+     }
+    ],
+    "recall": 0.6666666666666666,
+    "precision": 0.36363636363636365
+   },
+   "new": {
+    "findings": 17,
+    "expected": 12,
+    "hits": 12,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 5,
+    "extra_list": [
+     {
+      "rule": "A7",
+      "page": 4,
+      "sev": "medium",
+      "quote": "Cash yield 6.0% 7.0% 7.5% 8.0% 8.5% Cumulative distributions $60,000 $"
+     },
+     {
+      "rule": "B3",
+      "page": 7,
+      "sev": "high",
+      "quote": "Completed deals returned an average 21% IRR (Deals 3, 7 and 11)."
+     },
+     {
+      "rule": "C16",
+      "page": 1,
+      "sev": "high",
+      "quote": "7% annual yield paid monthly"
+     },
+     {
+      "rule": "C1",
+      "page": 2,
+      "sev": "high",
+      "quote": "This is a can't-miss opportunity to own institutional-quality apartmen"
+     },
+     {
+      "rule": "C8",
+      "page": 7,
+      "sev": "high",
+      "quote": "Completed deals returned an average 21% IRR (Deals 3, 7 and 11)."
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.7058823529411765
+   },
+   "new_meta": {
+    "seconds": 290,
+    "cost": 0.6629292,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    17,
+    17
+   ],
+   "assurance": {
+    "certain": 11,
+    "verify": 6
+   }
+  },
+  "S4_firm_mmr": {
+   "old": {
+    "findings": 5,
+    "expected": 2,
+    "hits": 1,
+    "misses": [
+     {
+      "rule": "B6",
+      "page": 3
+     }
+    ],
+    "false_positives": 1,
+    "fp_list": [
+     {
+      "rule": "A1a",
+      "page": null
+     }
+    ],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "A6",
+      "page": 5,
+      "sev": "low",
+      "quote": "securities offered through finalis securities llc member finra/sipc"
+     },
+     {
+      "rule": "A6",
+      "page": 1,
+      "sev": "low",
+      "quote": "for institutional use only"
+     },
+     {
+      "rule": "A7",
+      "page": 3,
+      "sev": "medium",
+      "quote": ""
+     }
+    ],
+    "recall": 0.5,
+    "precision": 0.2
+   },
+   "new": {
+    "findings": 3,
+    "expected": 2,
+    "hits": 2,
+    "misses": [],
+    "false_positives": 1,
+    "fp_list": [
+     {
+      "rule": "B3",
+      "page": 3
+     }
+    ],
+    "extras": 0,
+    "extra_list": [],
+    "recall": 1.0,
+    "precision": 0.6666666666666666
+   },
+   "new_meta": {
+    "seconds": 123,
+    "cost": 0.3363544,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    3,
+    3
+   ],
+   "assurance": {
+    "certain": 2,
+    "verify": 1
+   }
+  },
+  "S5_linkedin": {
+   "old": {
+    "findings": 6,
+    "expected": 3,
+    "hits": 3,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "A1b",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "A2",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "B1",
+      "page": 1,
+      "sev": "high",
+      "quote": "\u2026diagnostics company with 40% revenue growth. dm me for the teaser, or"
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.5
+   },
+   "new": {
+    "findings": 5,
+    "expected": 3,
+    "hits": 3,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 2,
+    "extra_list": [
+     {
+      "rule": "C9",
+      "page": 1,
+      "sev": "medium",
+      "quote": "We are currently raising for an exciting healthcare opportunity: a pro"
+     },
+     {
+      "rule": "C4",
+      "page": 1,
+      "sev": "medium",
+      "quote": "a profitable diagnostics company with 40% revenue growth"
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.6
+   },
+   "new_meta": {
+    "seconds": 107,
+    "cost": 0.32336400000000004,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    5,
+    5
+   ],
+   "assurance": {
+    "certain": 4,
+    "verify": 1
+   }
+  },
+  "S6_email": {
+   "old": {
+    "findings": 5,
+    "expected": 2,
+    "hits": 2,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "A3",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "B1",
+      "page": 1,
+      "sev": "high",
+      "quote": "\u2026nd iii will deliver 2.5x net to limited partners over the fund term, "
+     },
+     {
+      "rule": "B3",
+      "page": 1,
+      "sev": "high",
+      "quote": "subject: harbor growth fund iii: first close in june dear investor, we"
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.4
+   },
+   "new": {
+    "findings": 5,
+    "expected": 2,
+    "hits": 2,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "A3",
+      "page": 1,
+      "sev": "high",
+      "quote": "Institutional legend on the first page is missing"
+     },
+     {
+      "rule": "B1",
+      "page": 1,
+      "sev": "high",
+      "quote": "Fund III will deliver 2.5x net to limited partners over the fund term"
+     },
+     {
+      "rule": "C9",
+      "page": 1,
+      "sev": "medium",
+      "quote": "We are pleased to share the Harbor Growth Fund III opportunity. Fund I"
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.4
+   },
+   "new_meta": {
+    "seconds": 139,
+    "cost": 0.3874394,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    5,
+    5
+   ],
+   "assurance": {
+    "certain": 4,
+    "verify": 1
+   }
+  },
+  "S7_article": {
+   "old": {
+    "findings": 6,
+    "expected": 3,
+    "hits": 2,
+    "misses": [
+     {
+      "rule": "C4|C2",
+      "quote": "can expect"
+     }
+    ],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 4,
+    "extra_list": [
+     {
+      "rule": "A1b",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "A2",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "A5",
+      "page": null,
+      "sev": "high",
+      "quote": ""
+     },
+     {
+      "rule": "C4",
+      "page": 1,
+      "sev": "medium",
+      "quote": "\u2026funds returned 11.4% in 2025 against 3.1% for the bloomberg aggregate"
+     }
+    ],
+    "recall": 0.6666666666666666,
+    "precision": 0.3333333333333333
+   },
+   "new": {
+    "findings": 6,
+    "expected": 3,
+    "hits": 3,
+    "misses": [],
+    "false_positives": 0,
+    "fp_list": [],
+    "extras": 3,
+    "extra_list": [
+     {
+      "rule": "C9",
+      "page": 1,
+      "sev": "high",
+      "quote": "The asset class is now a core holding for pension funds and insurers, "
+     },
+     {
+      "rule": "C4",
+      "page": 1,
+      "sev": "medium",
+      "quote": "Direct lending funds returned 11.4% in 2025 against 3.1% for the Bloom"
+     },
+     {
+      "rule": "C6",
+      "page": 1,
+      "sev": "medium",
+      "quote": "Why private credit outperforms bonds in a rising-rate world"
+     }
+    ],
+    "recall": 1.0,
+    "precision": 0.5
+   },
+   "new_meta": {
+    "seconds": 105,
+    "cost": 0.3213094000000001,
+    "calls": 3,
+    "error": null
+   },
+   "located": [
+    6,
+    6
+   ],
+   "assurance": {
+    "certain": 3,
+    "verify": 3
+   }
+  }
+ },
+ "quartus": {
+  "old": {
+   "recall": 5,
+   "expectedTotal": 9,
+   "fp": 10,
+   "fpTotal": 23,
+   "open": 1,
+   "missed": [
+    "B6 \u00b7 Service provider logos, page 23",
+    "C \u00b7 \"Led by AI pioneers\", page 1",
+    "C \u00b7 \"trillions of dollars\" unsourced, page 6",
+    "C \u00b7 \"attractive long-term growth potential\", page 17"
+   ],
+   "raised": [
+    "A1b broker-dealer line requested separately",
+    "A2 \"separate, unaffiliated\" on deal material",
+    "A7 on a team, terms or sourced page (7, 9, 25, 27)",
+    "B1/B2 despite the disclaimers page (3, 4, 9, 25, 27)",
+    "B3 despite \"past performance is not indicative\" (3, 4, 6, 7, 9, 25)",
+    "B10 audience from risk wording",
+    "\"We believe \u2026 best\" or \"largest global institutions\", page 6",
+    "\"superior\" in the mission statement, page 11",
+    "Sourced third-party data or \"we believe\", page 15",
+    "Footnoted criteria, page 20"
+   ],
+   "findings": 63
+  },
+  "new": {
+   "recall": 8,
+   "expectedTotal": 9,
+   "fp": 3,
+   "fpTotal": 23,
+   "open": 3,
+   "missed": [
+    "C \u00b7 \"attractive long-term growth potential\", page 17"
+   ],
+   "raised": [
+    "\"We believe \u2026 best\" or \"largest global institutions\", page 6",
+    "\"superior\" in the mission statement, page 11",
+    "\"designed to deliver\" with the illustrative legend, page 18"
+   ],
+   "findings": 11
+  },
+  "new_meta": {
+   "seconds": 284,
+   "cost": 0.8170126000000001,
+   "calls": 3,
+   "error": null
+  },
+  "located": [
+   10,
+   11
+  ],
+  "assurance": {
+   "certain": 6,
+   "verify": 5
+  }
+ }
+}

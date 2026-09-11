@@ -1,0 +1,1421 @@
+{
+ "S1_inst_clean": {
+  "ms": 795,
+  "counts": {
+   "A": 4,
+   "B": 12,
+   "C": 2,
+   "total": 18
+  },
+  "lane": "institutional",
+  "findings": [
+   {
+    "rule": "A6",
+    "tier": "A",
+    "severity": "low",
+    "page": 2,
+    "status": "illegible",
+    "name": "Incorporation by reference of the Finalis Disclaimers is set at 8.5 pt",
+    "excerpt": "the reader agrees to the provisions set forth on those certain \"disclaimers\" located at https://www.finalis.com/disclaim"
+   },
+   {
+    "rule": "A6",
+    "tier": "A",
+    "severity": "low",
+    "page": 2,
+    "status": "illegible",
+    "name": "Broker-dealer line is set at 8.5 pt",
+    "excerpt": "securities are offered through finalis securities, llc member finra/sipc"
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A6",
+    "tier": "A",
+    "severity": "low",
+    "page": 1,
+    "status": "illegible",
+    "name": "Institutional legend on the first page is set at 8.5 pt",
+    "excerpt": "for institutional investors only"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026re illiquid and there is no secondary market. certain statements in this presentation are forward-looking statements, i"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "track record: fund i and fund ii fund i 1.9x tvpi fund ii 2.3x tvpi fund ii dpi 0.8x source: audited financial statement"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "summary of terms target fund size eur 400 million (hard cap eur 500 million) target return 2.5x net tvpi (a target, not "
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 2,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026ments in this presentation are forward-looking statements, including targeted returns and projections. such projections"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 7,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026e eur 400 million (hard cap eur 500 million) target return 2.5x net tvpi (a target, not a projection; see disclaimers o"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "harbor growth fund iii growth equity for european software companies for institutional investors only presented\u2026"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026ure performance. past performance is not indicative of future results; the performance of fund i and fund ii may not be"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 3,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026rowth-stage software offers attractive risk-adjusted return potential over the fund term. fund iii targets 15 to 20 inv"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "track record: fund i and fund ii fund i 1.9x tvpi fund ii 2.3x tvpi fund ii dpi 0.8x source: audited f\u2026"
+   },
+   {
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "status": "missing",
+    "name": "Preferred return",
+    "excerpt": "\u2026lion) target return 2.5x net tvpi (a target, not a projection; see disclaimers on page 2) preferred return 8% (see the "
+   },
+   {
+    "rule": "B7",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "status": "missing",
+    "name": "Testimonial or endorsement",
+    "excerpt": ""
+   },
+   {
+    "rule": "B7",
+    "tier": "B",
+    "severity": "high",
+    "page": 8,
+    "status": "missing",
+    "name": "Testimonial or endorsement",
+    "excerpt": ""
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026nce of how distributions (from operations or a capital event) are disbursed. they are not guaranteed and should not be "
+   },
+   {
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Promissory language",
+    "excerpt": "\u2026tions may not be realized. they are based on assumptions that may prove wrong and are not guarantees of future performa"
+   }
+  ]
+ },
+ "S2_inst_gaps": {
+  "ms": 601,
+  "counts": {
+   "A": 6,
+   "B": 14,
+   "C": 2,
+   "total": 22
+  },
+  "lane": "institutional",
+  "findings": [
+   {
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Incorporation by reference of the Finalis Disclaimers",
+    "excerpt": ""
+   },
+   {
+    "rule": "A1b",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Broker-dealer line",
+    "excerpt": ""
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Institutional legend on the first page",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 6,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 7,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026t constitute an offer or a solicitation. certain information contained herein constitutes forward-looking statements, i"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "track record fund ii 11.8% net irr fund iii 14.2% net irr fund iii dpi 0.6x source: audited financial statements of fund"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 8,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "fund terms target fund size eur 1.5 billion target net irr 12% to 14% (a target; see important information on page 2) pr"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 9,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "projected deployment schedule 2026 eur 250m 2027 eur 450m 2028 eur 550m 2029 eur 250m deployment of\u2026"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 2,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026n contained herein constitutes forward-looking statements, including targeted returns and projected deployment; such st"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 5,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "track record fund ii 11.8% net irr fund iii 14.2% net irr fund iii dpi 0.6x source: audited financial statements of fund"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 8,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "fund terms target fund size eur 1.5 billion target net irr 12% to 14% (a target; see important information on page 2) pr"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 9,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "projected deployment schedule 2026 eur 250m 2027 eur 450m 2028 eur 550m 2029 eur 250m deployment of\u2026"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "track record fund ii 11.8% net irr fund iii 14.2% net irr fund iii dpi 0.6x source: audited financial\u2026"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 8,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "fund terms target fund size eur 1.5 billion target net irr 12% to 14% (a target; see important information on page 2) pr"
+   },
+   {
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 8,
+    "status": "missing",
+    "name": "Preferred return",
+    "excerpt": "\u2026eur 1.5 billion target net irr 12% to 14% (a target; see important information on page 2) preferred return 8% compounde"
+   },
+   {
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 6,
+    "status": "missing",
+    "name": "Corporate logos",
+    "excerpt": "selected portfolio investments portfolio companies of funds ii and iii. not all investments are shown; a full list is av"
+   },
+   {
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 7,
+    "status": "missing",
+    "name": "Corporate logos",
+    "excerpt": "strategic partners and lenders we work with a group of relationship banks, advisers and co-investors: confid\u2026"
+   },
+   {
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "status": "missing",
+    "name": "Award, ranking or recognition",
+    "excerpt": "\u2026idian infrastructure partners iv the leading mid-market infrastructure platform in europe winner, infrastructure invest"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 3,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "strategy our proprietary sourcing engine delivers superior returns through off-market transactions. infrastructure asset"
+   },
+   {
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Promissory language",
+    "excerpt": "\u2026ed returns and projected deployment; such statements are based on assumptions and are not guarantees; actual results ma"
+   }
+  ]
+ },
+ "S3_retail_projections": {
+  "ms": 524,
+  "counts": {
+   "A": 5,
+   "B": 12,
+   "C": 5,
+   "total": 22
+  },
+  "lane": "retail",
+  "findings": [
+   {
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Incorporation by reference of the Finalis Disclaimers",
+    "excerpt": ""
+   },
+   {
+    "rule": "A1b",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Broker-dealer line",
+    "excerpt": ""
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A5",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Not an offer, retail audience",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 4,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "lakeside multifamily income fund projected 18% irr \u00b7 8% preferred return \u00b7 7% annual yield paid monthly a private real e"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 4,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "five-year projections year 1 year 2 year 3 year 4 year 5 cash yield 6.0% 7.0% 7.5% 8.0% 8.5% cumulative distrib\u2026"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026lost investor capital across 14 completed deals. completed deals returned an average 21% irr (deals 3, 7 and 11). over "
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "lakeside multifamily income fund projected 18% irr \u00b7 8% preferred return \u00b7 7% annual yield paid monthly a private real e"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 4,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "five-year projections year 1 year 2 year 3 year 4 year 5 cash yield 6.0% 7.0% 7.5% 8.0% 8.5% cumulative distrib\u2026"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 7,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026lost investor capital across 14 completed deals. completed deals returned an average 21% irr (deals 3, 7 and 11). over "
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 6,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "distributions 7% annualized distribution yield, paid monthly since inception distributions have been paid every month si"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "sponsor track record our sponsor has never lost investor capital across 14 completed deals. completed deals re\u2026"
+   },
+   {
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Preferred return",
+    "excerpt": "lakeside multifamily income fund projected 18% irr \u00b7 8% preferred return \u00b7 7% annual yield paid monthly a private real e"
+   },
+   {
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 2,
+    "status": "missing",
+    "name": "Preferred return",
+    "excerpt": "why invest now invest now: limited allocation, closing june 30. guaranteed 8% preferred return to investors before the s"
+   },
+   {
+    "rule": "B5",
+    "tier": "B",
+    "severity": "medium",
+    "page": 6,
+    "status": "missing",
+    "name": "Distributions",
+    "excerpt": "distributions 7% annualized distribution yield, paid monthly since inception distributions have been paid every month si"
+   },
+   {
+    "rule": "B7",
+    "tier": "B",
+    "severity": "high",
+    "page": 5,
+    "status": "missing",
+    "name": "Testimonial or endorsement",
+    "excerpt": ""
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 3,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026elve months) purchase cap rate 6.1% business plan value-add renovation of 180 units, rent premium of $210 per unit 3"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "why invest now invest now: limited allocation, closing june 30. guaranteed 8% preferred return to investors before the s"
+   },
+   {
+    "rule": "C3",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Fear, urgency or scare tactics",
+    "excerpt": "why invest now invest now: limited allocation, closing june 30. guaranteed 8% preferred return to invest\u2026"
+   },
+   {
+    "rule": "C3",
+    "tier": "C",
+    "severity": "high",
+    "page": 2,
+    "status": "needs_review",
+    "name": "Fear, urgency or scare tactics",
+    "excerpt": "why invest now invest now: limited allocation, closing june 30. guaranteed 8% preferred return to investors before\u2026"
+   },
+   {
+    "rule": "C3",
+    "tier": "C",
+    "severity": "high",
+    "page": 5,
+    "status": "needs_review",
+    "name": "Fear, urgency or scare tactics",
+    "excerpt": "\u2026rket every single year.\" j.r., investor since 2019 \"they take care of everything so i can sleep at night.\" m.k., invest"
+   }
+  ]
+ },
+ "S4_firm_mmr": {
+  "ms": 466,
+  "counts": {
+   "A": 5,
+   "B": 0,
+   "C": 0,
+   "total": 5
+  },
+  "lane": "institutional",
+  "findings": [
+   {
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Incorporation by reference of the Finalis Disclaimers",
+    "excerpt": ""
+   },
+   {
+    "rule": "A6",
+    "tier": "A",
+    "severity": "low",
+    "page": 5,
+    "status": "illegible",
+    "name": "Broker-dealer line is set at 8.5 pt",
+    "excerpt": "securities offered through finalis securities llc member finra/sipc"
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A6",
+    "tier": "A",
+    "severity": "low",
+    "page": 1,
+    "status": "illegible",
+    "name": "Institutional legend on the first page is set at 8 pt",
+    "excerpt": "for institutional use only"
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 3,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   }
+  ]
+ },
+ "S5_linkedin": {
+  "ms": 276,
+  "counts": {
+   "A": 3,
+   "B": 3,
+   "C": 0,
+   "total": 6
+  },
+  "lane": "retail",
+  "findings": [
+   {
+    "rule": "A1b",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Broker-dealer line",
+    "excerpt": ""
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A5",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Not an offer, retail audience",
+    "excerpt": ""
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026diagnostics company with 40% revenue growth. dm me for the teaser, or comment below and i will reach out. #manda #healt"
+   },
+   {
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "status": "missing",
+    "name": "Award, ranking or recognition",
+    "excerpt": "proud to share that northbridge advisors was ranked #3 in the mid-market advisor league table 2026 by mergerlink. thank "
+   },
+   {
+    "rule": "B11",
+    "tier": "B",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "LinkedIn call to action",
+    "excerpt": ""
+   }
+  ]
+ },
+ "S6_email": {
+  "ms": 319,
+  "counts": {
+   "A": 1,
+   "B": 3,
+   "C": 1,
+   "total": 5
+  },
+  "lane": "institutional",
+  "findings": [
+   {
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Institutional legend on the first page",
+    "excerpt": ""
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026nd iii will deliver 2.5x net to limited partners over the fund term, building on the 2.3x tvpi of fund ii. the first cl"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "subject: harbor growth fund iii: first close in june dear investor, we are pleased to share the harbor growth fund iii o"
+   },
+   {
+    "rule": "B12",
+    "tier": "B",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Email about an offering",
+    "excerpt": ""
+   },
+   {
+    "rule": "C2",
+    "tier": "C",
+    "severity": "high",
+    "page": 1,
+    "status": "needs_review",
+    "name": "Promissory language",
+    "excerpt": "\u2026e dear investor, we are pleased to share the harbor growth fund iii opportunity. fund iii will deliver 2.5x net to limi"
+   }
+  ]
+ },
+ "S7_article": {
+  "ms": 298,
+  "counts": {
+   "A": 3,
+   "B": 1,
+   "C": 2,
+   "total": 6
+  },
+  "lane": "retail",
+  "findings": [
+   {
+    "rule": "A1b",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Broker-dealer line",
+    "excerpt": ""
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A5",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Not an offer, retail audience",
+    "excerpt": ""
+   },
+   {
+    "rule": "B13",
+    "tier": "B",
+    "severity": "medium",
+    "page": null,
+    "status": "missing",
+    "name": "Article, newsletter or educational content",
+    "excerpt": ""
+   },
+   {
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "status": "needs_review",
+    "name": "Comparison to another fund, investment or firm",
+    "excerpt": "why private credit outperforms bonds in a rising-rate world by jane doe, northbridge advisors private credit has become\u2026"
+   },
+   {
+    "rule": "C4",
+    "tier": "C",
+    "severity": "medium",
+    "page": 1,
+    "status": "needs_review",
+    "name": "Comparison to another fund, investment or firm",
+    "excerpt": "\u2026funds returned 11.4% in 2025 against 3.1% for the bloomberg aggregate, and private credit outperforms public bonds in e"
+   }
+  ]
+ },
+ "quartus": {
+  "ms": 3484,
+  "counts": {
+   "A": 26,
+   "B": 28,
+   "C": 9,
+   "total": 63
+  },
+  "lane": "institutional",
+  "findings": [
+   {
+    "rule": "A1a",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Incorporation by reference of the Finalis Disclaimers",
+    "excerpt": ""
+   },
+   {
+    "rule": "A1b",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Broker-dealer line",
+    "excerpt": ""
+   },
+   {
+    "rule": "A2",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Separate and unaffiliated entities",
+    "excerpt": ""
+   },
+   {
+    "rule": "A3",
+    "tier": "A",
+    "severity": "high",
+    "page": null,
+    "status": "missing",
+    "name": "Institutional legend on the first page",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 1,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 2,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 3,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 4,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 6,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 7,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 8,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 9,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 11,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 12,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 13,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 15,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 16,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 17,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 18,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 20,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 21,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 22,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 23,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 25,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 27,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "A7",
+    "tier": "A",
+    "severity": "medium",
+    "page": 28,
+    "status": "missing",
+    "name": "Source on a statistical exhibit",
+    "excerpt": ""
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 3,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026based on current expectations, estimates, pr ojections, opinions and beliefs of the firm. projected future performance "
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 4,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026and their advisers in evaluating an investment in the fund. they are not a prediction or projection of actual investmen"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 9,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026capital ) = total gp and lp contributions to the fund; nav = net asset value of the fund; dpi = distribution to paid - "
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 16,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026tential assuming company meeting or exceeding its pre - investment pro - forma financial projections, normal market con"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 20,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026ten tial assuming company meeting or exceeding its pre - investment pro - forma financial projections, normal market co"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 25,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "confidential & private 25 company description current round pre - money valuation arr/ projected arr 1 target invest./ i"
+   },
+   {
+    "rule": "B1",
+    "tier": "B",
+    "severity": "high",
+    "page": 27,
+    "status": "missing",
+    "name": "Forecast, forward-looking statement or projection",
+    "excerpt": "\u2026nvestors fund term 8 - years base term from initial close, two 1 - year extension options target return 4x tvpi, 20% ir"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 3,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026based on current expectations, estimates, pr ojections, opinions and beliefs of the firm. projected future performance "
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 4,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026and their advisers in evaluating an investment in the fund. they are not a prediction or projection of actual investmen"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 9,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026esidual value to paid - in capital; tvpi = total value to paid - in capital = dpi + rvpi; moic = multiple on invested c"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 16,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026y potential within 5 years \u2022 margin of safety in valuation and liquidation preference for illustrative purposes only 1."
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 18,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026n here reflects an evolution of our investment strategy as stated in the ppm and lpa. for illustrative purposes only; a"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 20,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026on & strong terms 10x plus exit potential at baseline underwriting 1 1. for baseline exit scenario at underwriting, eac"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 22,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026rget fund returns 22 land and expand margin of safety and minimize exposure in a downside scenario reserve capital for "
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 25,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "confidential & private 25 company description current round pre - money valuation arr/ projected arr 1 target invest./ i"
+   },
+   {
+    "rule": "B2",
+    "tier": "B",
+    "severity": "medium",
+    "page": 27,
+    "status": "missing",
+    "name": "Projection chart or illustration",
+    "excerpt": "\u2026s base term from initial close, two 1 - year extension options target return 4x tvpi, 20% irr, all net of fees, expense"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 1,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "us emerging manager best performance award 2024 quartus 05.25.2026 001 quartus ai fund ii led by ai pioneers, technologi"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 3,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026s used in the prior performance da ta contained herein are based. accordingly, the actual realized returns on unrealize"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 4,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "confidential & private key risk factors an investment in quartus ai fund ii lp (the \"fund\"), any of its feeder, alternat"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 6,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026vertical ai offers the best risk - adjusted return potential within the ai ecosystem. 1. fund i is included in and benc"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 7,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026tner tim tang, phd partner sophia gao, phd, cfa partner barry day, jr. principal relevant track record & experience \u2022 f"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 9,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "confidential & private key definitions: fund i = quartus ai fund lp; commitments = total gp and lp commitments to the fu"
+   },
+   {
+    "rule": "B3",
+    "tier": "B",
+    "severity": "high",
+    "page": 25,
+    "status": "missing",
+    "name": "Past or present performance",
+    "excerpt": "\u2026>10% tbd lead & board member tbd target investment portfolio (partial selections) new to fund ii follow - on from fund "
+   },
+   {
+    "rule": "B4",
+    "tier": "B",
+    "severity": "high",
+    "page": 27,
+    "status": "missing",
+    "name": "Preferred return",
+    "excerpt": "\u2026sion options target return 4x tvpi, 20% irr, all net of fees, expenses & carried interest preferred return 8% gp commit"
+   },
+   {
+    "rule": "B6",
+    "tier": "B",
+    "severity": "medium",
+    "page": 22,
+    "status": "missing",
+    "name": "Corporate logos",
+    "excerpt": "\u2026ng information rights to select best performers \u2022 expand: building out positions in those portfolio companies that show"
+   },
+   {
+    "rule": "B7",
+    "tier": "B",
+    "severity": "high",
+    "page": 3,
+    "status": "missing",
+    "name": "Testimonial or endorsement",
+    "excerpt": ""
+   },
+   {
+    "rule": "B8",
+    "tier": "B",
+    "severity": "medium",
+    "page": 1,
+    "status": "missing",
+    "name": "Award, ranking or recognition",
+    "excerpt": "us emerging manager best performance award 2024 quartus 05.25.2026 001 quartus ai fund ii led by ai pioneers, technologi"
+   },
+   {
+    "rule": "B10",
+    "tier": "B",
+    "severity": "high",
+    "page": 3,
+    "status": "conflict",
+    "name": "Audience cross-check",
+    "excerpt": "your investment"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 20,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026quartus fit includes both qualitative and quantitative criteria to identify and invest in exceptional technology compan"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 20,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026quantitative criteria to identify and invest in exceptional technology companies. select exceptional deals with \"quartu"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 11,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026mission offer an ai and technology - focused venture growth equity strategy that delivers superior risk - adjusted retu"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 6,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026tical, real - world problems across high - value sectors. \u2022 we believe vertical ai offers the best risk - adjusted retu"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 15,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026om the trillions of dollars being poured into ai infrastructure. we believe, they provide the best risk adjusted return"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 22,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026ong performance by investing in follow - on rounds \u2022 focus on growth stage companies with proven business models , sign"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 15,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026#3 ai models & infra. software horizontal layer #2 cloud infrastructure horizontal layer #1 hardware infrastructure glo"
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 15,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026compute beyond the gpu era. ibm neuromorphic system, rain ai, lightmatter, vertical layer #1 ai - enabled productivity "
+   },
+   {
+    "rule": "C1",
+    "tier": "C",
+    "severity": "high",
+    "page": 22,
+    "status": "needs_review",
+    "name": "Superlative or absolute claim",
+    "excerpt": "\u2026ing in follow - on rounds \u2022 focus on growth stage companies with proven business models , significant growth potentia l"
+   }
+  ]
+ }
+}
