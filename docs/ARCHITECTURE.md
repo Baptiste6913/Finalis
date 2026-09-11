@@ -90,8 +90,8 @@ the mock backend replay it.
 - `src/util.js`, `src/extract.js` (pdf.js, DOCX, text, images), `src/rules.js` (SOP texts, required
   blocks, coverage, triggers, lexicon, rulebook, schemas), `src/engine.js` (deterministic analysis and
   quote location), `src/prompts.js` (profile, findings, verifier and transcription prompts, batching),
-  `src/review.js` (orchestration, guards, merge), `src/store.js` (db or localStorage), `src/notify.js`
-  (feedback to the reviewer), `src/calibration.js` (ground truth), `src/fixture.js` (reference
+  `src/review.js` (orchestration, guards, merge), `src/store.js` (db or localStorage), `src/pdfout.js` (a small PDF writer: Helvetica, WinAnsi, wrapping, page numbers), `src/notify.js`
+  (feedback to the reviewer, the banker summary and desk brief as PDF), `src/calibration.js` (ground truth), `src/fixture.js` (reference
   pre-review), `src/sample_deck.js` (the calibration deck, base64), `src/ask.js` (on-demand Claude per
   point), `src/learn.js` (learning system), `src/ui.js`, `src/boot.js`, `src/shim.js` (local runtime).
 - `server.py`: local server (static, Claude proxy with api/cli/mock backends, document store, assets,

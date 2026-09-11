@@ -74,6 +74,9 @@ in `.env` to models you do have — the server also retries automatically with y
    answer, and what happens when you submit). Click any point to jump to the exact highlighted passage;
    press `j` / `k` to walk the points.
 6. Answer the high points, tick the acknowledgement, **Complete submission**. That is the whole banker side.
+   **Export this summary as PDF** (Summary tab, and again on the confirmation page) gives the banker a record of
+   what was asked and answered; the desk has its own **Export the full brief as PDF** and a PDF button per
+   submission in the inbox. The PDFs are generated in the page, no library, nothing sent anywhere.
 7. Switch to the **Compliance desk** (top right) to see the same submission as Compliance receives it: the
    full brief, what the deck already covers, the gut check, the banker's answers, the ready-to-send feedback,
    a verdict per asserted point and Confirm / Dismiss on each pending one.

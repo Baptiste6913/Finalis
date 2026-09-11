@@ -593,6 +593,11 @@ const UI = (() => {
     renderGate();
     body.scrollTop = keep;
   }
+  async function savePdf(sub, kind) {
+    if (!S.caps.downloads) { U.toast('Downloads are not available in this view'); return; }
+    try { await S.caps.downloads.save({ filename: Notify.reportFilename(sub, kind), data: Notify.reportPdf(sub, kind) }); U.toast(kind === 'desk' ? 'Brief saved as PDF' : 'Summary saved as PDF'); }
+    catch (e) { if (!e || (e.code !== 'cancelled' && e.code !== 'declined')) U.toast('Could not save the PDF' + (e && e.message ? ': ' + e.message : '')); }
+  }
   function renderSub(findings) {
     const sub = $('panel-sub');
     sub.innerHTML = '';
@@ -610,10 +615,10 @@ const UI = (() => {
       rerun.addEventListener('click', async () => { S.result = null; S.steps = S.steps.filter((s) => s.key === 'extract' || s.key === 'blocks'); S.calib = null; S.reference = false; S.expanded = {}; S.ai = {}; renderHead(); renderStatus(); renderRail(); await runModel(true); });
       sub.append(rerun);
     }
-    if (S.result && S.caps.downloads) {
-      const dl = el('button', { class: 'btn ghost icon', type: 'button', title: 'Save the report (.md)', 'aria-label': 'Save the report' });
+    if (S.result && S.caps.downloads && !S.running) {
+      const dl = el('button', { class: 'btn ghost icon', type: 'button', title: S.viewing ? 'Export the brief as PDF' : 'Export the summary as PDF', 'aria-label': S.viewing ? 'Export the brief as PDF' : 'Export the summary as PDF' });
       dl.append(svg('download'));
-      dl.addEventListener('click', async () => { try { await S.caps.downloads.save({ filename: 'pre-review-' + S.doc.name.replace(/\.[^.]+$/, '') + '.md', data: Notify.reportMarkdown(currentSubmissionShape()) }); } catch (e) { if (!e || e.code !== 'cancelled') U.toast('Could not save'); } });
+      dl.addEventListener('click', () => savePdf(S.viewing || currentSubmissionShape(), S.viewing ? 'desk' : 'banker'));
       sub.append(dl);
     }
     if (S.running) {
@@ -953,6 +958,7 @@ const UI = (() => {
     const ic = el('span', { style: 'display:inline-flex;color:' + (g.ok ? 'var(--success)' : 'var(--warn)') }); ic.append(svg(g.ok ? 'checkCircle' : 'alert'));
     h.append(ic, el('h4', { style: 'margin:0', text: g.ok ? 'Ready to submit' : 'Not ready to submit' }));
     st.append(h, el('p', { class: 'helper', style: 'margin:0', text: g.why }));
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn sm', type: 'button', style: 'margin-top:10px' }); ex.append(svg('download'), document.createTextNode('Export this summary as PDF')); ex.addEventListener('click', () => savePdf(currentSubmissionShape(), 'banker')); st.append(ex); }
     body.append(st);
 
     const doc = el('div', { class: 'summary-card' });
@@ -1007,6 +1013,7 @@ const UI = (() => {
     const ic = el('span', { style: 'display:inline-flex;color:var(--success)' }); ic.append(svg('checkCircle'));
     h.append(ic, el('h4', { style: 'margin:0', text: 'Submitted for review' }));
     st.append(h);
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn sm', type: 'button', style: 'margin:-4px 0 10px' }); ex.append(svg('download'), document.createTextNode('Export the full brief as PDF')); ex.addEventListener('click', () => savePdf(sub, 'desk')); st.append(ex); }
     const grid = el('div', { class: 'grid' });
     [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s2 = el('div', { class: 'stat' }); s2.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s2); });
     st.append(grid);
@@ -1158,7 +1165,9 @@ const UI = (() => {
     const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center' });
     const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
     again.addEventListener('click', () => { resetForm(); show('form'); });
-    row.append(again, el('span', { style: 'flex:1' }));
+    row.append(again);
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn', type: 'button' }); ex.append(svg('download'), document.createTextNode('Download my summary (PDF)')); ex.addEventListener('click', () => savePdf(sub, 'banker')); row.append(ex); }
+    row.append(el('span', { style: 'flex:1' }));
     const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the Compliance desk (demo)' });
     inbox.addEventListener('click', () => setMode('reviewer'));
     row.append(inbox);
@@ -1188,6 +1197,7 @@ const UI = (() => {
       fb.addEventListener('click', () => openDialog('Feedback sent to the reviewer', (body) => { body.append(el('div', { class: 'mailpreview', text: 'Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body })); const cp = el('button', { class: 'btn sm', type: 'button', style: 'margin-top:10px' }); cp.append(svg('copy'), document.createTextNode('Copy')); cp.addEventListener('click', () => U.copyText('Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body)); body.append(cp); }));
       const open = el('button', { class: 'btn sm primary', type: 'button', text: 'Open' });
       open.addEventListener('click', () => openSubmission(sub));
+      if (S.caps.downloads) { const pdf = el('button', { class: 'btn sm', type: 'button', title: 'Export the brief as PDF' }); pdf.append(svg('download'), document.createTextNode('PDF')); pdf.addEventListener('click', () => savePdf(sub, 'desk')); acts.append(pdf); }
       acts.append(fb, open);
       row.append(d, by, lane, pts, status, acts);
       list.append(row);

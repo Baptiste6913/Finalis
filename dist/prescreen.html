@@ -1688,7 +1688,7 @@ const Prompts = (() => {
     return batches;
   }
 
-  return { profilePrompt, findingsPrompt, verifyPrompt, transcribePrompt, planBatches, DOC_LABELS, cleanText, excerptAround };
+  return { profilePrompt, findingsPrompt, verifyPrompt, transcribePrompt, planBatches, DOC_LABELS, INVOLVED_LABELS: INVOLVED, cleanText, excerptAround };
 })();
 
 /* ===== review.js ===== */
@@ -2202,6 +2202,149 @@ const Store = (() => {
   return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, listCalibration, memoryLines, getLearnedRules, setLearnedRules, getSettings, setSettings };
 })();
 
+/* ===== pdfout.js ===== */
+'use strict';
+/* A small PDF writer, no library: A4 pages, Helvetica and Helvetica-Bold (standard fonts, nothing embedded),
+   WinAnsi text, word wrapping from the Helvetica metrics, running header and page numbers. Enough for the
+   pre-review summary and the desk brief; not a general layout engine. */
+const PdfOut = (() => {
+  // Helvetica advance widths for codes 32..126 (AFM, 1/1000 em)
+  const W = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584];
+  const MAP = { '‘': 0x91, '’': 0x92, '‚': 0x82, '“': 0x93, '”': 0x94, '„': 0x84, '–': 0x96, '—': 0x97, '…': 0x85, '•': 0x95, '€': 0x80, '™': 0x99, 'ˆ': 0x88, '‰': 0x89, 'Š': 0x8a, 'Œ': 0x8c, 'Ž': 0x8e, 'š': 0x9a, 'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f, ' ': 0x20, ' ': 0x20, ' ': 0x20, '→': 0x3e, '✓': 0x2b, '✗': 0x2d };
+  function code(ch) {
+    const c = ch.charCodeAt(0);
+    if (c < 0x80) return c === 0x0a ? 0x20 : c;
+    if (c >= 0xa0 && c <= 0xff) return c;
+    if (MAP[ch] !== undefined) return MAP[ch];
+    return 0x3f;
+  }
+  function bytesOf(str) { const out = []; for (let i = 0; i < str.length; i += 1) out.push(code(str[i])); return out; }
+  function width(str, size, bold) {
+    let w = 0;
+    for (let i = 0; i < str.length; i += 1) { const c = code(str[i]); w += c >= 32 && c <= 126 ? W[c - 32] : 556; }
+    return (w * size) / 1000 * (bold ? 1.05 : 1);
+  }
+  function escapeText(bytes) {
+    let s = '';
+    bytes.forEach((b) => { if (b === 0x28 || b === 0x29 || b === 0x5c) s += '\\' + String.fromCharCode(b); else if (b < 32) s += ' '; else s += String.fromCharCode(b); });
+    return s;
+  }
+  function wrap(text, maxWidth, size, bold) {
+    const lines = [];
+    String(text || '').split(/\r?\n/).forEach((para) => {
+      const words = para.split(/\s+/).filter(Boolean);
+      if (!words.length) { lines.push(''); return; }
+      let cur = '';
+      words.forEach((w) => {
+        // break words longer than the line
+        while (width(w, size, bold) > maxWidth) {
+          let k = w.length;
+          while (k > 1 && width(w.slice(0, k), size, bold) > maxWidth) k -= 1;
+          if (cur) { lines.push(cur); cur = ''; }
+          lines.push(w.slice(0, k)); w = w.slice(k);
+        }
+        const trial = cur ? cur + ' ' + w : w;
+        if (width(trial, size, bold) <= maxWidth) cur = trial; else { lines.push(cur); cur = w; }
+      });
+      if (cur) lines.push(cur);
+    });
+    return lines;
+  }
+
+  /* blocks: {t:'h1'|'h2'|'p'|'small'|'kv'|'li'|'rule'|'gap', text, k, v, mark} */
+  function make(doc) {
+    const PAGE_W = 595.28, PAGE_H = 841.89, M = 56, TOP = PAGE_H - 64, BOTTOM = 60, CW = PAGE_W - 2 * M;
+    const pages = [];
+    let ops = [];
+    let y = TOP;
+    const num = (n) => (Math.round(n * 100) / 100).toString();
+    function text(x, yy, str, size, bold, grey) {
+      ops.push('BT /' + (bold ? 'F2' : 'F1') + ' ' + size + ' Tf ' + (grey ? grey + ' g ' : '0 g ') + num(x) + ' ' + num(yy) + ' Td (' + escapeText(bytesOf(str)) + ') Tj ET');
+    }
+    function newPage() { ops = []; pages.push(ops); y = TOP; }
+    function need(h) { if (y - h < BOTTOM) newPage(); }
+    function line(x1, yy, x2, grey) { ops.push((grey || '0.85') + ' G 0.6 w ' + num(x1) + ' ' + num(yy) + ' m ' + num(x2) + ' ' + num(yy) + ' l S'); }
+    function para(str, size, bold, grey, indent, gapAfter) {
+      const lh = size * 1.38;
+      const lines = wrap(str, CW - (indent || 0), size, bold);
+      lines.forEach((l) => { need(lh); text(M + (indent || 0), y - size, l, size, bold, grey); y -= lh; });
+      y -= gapAfter === undefined ? size * 0.5 : gapAfter;
+    }
+    pages.push(ops);
+    (doc.blocks || []).forEach((b) => {
+      switch (b.t) {
+        case 'h1': need(30); y -= 4; para(b.text, 17, true, null, 0, 6); break;
+        case 'h2': need(28); y -= 8; para(b.text, 11.5, true, null, 0, 2); line(M, y + 2, M + CW, '0.8'); y -= 6; break;
+        case 'p': para(b.text, 10, false, null, 0, 6); break;
+        case 'small': para(b.text, 8.5, false, '0.45', 0, 5); break;
+        case 'kv': {
+          const lh = 10 * 1.38;
+          const lines = wrap(b.v, CW - 110, 10, false);
+          need(lh * lines.length + 3);
+          text(M, y - 10, b.k, 9, false, '0.45');
+          lines.forEach((l) => { need(lh); text(M + 110, y - 10, l, 10, false); y -= lh; });
+          y -= 3;
+          break;
+        }
+        case 'li': {
+          const size = 10, lh = size * 1.38;
+          const mark = b.mark || '•';
+          const lines = wrap(b.text, CW - 16, size, !!b.bold);
+          need(lh);
+          text(M + 2, y - size, mark, size, false, '0.35');
+          lines.forEach((l) => { need(lh); text(M + 16, y - size, l, size, !!b.bold); y -= lh; });
+          if (b.sub) { wrap(b.sub, CW - 16, 9, false).forEach((l) => { need(9 * 1.38); text(M + 16, y - 9, l, 9, false, '0.4'); y -= 9 * 1.38; }); }
+          y -= 3;
+          break;
+        }
+        case 'rule': need(8); line(M, y - 2, M + CW); y -= 8; break;
+        case 'gap': y -= b.h || 8; break;
+        default: break;
+      }
+    });
+    // header and footer on every page
+    const total = pages.length;
+    pages.forEach((p, i) => {
+      const hdr = [];
+      hdr.push('BT /F2 8.5 Tf 0.35 g ' + num(M) + ' ' + num(PAGE_H - 38) + ' Td (' + escapeText(bytesOf(doc.header || 'Finalis AI Prescreen')) + ') Tj ET');
+      const right = doc.headerRight || '';
+      hdr.push('BT /F1 8.5 Tf 0.45 g ' + num(M + CW - width(right, 8.5, false)) + ' ' + num(PAGE_H - 38) + ' Td (' + escapeText(bytesOf(right)) + ') Tj ET');
+      hdr.push('0.85 G 0.6 w ' + num(M) + ' ' + num(PAGE_H - 46) + ' m ' + num(M + CW) + ' ' + num(PAGE_H - 46) + ' l S');
+      const foot = (doc.footer || '') + (doc.footer ? '   ' : '') + 'Page ' + (i + 1) + ' of ' + total;
+      hdr.push('BT /F1 8 Tf 0.5 g ' + num(M + CW - width(foot, 8, false)) + ' ' + num(36) + ' Td (' + escapeText(bytesOf(foot)) + ') Tj ET');
+      pages[i] = hdr.concat(p);
+    });
+    // objects
+    const objs = [];
+    const add = (s) => { objs.push(s); return objs.length; };
+    add('<< /Type /Catalog /Pages 2 0 R >>');
+    add(''); // pages, filled below
+    add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const kids = [];
+    pages.forEach((p) => {
+      const content = p.join('\n');
+      const cid = add('<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
+      const pid = add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + num(PAGE_W) + ' ' + num(PAGE_H) + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + cid + ' 0 R >>');
+      kids.push(pid + ' 0 R');
+    });
+    objs[1] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + kids.length + ' >>';
+    const info = add('<< /Title (' + escapeText(bytesOf(doc.title || 'Pre-review')) + ') /Producer (Finalis AI Prescreen) /Creator (Finalis AI Prescreen) >>');
+    let out = '%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n';
+    const offsets = [];
+    objs.forEach((o, i) => { offsets.push(out.length); out += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
+    const xref = out.length;
+    out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
+    offsets.forEach((o) => { out += String(o).padStart(10, '0') + ' 00000 n \n'; });
+    out += 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R /Info ' + info + ' 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+    const bytes = new Uint8Array(out.length);
+    for (let i = 0; i < out.length; i += 1) bytes[i] = out.charCodeAt(i) & 0xff;
+    return bytes;
+  }
+  function blob(doc) { return new Blob([make(doc)], { type: 'application/pdf' }); }
+  return { make, blob, wrap, width };
+})();
+
 /* ===== notify.js ===== */
 'use strict';
 /* The automatic feedback to the reviewer: composed from the pre-review and the banker's answers,
@@ -2267,7 +2410,92 @@ const Notify = (() => {
     return '# ' + subject + '\n\n' + body + '\n';
   }
 
-  return { compose, mailto, reportMarkdown, RESP_LABEL, ACTION_LABEL };
+
+  /* ---- PDF reports: the banker's summary (what they saw, what they answered) and the desk's full brief ---- */
+  function fmtDay(iso) { try { return new Date(iso || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } }
+  function where(f) { return f.page ? 'p. ' + (f.pages && f.pages.length > 1 ? f.pages.join(', ') : f.page) : 'document'; }
+  function sevLabel(f) { return f.severity === 'high' ? 'High' : f.severity === 'medium' ? 'Medium' : 'Low'; }
+  function respText(sub, f) { const r = sub.responses && sub.responses[f.id]; return r && r.status && r.status !== 'none' ? RESP_LABEL[r.status] + (r.note ? ' (' + r.note.slice(0, 160) + ')' : '') : ''; }
+  function reportBlocks(sub, kind) {
+    const desk = kind === 'desk';
+    const r = sub.result || {};
+    const p = r.profile || {};
+    const findings = sub.findings || [];
+    const c = Review.counts(findings);
+    const certain = findings.filter((f) => Review.isCertain(f));
+    const pending = findings.filter((f) => !Review.isCertain(f));
+    const highs = certain.filter((f) => f.severity === 'high');
+    const others = certain.filter((f) => f.severity !== 'high');
+    const answered = Object.keys(sub.responses || {}).filter((k) => sub.responses[k].status !== 'none').length;
+    const laneLabel = sub.lane === 'institutional' ? 'Institutional' : 'Retail';
+    const b = [];
+    b.push({ t: 'h1', text: sub.file.name });
+    b.push({ t: 'small', text: [laneLabel, sub.file.pages + (sub.file.kind === 'pdf' ? ' pages' : sub.file.kind === 'image' ? ' image' : ' sections'), Prompts.DOC_LABELS[sub.form.docType] || sub.form.docType, fmtDay(sub.created_at)].join(' · ') });
+    b.push({ t: 'h2', text: desk ? 'Submission' : 'Your document' });
+    if (p.material_kind || p.subject) b.push({ t: 'kv', k: 'What it is', v: [p.material_kind ? p.material_kind.charAt(0).toUpperCase() + p.material_kind.slice(1) : '', p.subject].filter(Boolean).join(': ') });
+    if (desk) b.push({ t: 'kv', k: 'Submitted by', v: (sub.submitter || 'unknown') + (sub.form.bankName ? ' · ' + sub.form.bankName : '') });
+    b.push({ t: 'kv', k: 'Audience', v: laneLabel + (sub.facts && sub.facts.laneReason ? ' · ' + sub.facts.laneReason : '') });
+    b.push({ t: 'kv', k: 'Distribution', v: (sub.form.distribution || []).join(', ') || 'not stated' });
+    b.push({ t: 'kv', k: 'Prepared by', v: Prompts.INVOLVED_LABELS ? (Prompts.INVOLVED_LABELS[sub.form.involvement] || sub.form.involvement || 'not stated') : (sub.form.involvement || 'not stated') });
+    if (sub.form.notes) b.push({ t: 'kv', k: 'Banker notes', v: sub.form.notes });
+    b.push({ t: 'h2', text: desk ? 'Attention points' : 'What Compliance will ask you' });
+    b.push({ t: 'p', text: c.total + ' attention point' + (c.total === 1 ? '' : 's') + ': ' + c.certain + ' asserted' + (desk ? ' to the banker' : '') + ' (' + highs.length + ' high), ' + c.verify + ' left to the Finalis reviewer' + (desk ? ' for verification' : '') + '. ' + (answered ? answered + ' answer' + (answered === 1 ? '' : 's') + ' given by the banker.' : desk ? 'No answer from the banker yet.' : '') });
+    if (highs.length) {
+      if (desk) b.push({ t: 'h2', text: 'Asserted, high' });
+      highs.forEach((f, i) => b.push({ t: 'li', mark: String(i + 1), bold: true, text: f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 200) + '”' : '', (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, desk ? 400 : 220), respText(sub, f) ? 'Banker: ' + respText(sub, f) : (desk ? 'Banker: no answer' : 'Your answer: none yet')].filter(Boolean).join('\n') }));
+    } else b.push({ t: 'p', text: 'No high point' + (desk ? ' asserted.' : ' to answer.') });
+    if (others.length) {
+      b.push({ t: 'h2', text: desk ? 'Asserted, medium and low' : 'Further points (no answer required)' });
+      others.forEach((f) => b.push({ t: 'li', text: '[' + sevLabel(f) + '] ' + f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 160) + '”' : '', desk ? (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, 300) : '', respText(sub, f) ? 'Banker: ' + respText(sub, f) : ''].filter(Boolean).join('\n') }));
+    }
+    if (pending.length) {
+      b.push({ t: 'h2', text: desk ? 'Awaiting your verification' : 'Left to the Finalis reviewer' });
+      if (!desk) b.push({ t: 'p', text: 'Possible points the pre-review was not certain enough to assert. The reviewer confirms or dismisses them; nothing for you to do.' });
+      pending.forEach((f) => {
+        const v = desk && sub.verdicts && sub.verdicts[f.id];
+        b.push({ t: 'li', text: '[' + sevLabel(f) + '] ' + f.title + ' (' + f.rule + ', ' + where(f) + ')', sub: [f.quote ? '“' + f.quote.slice(0, 160) + '”' : '', desk ? (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, 300) : '', 'Not asserted' + (f.why_verify ? ': ' + f.why_verify : ''), respText(sub, f) ? 'Banker: ' + respText(sub, f) : '', v ? 'Verification: ' + (v.verdict === 'correct' ? 'confirmed' : 'dismissed') + (v.reason ? ' (' + v.reason + ')' : '') : ''].filter(Boolean).join('\n') });
+      });
+    }
+    if (!desk) {
+      b.push({ t: 'h2', text: 'When you submit' });
+      b.push({ t: 'p', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis Compliance desk, a separate application. The reviewer verifies the pending points, then approves or requests changes through the usual Compliance channel.' });
+    } else {
+      const cov = p.coverage || {};
+      const keys = Object.keys(cov);
+      if (keys.length) {
+        b.push({ t: 'h2', text: 'Already covered in the material' });
+        keys.forEach((k) => { const x = cov[k] || {}; b.push({ t: 'li', mark: x.covered ? '✓' : '✗', text: k.replace(/_/g, ' ') + (x.covered ? '' : ' · not covered') + (x.where ? ' · ' + String(x.where).slice(0, 120) : ''), sub: x.quote ? '“' + String(x.quote).slice(0, 140) + '”' : '' }); });
+      }
+      if (r.gut_check && !(r.meta && r.meta.deterministicOnly)) {
+        b.push({ t: 'h2', text: '60-second gut check' });
+        [['inaccurate_picture', 'Could an investor walk away with an inaccurate picture?'], ['unsupported_claims', 'Claims the banker could not back up right now?'], ['promised_results', 'A result promised instead of a target?']].forEach(([k, q]) => { const x = r.gut_check[k] || {}; b.push({ t: 'li', mark: x.flag ? 'Yes' : 'No', text: q, sub: x.why || '' }); });
+      }
+      if (r.brief) { b.push({ t: 'h2', text: 'Brief' }); b.push({ t: 'p', text: r.brief }); }
+      if (r.banker_message) { b.push({ t: 'h2', text: 'Comment to the banker' }); b.push({ t: 'p', text: r.banker_message }); }
+      if (r.suppressed && r.suppressed.length) {
+        b.push({ t: 'h2', text: 'Set aside (' + r.suppressed.length + ' candidates a naive scan would have raised)' });
+        r.suppressed.slice(0, 14).forEach((s) => b.push({ t: 'small', text: s.rule + ' · p. ' + ((s.pages || []).join(', ') || '–') + (s.quote ? ' · “' + s.quote.slice(0, 80) + '”' : '') + ' · ' + (s.reason || '').slice(0, 220) }));
+        if (r.suppressed.length > 14) b.push({ t: 'small', text: '… and ' + (r.suppressed.length - 14) + ' more.' });
+      }
+      if (r.meta && r.meta.calls && r.meta.calls.length) b.push({ t: 'small', text: 'Model calls: ' + r.meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ' ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' images' : '')).join(' · ') });
+    }
+    b.push({ t: 'gap', h: 6 });
+    b.push({ t: 'small', text: 'Finalis AI Prescreen · machine-generated pre-submission scan, calibrated on the desk\'s verdicts. Advisory: it is not an approval and it does not change any status.' });
+    return b;
+  }
+  function reportPdf(sub, kind) {
+    const desk = kind === 'desk';
+    return PdfOut.blob({
+      title: (desk ? 'Compliance brief · ' : 'Pre-review summary · ') + sub.file.name,
+      header: 'Finalis AI Prescreen · ' + (desk ? 'Compliance desk brief' : 'Pre-review summary'),
+      headerRight: fmtDay(sub.created_at),
+      footer: desk ? 'Confidential · Compliance desk' : 'Advisory: not an approval',
+      blocks: reportBlocks(sub, kind),
+    });
+  }
+  function reportFilename(sub, kind) { return (kind === 'desk' ? 'compliance-brief-' : 'pre-review-summary-') + String(sub.file.name || 'document').replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60) + '.pdf'; }
+
+  return { compose, mailto, reportMarkdown, reportBlocks, reportPdf, reportFilename, RESP_LABEL, ACTION_LABEL };
 })();
 
 /* ===== calibration.js ===== */
@@ -3232,6 +3460,11 @@ const UI = (() => {
     renderGate();
     body.scrollTop = keep;
   }
+  async function savePdf(sub, kind) {
+    if (!S.caps.downloads) { U.toast('Downloads are not available in this view'); return; }
+    try { await S.caps.downloads.save({ filename: Notify.reportFilename(sub, kind), data: Notify.reportPdf(sub, kind) }); U.toast(kind === 'desk' ? 'Brief saved as PDF' : 'Summary saved as PDF'); }
+    catch (e) { if (!e || (e.code !== 'cancelled' && e.code !== 'declined')) U.toast('Could not save the PDF' + (e && e.message ? ': ' + e.message : '')); }
+  }
   function renderSub(findings) {
     const sub = $('panel-sub');
     sub.innerHTML = '';
@@ -3249,10 +3482,10 @@ const UI = (() => {
       rerun.addEventListener('click', async () => { S.result = null; S.steps = S.steps.filter((s) => s.key === 'extract' || s.key === 'blocks'); S.calib = null; S.reference = false; S.expanded = {}; S.ai = {}; renderHead(); renderStatus(); renderRail(); await runModel(true); });
       sub.append(rerun);
     }
-    if (S.result && S.caps.downloads) {
-      const dl = el('button', { class: 'btn ghost icon', type: 'button', title: 'Save the report (.md)', 'aria-label': 'Save the report' });
+    if (S.result && S.caps.downloads && !S.running) {
+      const dl = el('button', { class: 'btn ghost icon', type: 'button', title: S.viewing ? 'Export the brief as PDF' : 'Export the summary as PDF', 'aria-label': S.viewing ? 'Export the brief as PDF' : 'Export the summary as PDF' });
       dl.append(svg('download'));
-      dl.addEventListener('click', async () => { try { await S.caps.downloads.save({ filename: 'pre-review-' + S.doc.name.replace(/\.[^.]+$/, '') + '.md', data: Notify.reportMarkdown(currentSubmissionShape()) }); } catch (e) { if (!e || e.code !== 'cancelled') U.toast('Could not save'); } });
+      dl.addEventListener('click', () => savePdf(S.viewing || currentSubmissionShape(), S.viewing ? 'desk' : 'banker'));
       sub.append(dl);
     }
     if (S.running) {
@@ -3592,6 +3825,7 @@ const UI = (() => {
     const ic = el('span', { style: 'display:inline-flex;color:' + (g.ok ? 'var(--success)' : 'var(--warn)') }); ic.append(svg(g.ok ? 'checkCircle' : 'alert'));
     h.append(ic, el('h4', { style: 'margin:0', text: g.ok ? 'Ready to submit' : 'Not ready to submit' }));
     st.append(h, el('p', { class: 'helper', style: 'margin:0', text: g.why }));
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn sm', type: 'button', style: 'margin-top:10px' }); ex.append(svg('download'), document.createTextNode('Export this summary as PDF')); ex.addEventListener('click', () => savePdf(currentSubmissionShape(), 'banker')); st.append(ex); }
     body.append(st);
 
     const doc = el('div', { class: 'summary-card' });
@@ -3646,6 +3880,7 @@ const UI = (() => {
     const ic = el('span', { style: 'display:inline-flex;color:var(--success)' }); ic.append(svg('checkCircle'));
     h.append(ic, el('h4', { style: 'margin:0', text: 'Submitted for review' }));
     st.append(h);
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn sm', type: 'button', style: 'margin:-4px 0 10px' }); ex.append(svg('download'), document.createTextNode('Export the full brief as PDF')); ex.addEventListener('click', () => savePdf(sub, 'desk')); st.append(ex); }
     const grid = el('div', { class: 'grid' });
     [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s2 = el('div', { class: 'stat' }); s2.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s2); });
     st.append(grid);
@@ -3797,7 +4032,9 @@ const UI = (() => {
     const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center' });
     const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
     again.addEventListener('click', () => { resetForm(); show('form'); });
-    row.append(again, el('span', { style: 'flex:1' }));
+    row.append(again);
+    if (S.caps.downloads) { const ex = el('button', { class: 'btn', type: 'button' }); ex.append(svg('download'), document.createTextNode('Download my summary (PDF)')); ex.addEventListener('click', () => savePdf(sub, 'banker')); row.append(ex); }
+    row.append(el('span', { style: 'flex:1' }));
     const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the Compliance desk (demo)' });
     inbox.addEventListener('click', () => setMode('reviewer'));
     row.append(inbox);
@@ -3827,6 +4064,7 @@ const UI = (() => {
       fb.addEventListener('click', () => openDialog('Feedback sent to the reviewer', (body) => { body.append(el('div', { class: 'mailpreview', text: 'Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body })); const cp = el('button', { class: 'btn sm', type: 'button', style: 'margin-top:10px' }); cp.append(svg('copy'), document.createTextNode('Copy')); cp.addEventListener('click', () => U.copyText('Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body)); body.append(cp); }));
       const open = el('button', { class: 'btn sm primary', type: 'button', text: 'Open' });
       open.addEventListener('click', () => openSubmission(sub));
+      if (S.caps.downloads) { const pdf = el('button', { class: 'btn sm', type: 'button', title: 'Export the brief as PDF' }); pdf.append(svg('download'), document.createTextNode('PDF')); pdf.addEventListener('click', () => savePdf(sub, 'desk')); acts.append(pdf); }
       acts.append(fb, open);
       row.append(d, by, lane, pts, status, acts);
       list.append(row);

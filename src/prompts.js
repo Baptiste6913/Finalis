@@ -168,5 +168,5 @@ const Prompts = (() => {
     return batches;
   }
 
-  return { profilePrompt, findingsPrompt, verifyPrompt, transcribePrompt, planBatches, DOC_LABELS, cleanText, excerptAround };
+  return { profilePrompt, findingsPrompt, verifyPrompt, transcribePrompt, planBatches, DOC_LABELS, INVOLVED_LABELS: INVOLVED, cleanText, excerptAround };
 })();
