@@ -1,0 +1,37 @@
+import asyncio, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from harness import *
+FAKE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_flow.py')).read().split('FAKE = r"""')[1].split('"""')[0]
+async def main():
+    async with async_playwright() as pw:
+        browser, page = await open_page(pw, width=1280, height=1000, init_script=FAKE)
+        await page.wait_for_timeout(500)
+        await page.click('#sample-slot button'); await page.wait_for_selector('#filechip:not([hidden])', timeout=30000)
+        await page.click('#btn-submit-form'); await page.wait_for_selector('#btn-start'); await page.click('#btn-start')
+        await page.wait_for_function("document.getElementById('wh-status-text').textContent.includes('complete')", timeout=60000)
+        await page.wait_for_timeout(600)
+        st = await page.evaluate("""() => ({ all: UI.S.result.findings.length, shownCards: document.querySelectorAll('[data-card]').length, marks: new Set(Array.from(document.querySelectorAll('.mark')).map(m=>m.dataset.fid)).size, nav: document.getElementById('pt-label').textContent, tabs: [document.getElementById('tab-language-n').textContent, document.getElementById('tab-disclosures-n').textContent], verifySections: document.querySelectorAll('.section-h.v').length, product: document.getElementById('product-name').textContent, seg: document.getElementById('mode-reviewer').textContent.trim() })""")
+        print('BANKER', st)
+        await page.click('#tab-language'); await page.wait_for_timeout(200)
+        st2 = await page.evaluate("() => ({ cards: document.querySelectorAll('[data-card]').length, verifySections: document.querySelectorAll('.section-h.v').length })")
+        print('BANKER language tab', st2)
+        await page.screenshot(path='shot_banker_language_v2.png')
+        await page.click('#tab-summary'); await page.wait_for_timeout(200)
+        await page.screenshot(path='shot_summary_banker_v2.png')
+        highs = await page.evaluate("UI.S.result.findings.filter(f=>f.severity==='high' && Review.isCertain(f)).map(f=>f.id)")
+        for fid in highs:
+            tab = await page.evaluate(f"UI.S.result.findings.find(f=>f.id==='{fid}').tier === 'C' ? 'language' : 'disclosures'")
+            await page.click(f'#tab-{tab}'); await page.click(f'[data-card="{fid}"] .resp .chips button:first-child')
+        await page.check('#ack'); await page.click('#btn-submit'); await page.wait_for_selector('#view-done:not([hidden])'); await page.wait_for_timeout(300)
+        await page.screenshot(path='shot_done_v2.png', full_page=True)
+        await page.click('#mode-reviewer'); await page.wait_for_timeout(400)
+        print('REVIEWER product:', await page.text_content('#product-name'))
+        await page.screenshot(path='shot_reviewer_inbox_v2.png')
+        await page.click('#inbox-list .trow:not(.h) .btn.primary'); await page.wait_for_timeout(900)
+        st3 = await page.evaluate("""() => ({ cards: document.querySelectorAll('[data-card]').length, marks: new Set(Array.from(document.querySelectorAll('.mark')).map(m=>m.dataset.fid)).size, nav: document.getElementById('pt-label').textContent, verifySections: document.querySelectorAll('.section-h.v').length })""")
+        print('REVIEWER work', st3)
+        await page.click('#tab-language'); await page.wait_for_timeout(200)
+        await page.evaluate("const h=document.querySelector('.section-h.v'); if (h) h.scrollIntoView({block:'start'})"); await page.wait_for_timeout(200)
+        await page.screenshot(path='shot_reviewer_verify_v2.png')
+        await browser.close()
+asyncio.run(main())

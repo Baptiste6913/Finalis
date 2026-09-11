@@ -65,7 +65,7 @@ const UI = (() => {
     if (S.result && S.doc) { show('work'); renderWorkspace(); } else show('form');
   }
   function renderWorkspace() { renderViewer(); renderHead(); renderStatus(); renderRail(); }
-  /* The banker portal and the Compliance desk are two applications that share one page here: the app bar,
+  /* The banker platform and the reviewer platform are two applications that share one page here: the app bar,
      the accent colour, the crumb and the tab labels change with the side you are on. */
   function renderChrome() {
     const desk = S.mode === 'reviewer';
@@ -73,8 +73,8 @@ const UI = (() => {
     $('mode-banker').setAttribute('aria-pressed', String(!desk));
     $('mode-reviewer').setAttribute('aria-pressed', String(desk));
     $('avatar').textContent = desk ? 'CO' : 'JD';
-    $('avatar').title = desk ? 'Signed in to the Compliance desk as a reviewer' : 'Signed in to the banker portal';
-    $('product-name').textContent = desk ? 'Compliance desk' : 'Banker portal';
+    $('avatar').title = desk ? 'Signed in to the reviewer platform' : 'Signed in to the banker platform';
+    $('product-name').textContent = desk ? 'Reviewer platform' : 'Banker platform';
     $('crumb-root').textContent = desk ? 'Inbox' : 'Marketing materials';
     const ai = $('crumb-ai');
     ai.querySelector('b').textContent = desk ? 'Submission' : 'AI Prescreen';
@@ -225,7 +225,22 @@ const UI = (() => {
     if (S.result && !S.result.meta.error) { const ok = el('span', { class: 'ok' }); ok.append(svg('checkCircle')); ic.append(ok); }
     else if (failed && !running) { const w = el('span', { style: 'color:var(--danger);display:inline-flex' }); w.append(svg('alert')); ic.append(w); }
     else ic.append(el('span', { class: 'spin' }));
-    $('wh-status-text').textContent = S.result ? (S.result.meta.error ? 'Required blocks only' : (S.reference ? 'Reference pre-review' : 'Pre-review complete')) : failed ? 'Stopped: ' + failed.label : running ? running.label + (running.detail ? ' · ' + running.detail : '') : 'Preparing';
+    $('wh-status-text').textContent = S.result ? (S.result.meta.error ? 'Required blocks only' : (S.reference ? 'Reference pre-review' : 'Pre-review complete' + modelSuffix(S.result.meta))) : failed ? 'Stopped: ' + failed.label : running ? running.label + (running.detail ? ' · ' + running.detail : '') : 'Preparing';
+  }
+  function shortModel(m) { return String(m || '').replace(/^cli:/, '').replace(/^claude-/, '').replace(/-\d{8}$/, ''); }
+  function modelSuffix(meta) {
+    const calls = (meta && meta.calls) || [];
+    const models = Array.from(new Set(calls.map((c) => c.model).filter(Boolean)));
+    if (!models.length) return '';
+    return ' · ' + models.map(shortModel).join(', ') + (calls.some((c) => c.fallback) ? ' (fallback)' : '');
+  }
+  function modelWarning() {
+    const calls = (S.result && S.result.meta && S.result.meta.calls) || [];
+    const fb = calls.filter((c) => c.fallback);
+    if (!fb.length) return null;
+    const n = el('div', { class: 'note amber', style: 'margin-bottom:10px' });
+    n.append(svg('alert'), el('span', { text: 'This account could not use ' + Array.from(new Set(fb.map((c) => c.requested).filter(Boolean))).join(', ') + ', so ' + fb.map((c) => c.pass).join(', ') + ' ran on the account\'s default model (' + Array.from(new Set(fb.map((c) => shortModel(c.model)))).join(', ') + '). The pre-review was calibrated on claude-opus-5 and claude-sonnet-5: results differ. Set MODEL_COMPLEX and MODEL_DEFAULT in .env to models this account can use.' }));
+    return n;
   }
   /* Submit on the modal: mandatory, and it does not send anything. It opens the Finalis AI Prescreen with
      the document already rendered; the pre-review runs from there and the submission completes after it. */
@@ -297,7 +312,8 @@ const UI = (() => {
     go.append(document.createTextNode('Start the pre-review'), svg('send'));
     go.addEventListener('click', startPreReview);
     w.append(go);
-    w.append(el('div', { class: 'helper', style: 'text-align:center;margin-top:8px', text: 'Nothing reaches Compliance until the pre-review is complete.' }));
+    w.append(el('div', { class: 'helper', style: 'text-align:center;margin-top:8px', text: 'Nothing reaches the reviewer until the pre-review is complete.' }));
+    if (S.health && S.health.backend) w.append(el('div', { class: 'helper', style: 'text-align:center;margin-top:4px', text: (S.health.backend === 'mock' ? 'No model: the reference pre-review is replayed' : 'Models: ' + shortModel(S.health.models.complex) + ' for the findings, ' + shortModel(S.health.models.default) + ' for the map and the second pass' + (S.health.backend === 'cli' ? ' · your Claude Code login' : ' · Anthropic API')) }));
     const st = el('div', { class: 'steps3' });
     [['1', 'Required blocks', 'the SOP legends are matched verbatim on the text layer: present, missing, or set too small to read.'], ['2', 'Coverage map', 'disclaimer pages, risk factors, footnotes and sources are mapped first, so a disclosure the deck already carries is never requested twice.'], ['3', 'Attention points', 'triggered disclosures and language under FINRA 2210 and the institutional framework, calibrated on the reviewers\' verdicts; only points confirmed by a second pass are asserted to you, the rest waits for the Finalis reviewer.']].forEach(([n, t, d]) => { const row = el('div'); row.append(el('span', { text: n }), el('div', { html: '<b>' + U.esc(t) + '</b> · ' + U.esc(d) })); st.append(row); });
     w.append(st);
@@ -384,7 +400,7 @@ const UI = (() => {
     $('pg-of').textContent = '/ ' + S.doc.pages.length;
     $('pg-input').value = String(S.page);
     $('zoom-pct').textContent = Math.round(S.zoom * 100) + '%';
-    const c = S.result ? Review.counts(S.result.findings) : null;
+    const c = S.result ? Review.counts(currentFindings()) : null;
     $('tab-language-n').textContent = c ? String(c.C) : '0';
     $('tab-disclosures-n').textContent = c ? String(c.A + c.B) : '0';
     $('tab-language-n').className = 'badge ' + (c && c.C ? '' : 'grey');
@@ -478,7 +494,11 @@ const UI = (() => {
       if (old) old.replaceWith(canvas); else if (ph) ph.replaceWith(canvas); else box.prepend(canvas);
     } catch (e) { rendered.delete(n); }
   }
-  function currentFindings() { return S.result ? S.result.findings : Review.tierAFindings(S.facts || { required: [] }, S.form); }
+  /* Everything the pre-review produced (the reviewer platform sees all of it). */
+  function allFindings() { return S.result ? S.result.findings : Review.tierAFindings(S.facts || { required: [] }, S.form); }
+  /* What the current platform shows: the reviewer sees everything; the banker only the asserted points.
+     Pending points exist for the reviewer to verify, they are never put in front of the banker. */
+  function currentFindings() { const all = allFindings(); return S.viewing ? all : all.filter((f) => Review.isCertain(f)); }
   function drawMarks() {
     if (!S.doc) return;
     const findings = currentFindings();
@@ -588,7 +608,7 @@ const UI = (() => {
     if (setup) { renderSub([]); renderSetup(body); $('gate').hidden = true; return; }
     const findings = currentFindings();
     renderSub(findings);
-    if (S.tab === 'summary') renderSummary(body, findings);
+    if (S.tab === 'summary') renderSummary(body, S.viewing ? findings : allFindings());
     else renderList(body, findings.filter((f) => tierOfTab(f) === S.tab));
     renderGate();
     body.scrollTop = keep;
@@ -604,10 +624,10 @@ const UI = (() => {
     if (S.phase === 'setup' && S.mode === 'banker' && !S.viewing) { sub.append(el('span', { text: 'Finalis AI Prescreen · setup' }), el('span', { class: 'grow' })); return; }
     const list = S.tab === 'summary' ? findings : findings.filter((f) => tierOfTab(f) === S.tab);
     const need = findings.filter((f) => f.severity === 'high' && Review.isCertain(f) && (!S.responses[f.id] || S.responses[f.id].status === 'none')).length;
-    const toVerify = findings.filter((f) => !Review.isCertain(f)).length;
+    const toVerify = allFindings().filter((f) => !Review.isCertain(f)).length;
     sub.append(el('span', { text: S.running ? 'Reviewing…' : (S.tab === 'summary' ? findings.length + ' attention point' + (findings.length === 1 ? '' : 's') : list.length + ' suggestion' + (list.length === 1 ? '' : 's')) }));
     if (need && S.mode === 'banker' && !S.viewing && S.result) sub.append(el('span', { class: 'tag high', text: need + ' need an answer' }));
-    if (toVerify && S.result && !S.running && S.tab === 'summary') sub.append(el('span', { class: 'tag violet', text: toVerify + ' for Finalis review' }));
+    if (toVerify && S.result && !S.running && S.viewing) sub.append(el('span', { class: 'tag violet', text: toVerify + ' to verify' }));
     sub.append(el('span', { class: 'grow' }));
     if (S.result && S.caps.sample && !S.running && !S.viewing) {
       const rerun = el('button', { class: 'btn ghost icon', type: 'button', title: 'Run again (fresh answer)', 'aria-label': 'Run again' });
@@ -648,6 +668,7 @@ const UI = (() => {
     if (S.result && S.result.meta.error) { const n = el('div', { class: 'note red', style: 'margin-bottom:10px' }); n.append(svg('alert'), el('span', { text: S.result.meta.error })); body.append(n); }
     if (S.result && S.result.meta.deterministicOnly && !S.result.meta.error) { const n = el('div', { class: 'note amber', style: 'margin-bottom:10px' }); n.append(svg('alert'), el('span', { text: 'Claude is not available in this view: only the required blocks were checked. Open the page in the Claude app to run the full pre-review.' })); body.append(n); }
     if (S.result && S.result.meta.reference) { const n = el('div', { class: 'note blue', style: 'margin-bottom:10px' }); n.append(el('span', { text: S.result.meta.note })); body.append(n); }
+    { const w = modelWarning(); if (w) body.append(w); }
     if (S.result && S.result.meta.truncated) { const n = el('div', { class: 'note amber', style: 'margin-bottom:10px' }); n.append(el('span', { text: 'The model\'s answer was cut short; some points may be missing.' })); body.append(n); }
     if (!S.result && !S.running) return;
     const filters = el('div', { class: 'filters' });
@@ -667,10 +688,10 @@ const UI = (() => {
       const trig = certain.filter((f) => f.tier === 'B');
       if (req.length) { body.append(sectionHead('Required blocks', req.length)); req.forEach((f) => body.append(cardDisclosure(f))); }
       if (trig.length) { body.append(sectionHead('Triggered by the content', trig.length)); trig.forEach((f) => body.append(cardDisclosure(f))); }
-      if (verify.length) { body.append(sectionHead('For Finalis review', verify.length, true)); body.append(verifyIntro()); verify.forEach((f) => body.append(cardDisclosure(f))); }
+      if (verify.length) { body.append(sectionHead('Awaiting your verification', verify.length, true)); body.append(verifyIntro()); verify.forEach((f) => body.append(cardDisclosure(f))); }
     } else {
       if (certain.length) { body.append(sectionHead(S.facts.lane === 'institutional' ? 'Institutional Marketing Compliance' : 'Retail Marketing Compliance', certain.length)); certain.forEach((f) => body.append(cardLanguage(f))); }
-      if (verify.length) { body.append(sectionHead('For Finalis review', verify.length, true)); body.append(verifyIntro()); verify.forEach((f) => body.append(cardLanguage(f))); }
+      if (verify.length) { body.append(sectionHead('Awaiting your verification', verify.length, true)); body.append(verifyIntro()); verify.forEach((f) => body.append(cardLanguage(f))); }
     }
     if (S.result && S.result.suppressed && S.result.suppressed.length && S.filter === 'all') {
       const sup = S.result.suppressed.filter((s) => (S.tab === 'language') === /^C/.test(s.rule));
@@ -689,12 +710,12 @@ const UI = (() => {
     return h;
   }
   function verifyIntro() {
-    return el('div', { class: 'helper', style: 'margin:-2px 4px 10px', text: S.viewing ? 'These points were shown to the banker as pending your verification, not as facts. Confirm or dismiss each one; your verdict trains the next pre-reviews.' : 'Possible points the pre-review is not certain enough to assert. The Finalis reviewer confirms or dismisses them; no answer is required from you, a comment helps.' });
+    return el('div', { class: 'helper', style: 'margin:-2px 4px 10px', text: 'Possible points the pre-review was not certain enough to assert. The banker did not see them. Confirm the ones you would send, dismiss the others; each verdict trains the next pre-reviews.' });
   }
-  function verifyTag() { return el('span', { class: 'tag vtag', text: 'Finalis review' }); }
+  function verifyTag() { return el('span', { class: 'tag vtag', text: 'To verify' }); }
   function verifyNote(f) {
     const n = el('div', { class: 'verify-note' });
-    n.append(el('b', { text: 'Awaiting verification by Finalis Compliance' }), document.createTextNode(f.why_verify ? ' · ' + f.why_verify + '.' : '.'));
+    n.append(el('b', { text: 'Not asserted to the banker' }), document.createTextNode(f.why_verify ? ' · ' + f.why_verify + '.' : '.'));
     return n;
   }
   function riskTag(sev) {
@@ -881,7 +902,7 @@ const UI = (() => {
     const wrap = el('div', { class: 'resp' });
     const lbl = el('div', { class: 'lbl' });
     const certain = Review.isCertain(f);
-    lbl.append(el('span', { text: certain ? 'Your answer' : 'Your comment (optional)' }));
+    lbl.append(el('span', { text: 'Your answer' }));
     if (certain && f.severity === 'high' && r.status === 'none') lbl.append(el('span', { class: 'need', text: 'Required before submission' }));
     wrap.append(lbl);
     const chips = el('div', { class: 'chips' });
@@ -905,7 +926,7 @@ const UI = (() => {
     const resp = sub.responses && sub.responses[f.id];
     const certain = Review.isCertain(f);
     const wrap = el('div', { class: 'resp' });
-    wrap.append(el('div', { class: 'said', html: resp && resp.status && resp.status !== 'none' ? '<b>Banker:</b> ' + U.esc(RESP[resp.status]) + (resp.note ? ' — ' + U.esc(resp.note) : '') : '<b>Banker:</b> ' + (certain ? 'no answer' : 'no comment (not asked to answer)') }));
+    wrap.append(el('div', { class: 'said', html: resp && resp.status && resp.status !== 'none' ? '<b>Banker:</b> ' + U.esc(RESP[resp.status]) + (resp.note ? ' — ' + U.esc(resp.note) : '') : '<b>Banker:</b> ' + (certain ? 'no answer' : 'did not see this point') }));
     const v = (sub.verdicts && sub.verdicts[f.id]) || {};
     const row = el('div', { class: 'verdict' });
     row.append(el('span', { class: 'helper', style: 'margin:0', text: certain ? 'Your verdict' : 'Verification' }));
@@ -949,7 +970,7 @@ const UI = (() => {
     return row;
   }
   /* What the banker sees: their document in two lines, what Compliance will ask them, and the way out. Every
-     detail (coverage map, brief, gut check, model calls) lives on the Compliance desk. */
+     detail (coverage map, brief, gut check, model calls) lives on the reviewer platform. */
   function renderSummaryBanker(body, findings, r) {
     const c = Review.counts(findings);
     const g = gateState();
@@ -990,13 +1011,13 @@ const UI = (() => {
     const others = c.certain - highs.length;
     const lines = [];
     if (others > 0) lines.push(others + ' further point' + (others === 1 ? '' : 's') + ' to read in the Compliance and Disclosures tabs (no answer required).');
-    if (c.verify) lines.push(c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' the Finalis reviewer verifies first; nothing for you to do.');
+    if (c.verify) lines.push(c.verify + ' further candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the Finalis reviewer only; nothing for you to do.');
     lines.forEach((t) => ask.append(el('p', { class: 'helper', style: 'margin:8px 0 0', text: t })));
     body.append(ask);
 
     const next = el('div', { class: 'summary-card' });
     next.append(el('h4', { text: 'When you submit' }));
-    next.append(el('p', { class: 'helper', style: 'margin:0', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis Compliance desk, a separate application you do not see. The reviewer verifies the pending points, then approves or requests changes. This pre-review is advisory: it is not an approval and it changes no status.' }));
+    next.append(el('p', { class: 'helper', style: 'margin:0', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis reviewer platform, a separate application you do not see. The reviewer checks the remaining candidates, then approves or requests changes. This pre-review is advisory: it is not an approval and it changes no status.' }));
     body.append(next);
     if (Calibration.isReferenceDeck(S.doc.pages) && !S.reference && S.caps.sample) {
       const b2 = el('button', { class: 'btn sm', type: 'button', text: 'Show the reference pre-review instead' });
@@ -1004,7 +1025,7 @@ const UI = (() => {
       body.append(el('div', { style: 'padding:6px 4px' }, [b2]));
     }
   }
-  /* What the Compliance desk sees: everything. */
+  /* What the reviewer platform sees: everything. */
   function renderSummaryDesk(body, findings, r) {
     const sub = S.viewing;
     const c = Review.counts(findings);
@@ -1022,7 +1043,7 @@ const UI = (() => {
       const a = el('div', { class: 'gc', style: 'padding-top:8px' });
       a.append(el('span', { class: 'tag ok', text: String(c.certain) }), el('span', { html: '<b style="font-weight:500">asserted to the banker</b> <span style="color:var(--text-3)">deterministic checks and points confirmed by the second pass with a verbatim quote located on the page</span>' }));
       const b = el('div', { class: 'gc' });
-      b.append(el('span', { class: 'tag vtag', text: String(c.verify) }), el('span', { html: '<b style="font-weight:500">awaiting your verification</b> <span style="color:var(--text-3)">shown to the banker as pending, not as facts</span>' }));
+      b.append(el('span', { class: 'tag vtag', text: String(c.verify) }), el('span', { html: '<b style="font-weight:500">to verify</b> <span style="color:var(--text-3)">candidates the pre-review was not certain about; the banker did not see them</span>' }));
       st.append(a, b);
     }
     body.append(st);
@@ -1157,10 +1178,10 @@ const UI = (() => {
     card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: 'Sent to Finalis Compliance' }));
     card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ', ' + answered + ' answered' + (c.verify ? ' · ' + c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' left to the reviewer' : '') + '.' }));
     const n = el('div', { class: 'note green', style: 'margin-bottom:16px' });
-    n.append(svg('inbox'), el('span', { class: 'grow', text: 'The Compliance desk' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received your document, the pre-review, your answers and the brief' + (mode === 'shared' ? '.' : ' (in this browser\'s demo inbox; open this page in the Claude app to reach the shared desk).') + ' It is a separate application: you will hear back from the reviewer, not from this page.' }));
+    n.append(svg('inbox'), el('span', { class: 'grow', text: 'The Finalis reviewer' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received your document, the pre-review, your answers and the brief' + (mode === 'shared' ? '.' : ' (in this browser\'s demo inbox; open this page in the Claude app to reach the shared inbox).') + ' The reviewer platform is a separate application: you will hear back from the reviewer, not from this page.' }));
     card.append(n);
     const steps = el('div', { class: 'nextsteps' });
-    [['1', 'The reviewer verifies the pending points', c.verify ? c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' were flagged for verification, not asserted to you.' : 'Nothing was left pending on this document.'], ['2', 'The reviewer reads your answers', answered + ' answer' + (answered === 1 ? '' : 's') + ' travel with the submission.'], ['3', 'Approval or a request for changes', 'Comes back through the usual Compliance channel. This pre-review is advisory and is not an approval.']].forEach(([k, t, d]) => { const row = el('div'); row.append(el('span', { text: k }), el('div', { html: '<b>' + U.esc(t) + '</b><br>' + U.esc(d) })); steps.append(row); });
+    [['1', 'The reviewer checks the remaining candidates', c.verify ? c.verify + ' candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the reviewer only.' : 'Nothing was left for the reviewer to verify on this document.'], ['2', 'The reviewer reads your answers', answered + ' answer' + (answered === 1 ? '' : 's') + ' travel with the submission.'], ['3', 'Approval or a request for changes', 'Comes back through the usual Compliance channel. This pre-review is advisory and is not an approval.']].forEach(([k, t, d]) => { const row = el('div'); row.append(el('span', { text: k }), el('div', { html: '<b>' + U.esc(t) + '</b><br>' + U.esc(d) })); steps.append(row); });
     card.append(el('div', { class: 'label', text: 'What happens next' }), steps);
     const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center' });
     const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
@@ -1168,7 +1189,7 @@ const UI = (() => {
     row.append(again);
     if (S.caps.downloads) { const ex = el('button', { class: 'btn', type: 'button' }); ex.append(svg('download'), document.createTextNode('Download my summary (PDF)')); ex.addEventListener('click', () => savePdf(sub, 'banker')); row.append(ex); }
     row.append(el('span', { style: 'flex:1' }));
-    const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the Compliance desk (demo)' });
+    const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the reviewer platform (demo)' });
     inbox.addEventListener('click', () => setMode('reviewer'));
     row.append(inbox);
     card.append(row);
@@ -1308,7 +1329,9 @@ const UI = (() => {
     impInput.addEventListener('change', async () => { const f = impInput.files && impInput.files[0]; if (!f) return; try { const obj = JSON.parse(await f.text()); const r = await Learn.importState(obj); U.toast('Imported ' + r.added + ' verdicts · ' + r.rules + ' rules'); } catch (e) { U.toast('Not a learning export'); } renderLearning(); });
     const replay = el('button', { class: 'btn sm', type: 'button', text: 'Replay the calibration deck with the current learning' });
     replay.addEventListener('click', () => replayCalibration(replay));
-    io.append(exp, imp, impInput, replay);
+    const clear = el('button', { class: 'btn sm danger', type: 'button', text: 'Clear all learning' });
+    clear.addEventListener('click', async () => { if (!window.confirm('Delete every verdict and learned rule? The next pre-reviews start from the calibration rules alone.')) return; await Learn.clearAll(); U.toast('Learning state cleared'); renderLearning(); });
+    io.append(exp, imp, impInput, replay, clear);
     body.append(io);
     body.append(el('div', { id: 'replay-out' }));
     // recent verdicts
@@ -1433,6 +1456,7 @@ const UI = (() => {
   async function start(caps) {
     renderBrand();
     S.caps = caps;
+    if (window.claude && window.claude.local) { try { const h = await fetch((window.PRESCREEN_API || '') + '/api/health'); if (h.ok) S.health = await h.json(); } catch (e) { S.health = null; } }
     await Store.init(caps);
     S.settings = await Store.getSettings();
     if (S.settings.reviewerEmail) $('reviewer-email').value = S.settings.reviewerEmail;

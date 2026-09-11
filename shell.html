@@ -379,7 +379,7 @@ select:invalid, select.placeholder { color:var(--text-4); }
 .lgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:14px; }
 @media (max-width: 980px) { .lrow { grid-template-columns:60px 1fr 60px; } .lrow .hide-m { display:none; } }
 .setting { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-2); white-space:nowrap; }
-/* the Compliance desk is a different application: its own accent, everything else shared */
+/* the reviewer platform is a different application: its own accent, everything else shared */
 body[data-platform="desk"] { --primary:#0F7B6C; --primary-hover:#0B6659; --primary-soft:#E6F4F1; --primary-text:#0B6659; --primary-line:#9ED8CC; --banner:#E6F4F1; --info:#0F7B6C; --info-bg:#E6F4F1; --info-line:#9ED8CC; }
 body[data-platform="desk"] .seg button[aria-pressed="true"] { color:var(--primary-text); }
 body[data-platform="desk"] .avatar { background:var(--primary-soft); color:var(--primary-text); }
@@ -425,12 +425,12 @@ body[data-platform="desk"] .avatar { background:var(--primary-soft); color:var(-
 
 <div id="app">
   <header class="appbar">
-    <div class="logo"><span class="brand" id="brand-logo"></span><span class="divider"></span><span class="product" id="product-name">Banker portal</span></div>
+    <div class="logo"><span class="brand" id="brand-logo"></span><span class="divider"></span><span class="product" id="product-name">Banker platform</span></div>
     <div class="crumb"><svg class="i s" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><b id="crumb-root">Marketing materials</b><span id="crumb-ai" hidden><svg class="i s" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><b>AI Prescreen</b></span></div>
     <div class="spacer"></div>
-    <nav class="seg" aria-label="Application" title="Two separate applications share this demo page: bankers submit in the portal, Compliance reviews on the desk">
-      <button id="mode-banker" aria-pressed="true">Banker portal</button>
-      <button id="mode-reviewer" aria-pressed="false">Compliance desk <span class="badge" id="inbox-count" hidden>0</span></button>
+    <nav class="seg" aria-label="Platform" title="Two separate platforms share this demo page: bankers submit on theirs, reviewers work on theirs">
+      <button id="mode-banker" aria-pressed="true">Banker</button>
+      <button id="mode-reviewer" aria-pressed="false">Reviewer <span class="badge" id="inbox-count" hidden>0</span></button>
     </nav>
     <div class="avatar" id="avatar" title="Signed in">JD</div>
   </header>
@@ -562,7 +562,7 @@ body[data-platform="desk"] .avatar { background:var(--primary-soft); color:var(-
   <section class="view" id="view-inbox" hidden>
     <div class="inbox-wrap">
       <div class="inbox-head">
-        <div><h1>Compliance desk</h1><p>A separate application from the banker portal: bankers never see this side, and nothing reaches it before they submit. Each submission arrives with its pre-review, the banker's answers and the brief; the points the machine did not assert wait for your verification, and your verdicts calibrate the next pre-reviews.</p></div>
+        <div><h1>Reviewer platform</h1><p>A separate platform from the banker's: bankers never see this side, and nothing reaches it before they submit. Each submission arrives with its pre-review, the banker's answers and the brief; the candidates the pre-review did not assert are yours to verify, and your verdicts calibrate the next pre-reviews.</p></div>
         <div class="grow"></div>
         <label class="setting" for="reviewer-email"><span>Feedback goes to</span><input type="email" id="reviewer-email" placeholder="compliance@bank.com"></label>
       </div>

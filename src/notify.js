@@ -10,7 +10,7 @@ const Notify = (() => {
     let s = '[' + f.severity.toUpperCase() + '] ' + f.rule + ' · ' + f.title + ' (' + where + ')';
     if (f.quote) s += '\n    "' + f.quote.slice(0, 160) + (f.quote.length > 160 ? '…' : '') + '"';
     s += '\n    ' + (ACTION_LABEL[f.action] || 'Confirm') + ': ' + (f.issue || '').slice(0, 260);
-    if (f.assurance === 'verify') s += '\n    Not asserted to the banker' + (f.why_verify ? ': ' + f.why_verify : '') + '. Please confirm or dismiss.';
+    if (f.assurance === 'verify') s += '\n    Not shown to the banker' + (f.why_verify ? ': ' + f.why_verify : '') + '. Please confirm or dismiss.';
     if (resp && resp.status && resp.status !== 'none') {
       s += '\n    Banker: ' + RESP_LABEL[resp.status] + (resp.status === 'covered' && resp.page ? ' on page ' + resp.page : '') + (resp.note ? ' — ' + resp.note.slice(0, 200) : '');
     }
@@ -34,7 +34,7 @@ const Notify = (() => {
       r.profile && r.profile.subject ? 'Subject: ' + r.profile.subject : '',
       '',
       'ATTENTION POINTS (' + c.total + '): Tier A ' + c.A + ' · Tier B ' + c.B + ' · Tier C ' + c.C + ' · asserted to the banker ' + c.certain + ' · awaiting your verification ' + c.verify,
-      ...(verify.length ? ['', 'AWAITING YOUR VERIFICATION (' + verify.length + ') — shown to the banker as pending, not as facts:', ...verify.map((f) => line(f, sub.responses && sub.responses[f.id]))] : []),
+      ...(verify.length ? ['', 'TO VERIFY (' + verify.length + ') — not shown to the banker:', ...verify.map((f) => line(f, sub.responses && sub.responses[f.id]))] : []),
       ...(high.length ? ['', 'Asserted, high:', ...high.map((f) => line(f, sub.responses && sub.responses[f.id]))] : []),
       ...(others.length ? ['', 'Asserted, medium and low:', ...others.map((f) => line(f, sub.responses && sub.responses[f.id]))] : []),
       '',
@@ -126,20 +126,15 @@ const Notify = (() => {
     if (!desk) {
       section('What this document is');
       b.push({ t: 'p', text: p.subject ? p.subject : 'Described by the pre-review as: ' + (p.material_kind || 'a marketing communication') + '.' });
-      b.push({ t: 'p', text: 'The pre-review found ' + c.total + ' attention point' + (c.total === 1 ? '' : 's') + '. ' + c.certain + ' ' + (c.certain === 1 ? 'is' : 'are') + ' asserted to you (' + highs.length + ' high' + (highs.length === 1 ? ' point needs' : ' points need') + ' an answer before submission); ' + c.verify + ' ' + (c.verify === 1 ? 'is' : 'are') + ' left to the Finalis reviewer to verify and ' + (c.verify === 1 ? 'does' : 'do') + ' not require anything from you.', muted: false });
+      b.push({ t: 'p', text: 'The pre-review raises ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ' on this document; ' + highs.length + ' high ' + (highs.length === 1 ? 'point needs' : 'points need') + ' an answer before submission.' });
       section('Points to answer before submission');
       if (highs.length) { b.push(indexTable(sub, highs, false, 1)); highs.forEach((f, i) => b.push(pointDetail(sub, f, i + 1, false))); }
       else b.push({ t: 'p', text: 'None: no high point was asserted on this document.', muted: true });
       section('Points to read');
       if (others.length) b.push(indexTable(sub, others, false, highs.length + 1)); else b.push({ t: 'p', text: 'None.', muted: true });
       others.forEach((f, i) => b.push(pointDetail(sub, f, highs.length + i + 1, false)));
-      section('Left to the Finalis reviewer');
-      if (pending.length) {
-        b.push({ t: 'p', text: 'Possible points the pre-review was not certain enough to assert. The reviewer confirms or dismisses each one; no answer is required from you.', muted: true });
-        b.push(indexTable(sub, pending, false, highs.length + others.length + 1));
-      } else b.push({ t: 'p', text: 'None.', muted: true });
       section('After submission');
-      b.push({ t: 'p', text: 'The document, the attention points, your answers and a brief go to the Finalis Compliance desk, a separate application. The reviewer verifies the pending points and reads your answers, then approves or requests changes through the usual Compliance channel. This pre-review is advisory: it is not an approval and it changes no status.' });
+      b.push({ t: 'p', text: 'The document, the attention points, your answers and a brief go to the Finalis reviewer platform, a separate application.' + (c.verify ? ' ' + c.verify + ' further candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the reviewer only.' : '') + ' The reviewer reads your answers, then approves or requests changes through the usual Compliance channel. This pre-review is advisory: it is not an approval and it changes no status.' });
       return b;
     }
 
@@ -147,7 +142,7 @@ const Notify = (() => {
     section('Overview');
     b.push({ t: 'table', size: 9, cols: [{ w: 2.2, label: 'Asserted to the banker' }, { w: 1, label: 'High', align: 'right' }, { w: 1, label: 'Medium', align: 'right' }, { w: 1, label: 'Low', align: 'right' }, { w: 1.6, label: 'Pending', align: 'right' }, { w: 1.6, label: 'Answered', align: 'right' }, { w: 1.6, label: 'Set aside', align: 'right' }],
       rows: [[String(c.certain) + ' of ' + c.total, String(highs.length), String(others.filter((f) => f.severity === 'medium').length), String(others.filter((f) => f.severity === 'low').length), String(c.verify), String(answered), String((r.suppressed || []).length)]] });
-    b.push({ t: 'p', text: 'Asserted points are deterministic checks (SOP blocks matched on the text layer) or model points located verbatim on the page, rated high confidence, kept by the second pass and corroborated by an independent signal; the banker saw them as facts and had to answer the high ones. Pending points were shown to the banker as awaiting your verification, never as facts, and did not block the submission.', muted: true });
+    b.push({ t: 'p', text: 'Asserted points are deterministic checks (SOP blocks matched on the text layer) or model points located verbatim on the page, rated high confidence, kept by the second pass and corroborated by an independent signal; the banker saw them and had to answer the high ones. Points to verify were not shown to the banker at all: they are candidates the pre-review was not certain about, for you to confirm or dismiss.', muted: true });
     if (r.gut_check && !(r.meta && r.meta.deterministicOnly)) {
       b.push({ t: 'table', size: 9, cols: [{ w: 1, label: 'Gut check' }, { w: 5, label: 'Question' }, { w: 5, label: 'Why' }], rows: [['inaccurate_picture', 'Could an investor walk away with an inaccurate picture?'], ['unsupported_claims', 'Claims the banker could not back up right now?'], ['promised_results', 'A result promised instead of a target?']].map(([k, q]) => { const x = r.gut_check[k] || {}; return [{ sev: x.flag ? 'flag' : 'no' }, q, { text: x.why || '', grey: !x.why }]; }) });
     }
@@ -200,16 +195,16 @@ const Notify = (() => {
   function reportPdf(sub, kind) {
     const desk = kind === 'desk';
     return PdfOut.blob({
-      title: (desk ? 'Compliance brief ' : 'Pre-review summary ') + ref(sub) + ' ' + sub.file.name,
-      brand: 'finalis', product: desk ? 'Compliance desk' : 'Marketing materials',
-      kicker: desk ? 'Compliance brief' : 'Pre-review summary', date: fmtDay(sub.created_at),
+      title: (desk ? 'Reviewer brief ' : 'Pre-review summary ') + ref(sub) + ' ' + sub.file.name,
+      brand: 'finalis', product: desk ? 'Reviewer platform' : 'Marketing materials',
+      kicker: desk ? 'Reviewer brief' : 'Pre-review summary', date: fmtDay(sub.created_at),
       accent: desk ? [0.06, 0.48, 0.42] : [0.18, 0.37, 0.89],
-      footerLeft: desk ? 'Confidential. Machine-prepared pre-review for the Compliance desk; the reviewer decides.' : 'Advisory pre-review. Not an approval; it changes no status.',
+      footerLeft: desk ? 'Confidential. Machine-prepared pre-review for the reviewer; the reviewer decides.' : 'Advisory pre-review. Not an approval; it changes no status.',
       footerRight: ref(sub),
       blocks: reportBlocks(sub, kind),
     });
   }
-  function reportFilename(sub, kind) { return (kind === 'desk' ? 'compliance-brief-' : 'pre-review-summary-') + String(sub.file.name || 'document').replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60) + '.pdf'; }
+  function reportFilename(sub, kind) { return (kind === 'desk' ? 'reviewer-brief-' : 'pre-review-summary-') + String(sub.file.name || 'document').replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60) + '.pdf'; }
 
   return { compose, mailto, reportMarkdown, reportBlocks, reportPdf, reportFilename, RESP_LABEL, ACTION_LABEL };
 })();

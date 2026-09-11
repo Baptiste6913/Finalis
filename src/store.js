@@ -127,5 +127,13 @@ const Store = (() => {
     return next;
   }
 
-  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, listCalibration, memoryLines, getLearnedRules, setLearnedRules, getSettings, setSettings };
+  /* Wipe every verdict and learned rule (both stores). Submissions are kept. */
+  async function clearLearning() {
+    if (db) {
+      try { const snap = await db.collection('calibration').limit(1000).get(); for (const d of snap.docs) { try { await db.doc('calibration/' + d.id).delete(); } catch (e) { /* ignore */ } } } catch (e) { /* ignore */ }
+      try { await db.doc('learning/rules').set({ rules: [], updated_at: new Date().toISOString() }); } catch (e) { /* ignore */ }
+    }
+    lsSet(LS.cal, []); lsSet('mmat.learnedRules', []);
+  }
+  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, listCalibration, memoryLines, getLearnedRules, setLearnedRules, getSettings, setSettings, clearLearning };
 })();

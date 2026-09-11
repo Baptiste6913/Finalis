@@ -103,6 +103,19 @@ const Review = (() => {
       if (page && Engine.locate(page, f.quote)) return;
       const hit = pages.find((p) => p.number !== f.page && Engine.locate(p, f.quote));
       if (hit) { f.pages = [hit.number].concat((f.pages || []).filter((n) => n !== f.page)); f.page = hit.number; f.note = 'Quote found on page ' + hit.number + ', not ' + (f.page || '?') + ' as first cited.'; return; }
+      // a grouped quote ("p1: ... | p3: ...", "A ... B"): keep the first passage that is on a page, list the others
+      const parts = String(f.quote).split(/\s*\|\s*|\s+\.\.\.\s+|\s+\u2026\s+|\s*;\s+(?=p\d+\s*:)/).map((x) => x.replace(/^p\.?\s*\d+\s*[:\-]\s*/i, '').replace(/^[\u201c"']+|[\u201d"']+$/g, '').trim()).filter((x) => x.length >= 12);
+      if (parts.length > 1) {
+        const found = [];
+        parts.forEach((part) => { const on = (page && Engine.locate(page, part)) ? page : pages.find((p) => Engine.locate(p, part)); if (on) found.push({ part, page: on.number }); });
+        if (found.length) {
+          f.quote = found[0].part;
+          f.page = found[0].page;
+          f.pages = Array.from(new Set([found[0].page].concat(found.map((x) => x.page), f.pages || [])));
+          f.note = (f.note ? f.note + ' ' : '') + 'The passage recurs on pages ' + f.pages.join(', ') + '; the first occurrence is quoted.';
+          return;
+        }
+      }
       f.unverified = true;
       f.confidence = 'low';
       if (f.severity === 'high') f.severity = 'medium'; else if (f.severity === 'medium') f.severity = 'low';
@@ -266,6 +279,16 @@ const Review = (() => {
     return scored.map((s) => s.page).sort((a, b) => a - b);
   }
 
+  /* The model that answered the last call, when the runtime tells us (local build); empty in the artifact. */
+  function lastModel() {
+    const l = (typeof window !== 'undefined' && window.PRESCREEN_LAST) || null;
+    if (!l) return {};
+    const out = {};
+    if (l.model) out.model = String(l.model).replace(/^cli:/, '');
+    if (l.fallback) { out.fallback = true; out.requested = l.requested; }
+    window.PRESCREEN_LAST = null;
+    return out;
+  }
   async function run(ctx) {
     const { doc, form, caps, onStep, signal, memory, noCache } = ctx;
     let { pages, facts } = ctx;
@@ -301,7 +324,7 @@ const Review = (() => {
         onText: ({ text }) => { streamed = text.length; onStep('profile', { status: 'run', detail: 'Mapping the document · ' + streamed + ' chars' }); },
       });
     } catch (e) { onStep('profile', { status: 'fail', detail: (e && e.message) || 'failed' }); throw e; }
-    meta.calls.push({ pass: 'profile', ms: Math.round(performance.now() - t0), bytes: U.byteLength(p1) });
+    meta.calls.push(Object.assign({ pass: 'profile', ms: Math.round(performance.now() - t0), bytes: U.byteLength(p1) }, lastModel()));
     if (!profile || typeof profile !== 'object') profile = {};
     onStep('profile', { status: 'done', detail: (profile.material_kind || 'document') + ' · lane ' + (profile.lane || facts.lane) + ' · ' + Object.keys(profile.coverage || {}).filter((k) => profile.coverage[k] && profile.coverage[k].covered).length + ' disclosures already covered' });
 
@@ -336,7 +359,7 @@ const Review = (() => {
           res = await sample.json(built.prompt, { modelTier: form.depth || 'complex', signal, cache: cacheOpt });
         } else { onStep(stepKey, { status: 'fail', detail: (e && e.message) || 'failed' }); throw e; }
       }
-      meta.calls.push({ pass: 'findings', batch: i + 1, ms: Math.round(performance.now() - t1), bytes: U.byteLength(built.prompt), images: images ? inBatch.length : 0 });
+      meta.calls.push(Object.assign({ pass: 'findings', batch: i + 1, ms: Math.round(performance.now() - t1), bytes: U.byteLength(built.prompt), images: images ? inBatch.length : 0 }, lastModel()));
       results.push(res && typeof res === 'object' ? res : {});
       onStep(stepKey, { status: 'done', detail: ((res && res.findings) || []).length + ' points, ' + ((res && res.suppressed) || []).length + ' candidates set aside' });
     }
@@ -349,7 +372,7 @@ const Review = (() => {
       const t2 = performance.now();
       try {
         const verdicts = await sample.json(vp, { modelTier: 'default', signal, cache: cacheOpt, onText: ({ text }) => onStep('verify', { status: 'run', detail: 'Checking · ' + text.length + ' chars' }) });
-        meta.calls.push({ pass: 'verify', ms: Math.round(performance.now() - t2), bytes: U.byteLength(vp) });
+        meta.calls.push(Object.assign({ pass: 'verify', ms: Math.round(performance.now() - t2), bytes: U.byteLength(vp) }, lastModel()));
         out = assemble(facts, form, profile, results, pages, { stats: ctx.stats, verdicts: Array.isArray(verdicts) ? verdicts : (verdicts && verdicts.verdicts) });
         const dropped = out.suppressed.filter((s) => /^Verifier:/.test(s.reason)).length;
         onStep('verify', { status: 'done', detail: dropped ? dropped + ' candidate' + (dropped === 1 ? '' : 's') + ' set aside, ' + out.findings.length + ' points kept' : 'all ' + out.findings.length + ' points confirmed' });

@@ -240,7 +240,9 @@ def claude_cli(inp, tier, images, want_json):
     cwd = os.path.join(DATA, "cli")
     os.makedirs(cwd, exist_ok=True)
     proc = None
+    used_attempt = 0
     for i, cmd in enumerate(attempts):
+        used_attempt = i
         try:
             proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=900, cwd=cwd)
         except subprocess.TimeoutExpired:
@@ -258,15 +260,24 @@ def claude_cli(inp, tier, images, want_json):
                 hint = " This Claude account may not have access to %s: set MODEL_COMPLEX / MODEL_DEFAULT in .env to a model you can use." % model
             raise RuntimeError(json.dumps({"code": "upstream_error", "message": "claude CLI failed: " + err + hint}))
     cost = None
+    actual = None
     try:
         payload = json.loads(proc.stdout)
         text = payload.get("result") if isinstance(payload, dict) else proc.stdout
         cost = payload.get("total_cost_usd") if isinstance(payload, dict) else None
+        if isinstance(payload, dict) and isinstance(payload.get("modelUsage"), dict) and payload["modelUsage"]:
+            # the CLI also bills a small helper model (Haiku) for its own housekeeping; report the model that answered
+            keys = list(payload["modelUsage"].keys())
+            main = [k for k in keys if k == model] or [k for k in keys if "haiku" not in k] or keys
+            actual = ", ".join(sorted(main))
         if isinstance(payload, dict) and payload.get("is_error"):
             raise RuntimeError(json.dumps({"code": "upstream_error", "message": str(text)[:300]}))
     except json.JSONDecodeError:
         text = proc.stdout
-    return {"text": text or "", "truncated": False, "modelTierApplied": tier, "model": "cli:" + MODELS.get(tier, MODELS["default"]), "cost_usd": cost}
+    # the model that answered, and whether the ladder had to give up the preferred model (results then differ
+    # from the calibrated runs; the page shows a warning)
+    fallback = used_attempt >= 2
+    return {"text": text or "", "truncated": False, "modelTierApplied": tier, "model": actual or ("account default" if fallback else model), "requested": model, "fallback": fallback, "cost_usd": cost}
 
 
 _FIXTURE = None

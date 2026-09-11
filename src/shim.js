@@ -32,6 +32,8 @@
     if (opts.signal && opts.signal.aborted) throw err('cancelled', 'aborted');
     const res = await call('/sample', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: opts.signal }).catch((e) => { if (e && e.name === 'AbortError') throw err('cancelled', 'aborted'); throw e; });
     if (typeof res.cost_usd === 'number') { window.PRESCREEN_COST = (window.PRESCREEN_COST || 0) + res.cost_usd; window.PRESCREEN_CALLS = (window.PRESCREEN_CALLS || 0) + 1; }
+    // which model answered (the page shows it, and warns when the server had to fall back from the calibrated model)
+    window.PRESCREEN_LAST = { model: res.model || '', requested: res.requested || '', fallback: !!res.fallback };
     if (opts.onText && res.text) { try { opts.onText({ text: res.text, delta: res.text }); } catch (e) { /* ignore */ } }
     if (wantJson) { if (res.json === undefined) throw err('invalid_json', 'no JSON in the answer', res.text); return res.json; }
     return { text: res.text, truncated: !!res.truncated, modelTierApplied: res.modelTierApplied || body.modelTier };

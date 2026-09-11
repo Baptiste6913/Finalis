@@ -75,21 +75,21 @@ in `.env` to models you do have — the server also retries automatically with y
    press `j` / `k` to walk the points.
 6. Answer the high points, tick the acknowledgement, **Complete submission**. That is the whole banker side.
    **Export this summary as PDF** (Summary tab, and again on the confirmation page) gives the banker a record of
-   what was asked and answered; the desk has its own **Export the full brief as PDF** and a PDF button per
+   what was asked and answered; the reviewer platform has its own **Export the full brief as PDF** and a PDF button per
    submission in the inbox. The PDFs are generated in the page, no library, nothing sent anywhere.
-7. Switch to the **Compliance desk** (top right) to see the same submission as Compliance receives it: the
-   full brief, what the deck already covers, the gut check, the banker's answers, the ready-to-send feedback,
-   a verdict per asserted point and Confirm / Dismiss on each pending one.
+7. Switch to **Reviewer** (top right) to see the same submission on the reviewer platform: the full brief,
+   what the deck already covers, the gut check, the banker's answers, the ready-to-send feedback, a verdict per
+   asserted point and Confirm / Dismiss on each candidate the banker never saw.
 
-The banker portal and the Compliance desk are two separate applications. This demo page hosts both behind
+The banker platform and the reviewer platform are two separate applications. This demo page hosts both behind
 one switch so you can play both roles; the accent colour, the header and the tabs change with the side you
-are on, and nothing reaches the desk before the banker submits.
+are on, and nothing reaches the reviewer before the banker submits.
 
 ![The setup step that opens after Submit](docs/screens/shot_setup.png)
 
 ![The banker's Summary: the document in two lines, what Compliance will ask, nothing else](docs/screens/shot_summary_banker.png)
 
-![The same submission on the Compliance desk: the full brief](docs/screens/shot_desk_brief.png)
+![The same submission on the reviewer platform: the full brief](docs/screens/shot_desk_brief.png)
 
 ## 5. What is asserted, and what waits for a human
 
@@ -101,9 +101,10 @@ findings pass rated it high confidence, the second pass kept it unchanged, and a
 corroborates it (the SOP wording is genuinely absent from the document, or the quote contains a term from
 the desk's language guide).
 
-Everything else appears under **For Finalis review**: shown to the banker as pending, never as a fact, with
-the reason it was not asserted, and never blocking the submission. The reviewer gets **Confirm** /
-**Dismiss** on each of those, and the feedback email lists them first.
+Everything else is not shown to the banker at all. It reaches the reviewer platform as candidates **to
+verify**, with the reason each one was not asserted; the reviewer gets **Confirm** / **Dismiss** on each,
+the feedback email lists them first, and every verdict trains the next pre-reviews. The banker only learns
+that a number of further candidates went to the reviewer.
 
 ![The reviewer confirming a pending point](docs/screens/shot_verify.png)
 
@@ -112,7 +113,7 @@ the reason it was not asserted, and never blocking the submission. The reviewer 
 Every reviewer verdict is stored as a structured precedent (rule, lane, document type, page, quote,
 correct/incorrect, reason). On the next pre-review the closest precedents are injected into the prompts,
 repeated rejections of the same rule are distilled by Claude into new calibration rules, and a rule the
-desk keeps rejecting is demoted or set aside automatically. The **Learning** view (Compliance desk) shows the
+desk keeps rejecting is demoted or set aside automatically. The **Learning** view (reviewer platform) shows the
 track record per rule and exports the whole state as JSON.
 
 ## 7. Speed, cost, and what it costs you
@@ -182,7 +183,15 @@ Claude Code, run `claude` once to sign in, restart `./run.sh`.
 **"claude CLI failed: ... not logged in"** — run `claude` in a terminal, `/login`, then retry.
 
 **"This Claude account may not have access to claude-opus-5"** — set `MODEL_COMPLEX` and `MODEL_DEFAULT`
-in `.env` to models your plan includes.
+in `.env` to models your plan includes. When the server has to fall back to your account's default model, the
+workspace says so (status line and an amber note in the points panel): the pre-review was calibrated on
+`claude-opus-5` for the findings and `claude-sonnet-5` for the map and the second pass, and another model
+raises different points. The setup step shows which models will run before you start.
+
+**The points changed between two runs of the same document** — three things move them: the model (see
+above), the depth (Fast has no second pass and asserts only the deterministic checks), and the learning state
+(every verdict you click on the reviewer platform becomes a precedent for the next runs; **Clear all learning**
+in the Learning view resets it).
 
 **Port 8787 already in use** — `PRESCREEN_PORT=8899 ./run.sh`.
 

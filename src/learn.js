@@ -128,5 +128,6 @@ const Learn = (() => {
     return { added, rules: rules.length };
   }
 
-  return { stats, precedents, learnedRules, saveLearnedRules, synthesize, addManualRule, removeRule, memoryFor, exportState, importState, wilsonLow };
+  async function clearAll() { return Store.clearLearning(); }
+  return { stats, precedents, learnedRules, saveLearnedRules, synthesize, addManualRule, removeRule, memoryFor, exportState, importState, wilsonLow, clearAll };
 })();

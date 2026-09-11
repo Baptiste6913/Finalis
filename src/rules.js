@@ -188,7 +188,7 @@ FINRA Rule 2210: communications must be fair, balanced and not misleading; no ex
 11. Never request new slides or new material. Ask to qualify, source, soften, remove, or add a specific disclosure text.
 12. Group repeated occurrences of the same issue into one finding listing the pages. Prefer fewer, sharper findings. On institutional material a clean deck yields 3 to 8 findings; a deck without a disclaimers page yields more.
 13. Close calls (a projection framing, a possibly misleading omission, a new interpretation of 2210) get action "escalate" rather than an assertion.
-14. Every finding quotes the exact text from the page (verbatim, at most 200 characters) so the reviewer can find it; a missing-block finding quotes nothing.
+14. Every finding quotes ONE exact passage from its main page (verbatim, at most 200 characters, no page prefixes, no " | " or "..." joining several passages) so the highlighter can find it; when the same issue recurs on other pages, list them in "pages" and keep the quote from the main page only. A missing-block finding quotes nothing.
 15. C15 to C19 follow the lane strictly: on institutional material a labelled target or projection whose basis, assumptions and risks are covered by a disclaimers page or footnotes is not raised (see rules 3 and 9(e)); on retail private-placement material a projected investor return is raised once, at document level, listing the pages, with the RN 20-21 exceptions checked before raising.`;
 
   const PROFILE_SCHEMA = `Reply with ONLY one JSON object, no prose:
@@ -220,7 +220,7 @@ FINRA Rule 2210: communications must be fair, balanced and not misleading; no ex
    "severity": "high" | "medium" | "low",
    "page": 27,                        // main page; null for document-level
    "pages": [27],                     // every page concerned
-   "quote": "verbatim text from the page, max 200 chars, or empty",
+   "quote": "ONE verbatim passage from the main page, max 200 chars (never several passages joined), or empty",
    "title": "short reviewer-facing title (max 70 chars)",
    "issue": "what is wrong and why it matters under the rule, 1-2 sentences",
    "text_to_add": "the verbatim disclosure text to add, or empty",
