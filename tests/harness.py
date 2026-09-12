@@ -1,4 +1,4 @@
-import os, asyncio, json, os, sys, threading, http.server, socketserver, functools
+import os, asyncio, json, sys, threading, http.server, socketserver, functools
 from playwright.async_api import async_playwright
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP=ROOT
@@ -27,11 +27,13 @@ async def route_cdn(route):
     else:
         await route.abort()
 
-async def open_page(pw, page_html='dist/prescreen.html', width=1400, height=900, init_script=None):
+SEED_USER = "try{localStorage.setItem('prescreen.user', JSON.stringify({name:'Jane Doe',email:'jane.doe@northbridge.example',firm:'Northbridge Advisors',role:'banker'}))}catch(e){}"
+async def open_page(pw, page_html='dist/prescreen.html', width=1400, height=900, init_script=None, fresh=False):
     browser=await pw.chromium.launch()
     ctx=await browser.new_context(viewport={'width':width,'height':height})
     page=await ctx.new_page()
     await page.route('**/*', lambda route: route_cdn(route) if not route.request.url.startswith('http://127.0.0.1') else route.continue_())
+    if not fresh: await page.add_init_script(SEED_USER)  # a remembered banker sign-in, so the flows start on the form
     if init_script: await page.add_init_script(init_script)
     page.on('console', lambda m: print('[console]', m.type, m.text) if m.type in ('error','warning') else None)
     page.on('pageerror', lambda e: print('[pageerror]', e))

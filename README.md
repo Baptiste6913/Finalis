@@ -6,11 +6,21 @@ Finalis AI Prescreen. The pre-review reads the whole document, checks the SOP di
 maps what the disclaimers already cover, reviews the wording under FINRA Rule 2210, and sends Compliance a
 brief with the attention points, the banker's answers, and a short list of items for the reviewer to verify.
 
-![The Marketing materials modal, unchanged, with a mandatory Submit](docs/screens/shot_landing.png)
+![The Marketing materials modal, unchanged, with a mandatory Submit](docs/screens/shot_landing.jpg)
+
+The banker then fixes the material without leaving the platform: each attention point carries a *Fix in the
+document* action that places the SOP text, rewrites the flagged passage in place or removes it, on boxes the
+banker can drag, resize and edit; the corrected PDF is built in the browser on top of the original file,
+re-checked on the spot, and can be downloaded as PDF, PowerPoint or Word. A readiness score follows the
+work. On the reviewer platform the submissions queue by priority, the corrections are outlined on the pages
+next to the original, the candidates to verify are walked with the keyboard, and the decision message is
+drafted from the verdicts. Both platforms open on a sign-in screen and share one question box that answers
+from the document, the rulebook and the pre-review.
 
 Everything runs locally: one Python file serves the page and calls Claude **through your own Claude Code
-login**. No API key, no install beyond Python and Claude Code, nothing leaves your machine except the
-document text sent to Claude under your own account.
+login**. No API key, no install beyond Python and Claude Code. What leaves your machine is what the model
+needs, sent under your own account: the document text, the form, and on the reviewer side the reviewers'
+comments (section 12 lists it all).
 
 ---
 
@@ -21,7 +31,8 @@ document text sent to Claude under your own account.
 | **Python 3.8+** | `python3 --version` — macOS and Linux already have it; Windows: https://www.python.org/downloads/ (tick "Add python.exe to PATH") |
 | **Claude Code** | `npm install -g @anthropic-ai/claude-code`, then run `claude` once and sign in with your Claude account |
 
-Nothing else. No pip install, no node_modules, no Docker.
+Nothing else. No pip install, no node_modules, no Docker. (`build.py`, only needed after editing the source,
+uses node when present to refresh the mock backend's fixture and works without it.)
 
 ## 2. Install and run
 
@@ -36,14 +47,20 @@ Then open **http://127.0.0.1:8787/**
 On start the server tells you exactly how it will reach Claude:
 
 ```
+claude CLI: 2.x (/usr/local/bin/claude)
+
   Finalis AI Prescreen
   backend : cli
             Claude through your own Claude Code login (the `claude` CLI). No API key needed;
             the calls are billed to your Claude account. Text only: no page images.
   models  : complex=claude-opus-5, default=claude-sonnet-5, quick=claude-haiku-4-5-20251001
+  data    : /path/to/Finalis/data
+  access  : this machine only (127.0.0.1); no passcode (demo sign-in)
 
   Open http://127.0.0.1:8787/  (Ctrl+C to stop)
 ```
+
+`python3 server.py --help` prints the options; `.env` next to `server.py` is read at start (see `.env.example`).
 
 ## 3. How the AI connects to your Claude account
 
@@ -63,33 +80,60 @@ in `.env` to models you do have — the server also retries automatically with y
 
 ## 4. Try it in three minutes
 
-1. Open http://127.0.0.1:8787/ . You get the Marketing materials modal, identical to the platform's.
-2. Click **Use the calibration deck (Quartus AI Fund II, 28 pages)** under the upload box (or drop your
-   own PDF, DOCX, PNG or JPEG).
+1. Open http://127.0.0.1:8787/ . **Sign in**: any email, your name, the firm, role *Banker*. (The reviewer
+   platform can ask for a passcode on a team install: set `PRESCREEN_PASSCODE` in `.env`. The demo needs none.)
+2. You get the Marketing materials modal, identical to the platform's. Click **Use the calibration deck
+   (Quartus AI Fund II, 28 pages)** under the upload box (or drop your own PDF, DOCX, PNG or JPEG).
 3. Distribution method → *Email*. Who was involved → *Banker*. **Submit**.
-4. You land in the AI Prescreen. Intended audience → *Institutional investors only*, depth **Thorough**,
-   **Start the pre-review**. It takes 2 to 5 minutes on a 28-page deck and streams its progress.
+4. You land in the AI Prescreen, your name and firm prefilled from the sign-in. Intended audience →
+   *Institutional investors only*, depth **Thorough**, **Start the pre-review**. It takes 2 to 5 minutes
+   on a 28-page deck and streams its progress.
 5. Read the three tabs on the right: **Compliance** (wording), **Disclosures** (missing blocks and
-   triggered disclosures), **Summary** (your document in two lines, the points Compliance will ask you to
-   answer, and what happens when you submit). Click any point to jump to the exact highlighted passage;
-   press `j` / `k` to walk the points.
-6. Answer the high points, tick the acknowledgement, **Complete submission**. That is the whole banker side.
-   **Export this summary as PDF** (Summary tab, and again on the confirmation page) gives the banker a record of
-   what was asked and answered; the reviewer platform has its own **Export the full brief as PDF** and a PDF button per
-   submission in the inbox. The PDFs are generated in the page, no library, nothing sent anywhere.
-7. Switch to **Reviewer** (top right) to see the same submission on the reviewer platform: the full brief,
-   what the deck already covers, the gut check, the banker's answers, the ready-to-send feedback, a verdict per
-   asserted point and Confirm / Dismiss on each candidate the banker never saw.
+   triggered disclosures), **Summary** (your document in two lines, the readiness score, the points
+   Compliance will ask you to answer, and what happens when you submit). Click any point to jump to the exact
+   highlighted passage; press `j` / `k` to walk the points. The chat bubble in the tab bar opens **Ask about
+   this document**: questions answered from the document text, the rulebook and the pre-review, with pages.
+6. **Fix in the document.** Every point carries a *Fix in the document* button: the SOP text is placed on the
+   right page as a box you can drag, resize and edit, a flagged passage is rewritten in place (the suggested
+   rewrite, or one of the three alternatives Claude proposes, with *Use*), a source line goes under an exhibit,
+   a passage can be removed. **Apply all suggested fixes** (the bar above the points) does the unambiguous ones
+   at once. Then **Re-check the
+   corrected version**: the corrected PDF is built in the browser (an incremental update on the original
+   file, nothing rewritten), re-read, and the points it resolves move to *N points resolved in this version*; the
+   readiness score follows (the calibration deck goes from 34 to 100 once the fixes are re-checked). **Download corrected PDF**,
+   **PowerPoint** (one slide per page, corrections as editable text boxes) and **Word** (an editable change
+   sheet) are on the same bar. The corrected version, its change log and the resolved points travel with
+   the submission (the form will not submit while corrections are placed but not re-checked).
+7. Answer what is left, tick the acknowledgement, **Complete submission**. That is the whole banker side.
+   **Export this summary as PDF** (Summary tab; **Download my summary (PDF)** on the confirmation page) gives the
+   banker a record of what was asked, corrected and answered.
+8. Sign out (avatar, top right) and sign in as a *Finalis reviewer*, or use the **Reviewer** switch: the queue
+   sorts by priority (new first, lowest readiness first), with filters, search and the numbers of the day.
+   Open the submission: the corrections are outlined on the pages with a **Corrected / Original** switch, the
+   candidates the banker never saw wait under *Awaiting your verification*, and **Verify one by one** walks
+   them with the keyboard (`C` confirm, `D` dismiss, `J`/`K`). The decision bar drafts the message to the
+   banker from your verdicts (**Draft with Claude**), then **Approve**, **Request changes** or **Escalate**;
+   the Brief tab shows the timeline and **Export the full brief as PDF**.
 
 The banker platform and the reviewer platform are two separate applications. This demo page hosts both behind
 one switch so you can play both roles; the accent colour, the header and the tabs change with the side you
 are on, and nothing reaches the reviewer before the banker submits.
 
-![The setup step that opens after Submit](docs/screens/shot_setup.png)
+![Sign-in: the role decides the platform](docs/screens/shot_login.jpg)
 
-![The banker's Summary: the document in two lines, what Compliance will ask, nothing else](docs/screens/shot_summary_banker.png)
+![Fix in the document: the SOP text placed on the page, the passage rewritten in place, every box movable](docs/screens/shot_edit.jpg)
 
-![The same submission on the reviewer platform: the full brief](docs/screens/shot_desk_brief.png)
+![After Re-check: version 2, the resolved points, readiness 100](docs/screens/shot_edit_v2.jpg)
+
+![The reviewer queue: priority, readiness, points to verify](docs/screens/shot_desk_queue.jpg)
+
+![Verify one by one, with the keyboard](docs/screens/shot_desk_focus.jpg)
+
+![The setup step that opens after Submit](docs/screens/shot_setup.jpg)
+
+![The banker's Summary: the document in two lines, what Compliance will ask, nothing else](docs/screens/shot_summary_banker.jpg)
+
+![The same submission on the reviewer platform: the full brief](docs/screens/shot_desk_brief.jpg)
 
 ## 5. What is asserted, and what waits for a human
 
@@ -106,15 +150,49 @@ verify**, with the reason each one was not asserted; the reviewer gets **Confirm
 the feedback email lists them first, and every verdict trains the next pre-reviews. The banker only learns
 that a number of further candidates went to the reviewer.
 
-![The reviewer confirming a pending point](docs/screens/shot_verify.png)
+![The reviewer confirming a pending point](docs/screens/shot_verify.jpg)
 
-## 6. It learns from the desk
+## 6. It learns from the desk, and from each reviewer
 
-Every reviewer verdict is stored as a structured precedent (rule, lane, document type, page, quote,
-correct/incorrect, reason). On the next pre-review the closest precedents are injected into the prompts,
-repeated rejections of the same rule are distilled by Claude into new calibration rules, and a rule the
-desk keeps rejecting is demoted or set aside automatically. The **Learning** view (reviewer platform) shows the
-track record per rule and exports the whole state as JSON.
+Everything a reviewer does on the reviewer platform teaches the next pre-reviews, and every entry carries
+the reviewer's name:
+
+- every verdict is recorded, confirmed or dismissed, from a card or from the keyboard in focus mode, with or
+  without a comment; the comment box under each point is saved as you type; a comment on a point without a
+  verdict counts too; a changed verdict updates the same entry rather than adding a second one;
+- every decision (Approve, Request changes, Escalate) is recorded with the message sent to the banker;
+- after each decision Claude reads what is new (the digest): the comments, the decision messages, the
+  confirmations and dismissals, and writes durable calibration rules, **desk-wide** when the lesson is
+  general and **for one reviewer** when it is that reviewer's own practice or wording preference. The Learning
+  view has *Digest the new comments now* and *Re-read everything*;
+- before each pre-review the closest precedents are put in front of the model, weighted toward the reviewer
+  the submission goes to (the desk's *Feedback goes to* address); an identical passage that reviewer or the
+  desk dismissed is set aside before the banker sees it; a close one, or a rule that reviewer keeps rejecting
+  (four verdicts, three quarters dismissed), is left to the reviewer instead of asserted; the rules learned
+  from that reviewer are added to the prompts as their preferences;
+- on the reviewer platform each point shows its precedent: *You dismissed an identical point on 2026-09-10:
+  "…"*.
+
+**Two memories on every submission.** When a reviewer opens a submission, a Memory card at the top of the
+panel tells them two things. *For you*: what they usually do on these rules, the open points that match what
+they usually confirm (or a passage they confirmed before and have not verdicted here), and their own verdicts
+that differ from what they did before. *From the other reviewers*: the similar submissions the reviewers handled (same firm,
+lane, document type, file, subject or points raised; the same file scores 100 %), who reviewed them and
+what was decided, the colleagues' verdicts on similar points shown under each point ("Marie Curie confirmed an
+identical point on Quartus AI Fund II (2026-09-10): …"), and every verdict that differs from a colleague's on a similar point.
+Nothing is changed automatically: the card says where the reviewer would be inconsistent, with themselves or
+with the desk, and lets them keep or align, with a comment either way. `tests/test_memory.py` drives it with
+two reviewers.
+
+![The Memory card on the reviewer platform: the desk's similar submission, a colleague's verdict, a disagreement flagged](docs/screens/shot_memory.jpg)
+
+The **Learning** view lists the reviewers (what each one confirms, dismisses and says, the rules learned from
+them), the learned rules with their scope, the track record per rule, what the pre-review learned in order,
+and exports the whole state as JSON. After a week of use the state carries the desk's verdicts, comments and
+decisions, and the pre-review is calibrated on them; `tests/test_learning.py` drives the whole loop with a
+stubbed Claude.
+
+![The Learning view: reviewers, what they said, the rules learned from them](docs/screens/shot_learning.jpg)
 
 ## 7. Speed, cost, and what it costs you
 
@@ -149,16 +227,20 @@ python3 sim/score.py && python3 sim/report.py
 
 ```
 run.sh / run.cmd     start the local server
-server.py            the whole backend: static files, Claude calls, document store, assets, learning
+server.py            the whole backend: static files, Claude calls, document store, assets, learning, sign-in
 shell.html, src/*.js the app (one page, no framework, no build step beyond build.py)
+src/pdfedit.js       the in-browser PDF editor: incremental updates on the uploaded file (xref tables and
+                     xref streams with object streams), white boxes and Helvetica text, no library
+src/fix.js           the fixes proposed per point, the corrected build, the re-check, the readiness score
+src/exports.js       PowerPoint and Word writers (Office Open XML in a STORE zip, no library)
 build.py             assembles shell.html + src/*.js into dist/ and web/
 web/index.html       the local build served by server.py        (generated)
 dist/prescreen.html  the same app as a standalone claude.ai artifact page (generated)
 quartus.pdf          the calibration deck used by the demo button
-brand/               drop the official Finalis logo here as logo.svg, then re-run build.py
+brand/               the official Finalis logo (transparent PNG, dark variant, JPEG for the PDF headers), inlined by build.py
 docs/                SIMULATIONS.md (the evaluation), ARCHITECTURE.md (the rule pipeline), screens/
 sim/                 the simulation corpus, the old engine, the runner, the scorer, the report
-tests/               Playwright flows (see below)
+tests/               Playwright flows, the suite runner, the module lint, fixtures (see below)
 data/                created at first run: submissions, uploaded PDFs, learning state (gitignored)
 ```
 
@@ -171,9 +253,29 @@ pip install playwright && python -m playwright install chromium
 python3 tests/test_local.py   # the local build against server.py in mock mode, end to end
 python3 tests/test_flow.py    # banker → reviewer → learning, with a stubbed Claude, scored against the finding sheet
 python3 tests/test_hl.py      # highlight location on 18 real quotes from the calibration deck
+python3 tests/test_pdfedit.py # the PDF editor on a classic-xref file and on the object-stream deck (qpdf, pdftotext, pdf.js)
+python3 tests/test_edit.py    # Fix in the document → Apply all → drag → corrected PDF → Re-check → v2 submission → reviewer
+python3 tests/test_office.py  # PowerPoint and Word exports opened with python-pptx / python-docx and converted by LibreOffice
+python3 tests/test_login.py   # sign-in, keep me signed in, prefill, sign out, reviewer role
+python3 tests/test_desk.py    # reviewer queue, focus mode with the keyboard, decision, timeline, chat dock
+python3 tests/test_learning.py # every verdict and comment recorded with identity, decision, digest, adaptation to the reviewer
+python3 tests/test_memory.py  # personal and shared memory with two reviewers, disagreements flagged
+python3 tests/test_platforms.py # the banker sees asserted points only, the reviewer sees everything
+python3 tests/test_landing.py # the modal: Submit disabled without a file, the setup step, back and forth
+python3 tests/test_more.py    # DOCX, a pasted post, an image upload, a 400 px viewport, dark theme
+python3 tests/test_engine.py  # extraction and the deterministic engine on the calibration deck
+python3 tests/test_pdf.py     # the PDF exports through the local server (downloads, qpdf)
+python3 tests/lint_modules.py # cross-module check: every Module.member used exists, every state key read is set
+python3 tests/run_all.py      # the whole suite, one line per test; --quick skips test_office, test_pdf and test_local
 ```
 
-None of these call a model.
+Every test ends with `ALL OK` or `FAILURES` and a non-zero exit code; `run_all.py` reports 17/17.
+
+None of these call a model. Beyond Chromium (`pip install -r tests/requirements.txt`, then
+`python -m playwright install chromium`): `test_pdfedit`, `test_edit` and `test_pdf` need `qpdf` and
+`poppler-utils`; `test_office` also needs `python-pptx`, `python-docx` and LibreOffice (`soffice`). The
+server tests start their own server on port 8789/8790 with a temporary data folder, so a running `./run.sh`
+and your real `data/` are left alone.
 
 ## 11. Troubleshooting
 
@@ -201,11 +303,22 @@ opened as a plain file. Use the local server, or publish that file as a Claude a
 **A scanned PDF with no text layer** — upload it as PNG/JPEG instead: the pre-review transcribes the image
 first (API backend only).
 
-## 12. Privacy
+## 12. Privacy and security
 
-The document never leaves your machine except as text (and, on the API backend, page images) inside the
-model call made under your own account. Submissions, the uploaded PDFs and the learning state live in
-`data/` next to the code; delete the folder and nothing remains. The server binds to 127.0.0.1 by default.
+What reaches the model, always under your own account and only when a model call is made: the document text
+(and, on the API backend, page images), the form (document type, distribution, audience, firm name, banker
+name and email, notes), and on the reviewer platform the reviewers' names, comments and decision messages
+(the digest and the decision draft need them). Nothing else leaves the machine; the artifact build loads
+pdf.js from cdnjs, the local build serves it from `web/vendor/`.
+
+Submissions, the uploaded PDFs and the learning state live in `data/` next to the code (or `PRESCREEN_DATA`);
+delete the folder and nothing remains. The server binds to 127.0.0.1 by default and refuses requests whose
+Host is not local, cross-origin requests, and mutating requests that do not come from the page. On a shared
+install set `PRESCREEN_PASSCODE`: every sign-in then opens a server session, the reviewer role needs the
+passcode, bankers only see their own submissions through the API, and the demo switch between the platforms
+is off. The `claude` CLI is always run with tools off, one turn, no session and a minimal environment, so
+nothing in a document can drive an action. Sign-in is an identity, not an authentication: put Finalis's own
+login (SSO) in front of the server for production.
 
 ---
 

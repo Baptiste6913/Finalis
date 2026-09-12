@@ -1,6 +1,7 @@
 import asyncio, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from harness import *
+OUT = os.path.join(ROOT, 'tests', 'out'); os.makedirs(OUT, exist_ok=True)
 FAKE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_flow.py')).read().split('FAKE = r"""')[1].split('"""')[0]
 async def main():
     async with async_playwright() as pw:
@@ -12,26 +13,32 @@ async def main():
         await page.wait_for_timeout(600)
         st = await page.evaluate("""() => ({ all: UI.S.result.findings.length, shownCards: document.querySelectorAll('[data-card]').length, marks: new Set(Array.from(document.querySelectorAll('.mark')).map(m=>m.dataset.fid)).size, nav: document.getElementById('pt-label').textContent, tabs: [document.getElementById('tab-language-n').textContent, document.getElementById('tab-disclosures-n').textContent], verifySections: document.querySelectorAll('.section-h.v').length, product: document.getElementById('product-name').textContent, seg: document.getElementById('mode-reviewer').textContent.trim() })""")
         print('BANKER', st)
+        checks = {'banker_sees_certain_only': st['shownCards'] < st['all'] and st['verifySections'] == 0 and st['product'] == 'Banker platform'}
         await page.click('#tab-language'); await page.wait_for_timeout(200)
         st2 = await page.evaluate("() => ({ cards: document.querySelectorAll('[data-card]').length, verifySections: document.querySelectorAll('.section-h.v').length })")
         print('BANKER language tab', st2)
-        await page.screenshot(path='shot_banker_language_v2.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_banker_language_v2.png'))
         await page.click('#tab-summary'); await page.wait_for_timeout(200)
-        await page.screenshot(path='shot_summary_banker_v2.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_summary_banker_v2.png'))
         highs = await page.evaluate("UI.S.result.findings.filter(f=>f.severity==='high' && Review.isCertain(f)).map(f=>f.id)")
         for fid in highs:
             tab = await page.evaluate(f"UI.S.result.findings.find(f=>f.id==='{fid}').tier === 'C' ? 'language' : 'disclosures'")
             await page.click(f'#tab-{tab}'); await page.click(f'[data-card="{fid}"] .resp .chips button:first-child')
         await page.check('#ack'); await page.click('#btn-submit'); await page.wait_for_selector('#view-done:not([hidden])'); await page.wait_for_timeout(300)
-        await page.screenshot(path='shot_done_v2.png', full_page=True)
+        await page.screenshot(path=os.path.join(OUT, 'shot_done_v2.png'), full_page=True)
         await page.click('#mode-reviewer'); await page.wait_for_timeout(400)
         print('REVIEWER product:', await page.text_content('#product-name'))
-        await page.screenshot(path='shot_reviewer_inbox_v2.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_reviewer_inbox_v2.png'))
         await page.click('#inbox-list .trow:not(.h) .btn.primary'); await page.wait_for_timeout(900)
         st3 = await page.evaluate("""() => ({ cards: document.querySelectorAll('[data-card]').length, marks: new Set(Array.from(document.querySelectorAll('.mark')).map(m=>m.dataset.fid)).size, nav: document.getElementById('pt-label').textContent, verifySections: document.querySelectorAll('.section-h.v').length })""")
         print('REVIEWER work', st3)
+        checks['reviewer_sees_all'] = st3['nav'].endswith(str(st['all']) + ' points') and st3['verifySections'] >= 1
         await page.click('#tab-language'); await page.wait_for_timeout(200)
         await page.evaluate("const h=document.querySelector('.section-h.v'); if (h) h.scrollIntoView({block:'start'})"); await page.wait_for_timeout(200)
-        await page.screenshot(path='shot_reviewer_verify_v2.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_reviewer_verify_v2.png'))
         await browser.close()
+        bad = [k for k, v in checks.items() if not v]
+        print('ALL OK' if not bad else 'FAILURES: ' + ', '.join(bad))
+        sys.exit(1 if bad else 0)
+
 asyncio.run(main())

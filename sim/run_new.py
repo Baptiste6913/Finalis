@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Runs the corpus (and the Quartus calibration deck) through the product path: the local build served by
 server.py with the CLI backend (real Claude models), driven in headless Chromium exactly as a banker would.
-Writes sim/results_new.json. Usage: python3 sim/run_new.py [names...]"""
+Writes sim/results_new.json. Usage: python3 sim/run_new.py [names...]   (names from sim/corpus/truth.json, or
+"quartus"; no names = the whole corpus). Every run calls real models on your Claude account: 2 to 5 minutes and
+$0.30 to $0.80 per document. Env: SIM_BACKEND (cli|api), SIM_DEPTH (complex|default), SIM_PORT."""
 import asyncio, json, os, subprocess, sys, time, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 APP = os.path.dirname(HERE)
@@ -59,7 +61,12 @@ async def run_doc(page, name, spec, depth):
     return res
 
 async def main():
+    if any(a in ('-h', '--help') for a in sys.argv[1:]):
+        print(__doc__); print('documents:', ', '.join(list(TRUTH.keys()) + ['quartus'])); return
     names = sys.argv[1:] or (list(TRUTH.keys()) + ['quartus'])
+    unknown = [n for n in names if n not in TRUTH and n != 'quartus']
+    if unknown:
+        raise SystemExit('unknown document(s): %s. Known: %s' % (', '.join(unknown), ', '.join(list(TRUTH.keys()) + ['quartus'])))
     depth = os.environ.get('SIM_DEPTH', 'complex')
     srv = start_server()
     out_path = os.path.join(HERE, 'results_new.json')
@@ -69,6 +76,7 @@ async def main():
             browser = await pw.chromium.launch()
             ctx = await browser.new_context(viewport={'width': 1400, 'height': 900})
             page = await ctx.new_page()
+            await page.add_init_script("try{localStorage.setItem('prescreen.user', JSON.stringify({name:'Jane Doe',email:'jane.doe@northbridge.example',firm:'Northbridge Advisors',role:'banker'}))}catch(e){}")
             await page.route('**/*', lambda r: r.abort() if 'fonts.g' in r.request.url else r.continue_())
             page.on('pageerror', lambda e: print('[pageerror]', e))
             for name in names:

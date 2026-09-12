@@ -31,4 +31,7 @@ async def main():
         }""", QUOTES)
         for r in res: print(('OK ' if r['found'] else 'MISS'), r['n'], r['score'], 'boxes', r['boxes'], '|', r['q'], '=>', (r['text'] or '')[:90])
         await browser.close()
+        missed = [r for r in res if not r['found'] or r['score'] < 90 or not r['boxes']]
+        print('ALL OK' if not missed else 'FAILURES: %d of %d quotes not located' % (len(missed), len(res)))
+        sys.exit(1 if missed else 0)
 asyncio.run(main())

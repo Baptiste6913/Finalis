@@ -6,6 +6,7 @@ const PdfOut = (() => {
   const W = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584];
   const MAP = { '‘': 0x91, '’': 0x92, '‚': 0x82, '“': 0x93, '”': 0x94, '„': 0x84, '–': 0x96, '—': 0x97, '…': 0x85, '•': 0x95, '€': 0x80, '™': 0x99, 'Š': 0x8a, 'Œ': 0x8c, 'Ž': 0x8e, 'š': 0x9a, 'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f, ' ': 0x20, ' ': 0x20, ' ': 0x20, '→': 0x3e, '✓': 0x2b, '✗': 0x2d, '☐': 0x5b, '□': 0x5b };
   const SEV = { high: { rgb: [0.71, 0.14, 0.09], label: 'High' }, medium: { rgb: [0.71, 0.28, 0.03], label: 'Medium' }, low: { rgb: [0.02, 0.46, 0.28], label: 'Low' }, pending: { rgb: [0.41, 0.25, 0.78], label: 'Pending' }, ok: { rgb: [0.02, 0.46, 0.28], label: 'Yes' }, no: { rgb: [0.45, 0.45, 0.45], label: 'No' }, flag: { rgb: [0.71, 0.14, 0.09], label: 'Yes' } };
+  const LOGO = (typeof window !== 'undefined' && window.FINALIS_LOGO_JPG && window.FINALIS_LOGO_JPG.b64) ? window.FINALIS_LOGO_JPG : null;
   function code(ch) {
     const c = ch.charCodeAt(0);
     if (c < 0x80) return c === 0x0a ? 0x20 : c;
@@ -212,8 +213,9 @@ const PdfOut = (() => {
     pages.forEach((p, i) => {
       const h = [];
       const brand = doc.brand || 'finalis';
-      h.push('BT /F2 13 Tf ' + rgb(accent) + ' rg ' + n2(M) + ' ' + n2(PH - 44) + ' Td (' + esc(bytesOf(brand)) + ') Tj ET');
-      const bw = width(brand, 13, true);
+      let bw;
+      if (LOGO) { const lh = 15; const lw = lh * LOGO.w / LOGO.h; h.push('q ' + n2(lw) + ' 0 0 ' + n2(lh) + ' ' + n2(M) + ' ' + n2(PH - 48) + ' cm /Im1 Do Q'); bw = lw; }
+      else { h.push('BT /F2 13 Tf ' + rgb(accent) + ' rg ' + n2(M) + ' ' + n2(PH - 44) + ' Td (' + esc(bytesOf(brand)) + ') Tj ET'); bw = width(brand, 13, true); }
       h.push(rgb([0.75, 0.78, 0.82]) + ' RG 0.6 w ' + n2(M + bw + 9) + ' ' + n2(PH - 47) + ' m ' + n2(M + bw + 9) + ' ' + n2(PH - 33) + ' l S');
       h.push('BT /F1 9 Tf ' + rgb(MUTED) + ' rg ' + n2(M + bw + 17) + ' ' + n2(PH - 43) + ' Td (' + esc(bytesOf(doc.product || 'Compliance')) + ') Tj ET');
       const k = doc.kicker || '';
@@ -234,11 +236,13 @@ const PdfOut = (() => {
     add('');
     add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
     add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    let logoId = 0;
+    if (LOGO) { const jpg = atob(LOGO.b64); logoId = add('<< /Type /XObject /Subtype /Image /Width ' + LOGO.w + ' /Height ' + LOGO.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpg.length + ' >>\nstream\n' + jpg + '\nendstream'); }
     const kids = [];
     pages.forEach((p) => {
       const content = p.join('\n');
       const cid = add('<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
-      const pid = add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + n2(PW) + ' ' + n2(PH) + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + cid + ' 0 R >>');
+      const pid = add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + n2(PW) + ' ' + n2(PH) + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> ' + (logoId ? '/XObject << /Im1 ' + logoId + ' 0 R >> ' : '') + '>> /Contents ' + cid + ' 0 R >>');
       kids.push(pid + ' 0 R');
     });
     objs[1] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + kids.length + ' >>';
@@ -255,5 +259,5 @@ const PdfOut = (() => {
     return bytes;
   }
   function blob(doc) { return new Blob([make(doc)], { type: 'application/pdf' }); }
-  return { make, blob, wrap, width, SEV };
+  return { make, blob, wrap, width, SEV, bytesOf, esc };
 })();

@@ -81,30 +81,38 @@ const Store = (() => {
     lsSet(LS.cal, all.slice(0, 400));
     return doc;
   }
+  /* one document per key: a second verdict on the same point, or a comment added later, replaces the first */
+  async function upsertCalibration(entry) {
+    const doc = Object.assign({ at: new Date().toISOString() }, entry);
+    if (!doc.id) doc.id = U.uid('cal');
+    if (db) {
+      try { await db.doc('calibration/' + doc.id).set(doc); return doc; } catch (e) { console.warn('db calibration failed', e); }
+    }
+    const all = lsGet(LS.cal, []).filter((e) => e && e.id !== doc.id);
+    all.unshift(doc);
+    lsSet(LS.cal, all.slice(0, 600));
+    return doc;
+  }
+  async function getLearningMeta() {
+    if (db) { try { const s = await db.doc('learning/meta').get(); if (s.exists) return s.data() || {}; } catch (e) { /* ignore */ } }
+    return lsGet('mmat.learningMeta', {});
+  }
+  async function setLearningMeta(patch) {
+    const cur = await getLearningMeta();
+    const next = Object.assign({}, cur, patch, { updated_at: new Date().toISOString() });
+    if (db) { try { await db.doc('learning/meta').set(next); } catch (e) { /* ignore */ } }
+    lsSet('mmat.learningMeta', next);
+    return next;
+  }
   async function listCalibration(limit) {
     let list = [];
     if (db) {
-      try { const snap = await db.collection('calibration').orderBy('at', 'desc').limit(limit || 40).get(); list = snap.docs.map((d) => d.data()); }
+      try { const snap = await db.collection('calibration').orderBy('at', 'desc').limit(limit || 40).get(); list = snap.docs.map((d) => d.data()).filter((d) => d && (!d.type || d.type === 'verdict' || d.type === 'decision' || d.type === 'comment')); }
       catch (e) { list = []; }
     }
-    if (!list.length) list = lsGet(LS.cal, []).slice(0, limit || 40);
+    if (!list.length) list = lsGet(LS.cal, []).filter((d) => d && (!d.type || d.type === 'verdict' || d.type === 'decision' || d.type === 'comment')).slice(0, limit || 40);
     return list;
   }
-  /* Calibration memory lines for the prompt: short, recent, deduplicated. */
-  async function memoryLines() {
-    const entries = await listCalibration(40);
-    const seen = new Set();
-    const lines = [];
-    entries.forEach((e) => {
-      const key = (e.rule || '') + '|' + (e.quote || '').slice(0, 30);
-      if (seen.has(key)) return;
-      seen.add(key);
-      const verdict = e.verdict === 'correct' ? 'CORRECT flag' : 'INCORRECT flag (do not raise this again)';
-      lines.push((e.rule || '?') + ' on a ' + (e.lane || 'retail') + ' ' + (e.docType || 'document') + (e.quote ? ', "' + e.quote.slice(0, 90) + '"' : '') + ': ' + verdict + (e.reason ? ' — ' + e.reason.slice(0, 140) : ''));
-    });
-    return lines.slice(0, 30);
-  }
-
   async function getLearnedRules() {
     if (db) { try { const s = await db.doc('learning/rules').get(); if (s.exists) return (s.data().rules || []); } catch (e) { /* ignore */ } }
     return lsGet('mmat.learnedRules', []);
@@ -132,8 +140,9 @@ const Store = (() => {
     if (db) {
       try { const snap = await db.collection('calibration').limit(1000).get(); for (const d of snap.docs) { try { await db.doc('calibration/' + d.id).delete(); } catch (e) { /* ignore */ } } } catch (e) { /* ignore */ }
       try { await db.doc('learning/rules').set({ rules: [], updated_at: new Date().toISOString() }); } catch (e) { /* ignore */ }
+      try { await db.doc('learning/meta').set({ log: [], updated_at: new Date().toISOString() }); } catch (e) { /* ignore */ }
     }
-    lsSet(LS.cal, []); lsSet('mmat.learnedRules', []);
+    lsSet(LS.cal, []); lsSet('mmat.learnedRules', []); lsSet('mmat.learningMeta', {});
   }
-  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, listCalibration, memoryLines, getLearnedRules, setLearnedRules, getSettings, setSettings, clearLearning };
+  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, upsertCalibration, getLearningMeta, setLearningMeta, listCalibration, getLearnedRules, setLearnedRules, getSettings, setSettings, clearLearning };
 })();

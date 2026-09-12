@@ -8,6 +8,8 @@
   const err = (code, message, text) => ({ code, message, text });
   async function call(path, opts) {
     let res;
+    opts = opts || {};
+    opts.headers = Object.assign({ 'X-Prescreen': '1' }, opts.headers || {}); // the server refuses mutating requests without it (CSRF)
     try { res = await fetch(API + path, opts); } catch (e) { throw err('upstream_error', 'server unreachable'); }
     let body = null;
     try { body = await res.json(); } catch (e) { body = null; }

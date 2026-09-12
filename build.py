@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Builds the page in two flavours from shell.html + src/*.js:
+"""Builds the page in three flavours from shell.html + src/*.js (standard library only; node is optional):
   dist/prescreen.html       the claude.ai artifact (pdf.js from cdnjs, the artifact runtime provides Claude)
   dist/prescreen-demo.html  same page, titled for the public demo variant
   web/index.html            the local build served by server.py (local pdf.js, runtime shim to the server)
-Also writes web/fixture.json (the reference pre-review, used by the server's mock backend) and copies
-the vendor files and the shim into web/.
+  prescreen.html, prescreen-demo.html (repo root, gitignored): publish copies of the two artifact flavours
+Also writes web/fixture.json (the reference pre-review, used by the server's mock backend; needs node,
+skipped with a notice otherwise) and copies the vendor files and the shim into web/.
 """
 import os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORDER = ["util.js","extract.js","rules.js","engine.js","prompts.js","review.js","store.js","pdfout.js","notify.js","calibration.js","fixture.js","sample_deck.js","ask.js","learn.js","ui.js","boot.js"]
+ORDER = ["util.js","extract.js","rules.js","engine.js","prompts.js","review.js","store.js","pdfout.js","pdfedit.js","fix.js","exports.js","notify.js","calibration.js","fixture.js","sample_deck.js","ask.js","learn.js","ui.js","boot.js"]
 shell = open(os.path.join(HERE, "shell.html"), encoding="utf-8").read()
 parts = []
 for f in ORDER:
@@ -20,14 +21,41 @@ assert "</script" not in js.replace("<\\/script", ""), "a </script> inside the b
 os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
 os.makedirs(os.path.join(HERE, "web", "vendor"), exist_ok=True)
 
+def jpeg_size(data):
+    """Width and height from the JPEG's SOF marker (no imaging library needed)."""
+    i = 2
+    while i + 9 < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if marker in (0xD8, 0x01) or 0xD0 <= marker <= 0xD7:
+            i += 2
+            continue
+        seg = (data[i + 2] << 8) | data[i + 3]
+        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+            return ((data[i + 7] << 8) | data[i + 8]), ((data[i + 5] << 8) | data[i + 6])
+        i += 2 + seg
+    raise ValueError("not a JPEG")
+
+
 # official logo, when the file is present (brand/logo.svg or brand/logo.png), inlined as a data URI
 brand_tag = ""
+import base64
 for name, mime in (("logo.svg", "image/svg+xml"), ("logo.png", "image/png")):
     fp = os.path.join(HERE, "brand", name)
     if os.path.exists(fp):
-        import base64
         data = base64.b64encode(open(fp, "rb").read()).decode("ascii")
-        brand_tag = '<script>window.FINALIS_LOGO = "data:%s;base64,%s";</script>\n' % (mime, data)
+        brand_tag = '<script>window.FINALIS_LOGO = "data:%s;base64,%s";' % (mime, data)
+        for extra, var, emime in (("logo-dark.png", "FINALIS_LOGO_DARK", "image/png"),):
+            fx = os.path.join(HERE, "brand", extra)
+            if os.path.exists(fx):
+                brand_tag += 'window.%s = "data:%s;base64,%s";' % (var, emime, base64.b64encode(open(fx, "rb").read()).decode("ascii"))
+        fj = os.path.join(HERE, "brand", "logo.jpg")
+        if os.path.exists(fj):
+            w, h = jpeg_size(open(fj, "rb").read())
+            brand_tag += 'window.FINALIS_LOGO_JPG = {"w": %d, "h": %d, "b64": "%s"};' % (w, h, base64.b64encode(open(fj, "rb").read()).decode("ascii"))
+        brand_tag += '</script>\n'
         print("brand logo inlined from brand/%s" % name)
         break
 

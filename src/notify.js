@@ -48,7 +48,7 @@ const Notify = (() => {
       '',
       r.banker_message ? 'SUGGESTED COMMENT TO THE BANKER\n' + r.banker_message : '',
       '',
-      'Finalis Compliance · machine-generated pre-submission scan, calibrated on the desk\'s verdicts. It is advisory: it is not an approval and it does not change any status.',
+      'Finalis Compliance · machine-generated pre-submission scan, calibrated on the reviewers\' verdicts. It is advisory: it is not an approval and it does not change any status.',
     ].filter((l, i, arr) => !(l === '' && arr[i - 1] === '')).join('\n');
     return { subject, body };
   }
@@ -69,7 +69,7 @@ const Notify = (() => {
   function ref(sub) { const d = new Date(sub.created_at || Date.now()); const ymd = d.toISOString().slice(2, 10).replace(/-/g, ''); return 'PRS-' + ymd + '-' + String(sub.id || 'draft').replace(/^sub-?/, '').slice(-6).toUpperCase(); }
   function where(f) { return f.page ? 'p. ' + (f.pages && f.pages.length > 1 ? f.pages.join(', ') : f.page) : 'document'; }
   function resp(sub, f) { const r = sub.responses && sub.responses[f.id]; return r && r.status && r.status !== 'none' ? RESP_LABEL[r.status] + (r.note ? ': ' + r.note.slice(0, 200) : '') : ''; }
-  function verdictText(sub, f) { const v = sub.verdicts && sub.verdicts[f.id]; if (!v) return ''; return (Review.isCertain(f) ? (v.verdict === 'correct' ? 'Correct flag' : 'Incorrect flag') : (v.verdict === 'correct' ? 'Confirmed' : 'Dismissed')) + (v.reason ? ': ' + v.reason : ''); }
+  function verdictText(sub, f) { const v = sub.verdicts && sub.verdicts[f.id]; if (!v) return ''; if (!v.verdict) return v.reason ? 'Comment: ' + v.reason.slice(0, 200) : ''; return (Review.isCertain(f) ? (v.verdict === 'correct' ? 'Correct flag' : 'Incorrect flag') : (v.verdict === 'correct' ? 'Confirmed' : 'Dismissed')) + (v.reason ? ': ' + v.reason : ''); }
   const ACTION_TEXT = { add: 'Add the disclosure', rewrite: 'Rewrite', source: 'Add a source', remove: 'Remove', confirm: 'Confirm with the banker', escalate: 'Escalate' };
   function label(f) { return (RULES.CATEGORY_NAMES[f.rule] || f.category || f.rule); }
   function metaRows(sub, desk) {
@@ -81,6 +81,9 @@ const Notify = (() => {
     rows.push(['Audience', (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + (sub.facts && sub.facts.laneReason ? ' (' + sub.facts.laneReason + ')' : '')]);
     rows.push(['Distribution', (sub.form.distribution || []).join(', ') || 'not stated']);
     rows.push(['Prepared by', (Prompts.INVOLVED_LABELS && Prompts.INVOLVED_LABELS[sub.form.involvement]) || sub.form.involvement || 'not stated']);
+    if ((sub.version || 1) > 1) rows.push(['Version', 'v' + sub.version + ', corrected in the app (' + (sub.changes || []).length + ' edit' + ((sub.changes || []).length === 1 ? '' : 's') + ', ' + (sub.resolved || []).length + ' point' + ((sub.resolved || []).length === 1 ? '' : 's') + ' resolved)']);
+    if (sub.readiness) rows.push(['Readiness', sub.readiness.score + ' / 100 · ' + sub.readiness.label]);
+    if (sub.submitted_by && sub.submitted_by.name && !desk) rows.push(['Signed in as', sub.submitted_by.name + (sub.submitted_by.email ? ', ' + sub.submitted_by.email : '')]);
     if (desk) { rows.push(['Submitted by', (sub.submitter || 'unknown') + (sub.form.bankName ? ', ' + sub.form.bankName : '')]); rows.push(['Depth', sub.form.depth === 'default' ? 'Fast (one pass)' : 'Thorough (three passes)']); }
     else if (sub.form.bankName) rows.push(['Bank / DBA', sub.form.bankName]);
     return rows;
@@ -123,10 +126,18 @@ const Notify = (() => {
     const section = (t) => { sec += 1; b.push({ t: 'section', n: sec, text: t }); };
     b.push({ t: 'title', text: sub.file.name.replace(/\.[^.]+$/, ''), sub: [p.material_kind ? p.material_kind.charAt(0).toUpperCase() + p.material_kind.slice(1) : (Prompts.DOC_LABELS[sub.form.docType] || 'Marketing material'), sub.file.pages + (sub.file.kind === 'pdf' ? ' pages' : sub.file.kind === 'image' ? ' image' : ' sections'), sub.file.name].join(' · '), meta: metaRows(sub, desk) });
 
+    const changesSection = () => {
+      if (!(sub.changes && sub.changes.length)) return;
+      section(desk ? 'Corrections made by the banker in the app' : 'Corrections you made in the app');
+      b.push({ t: 'p', text: 'The submitted file is version ' + (sub.version || 2) + ': the original was corrected in the app and re-checked; the original text stays underneath the corrections (overlay), so the reviewer can still read what was there.' + ((sub.resolved || []).length ? ' ' + sub.resolved.length + ' point' + (sub.resolved.length === 1 ? '' : 's') + ' from the first pre-review ' + (sub.resolved.length === 1 ? 'was' : 'were') + ' resolved by these corrections.' : ''), muted: false });
+      b.push({ t: 'table', size: 8.8, cols: [{ w: 0.45, label: '#' }, { w: 0.9, label: 'Page' }, { w: 2.4, label: 'Correction' }, { w: 8.0, label: 'Text as it now reads' }], rows: sub.changes.map((ch, i) => [String(i + 1), 'p. ' + ch.page, (ch.label || ch.kind), ch.kind === 'whiteout' ? { text: 'Passage removed', grey: true } : String(ch.text || '').slice(0, 320)]) });
+      if (sub.resolved && sub.resolved.length) b.push({ t: 'table', size: 8.8, cols: [{ w: 1.1, label: 'Rule' }, { w: 0.9, label: 'Page' }, { w: 6.2, label: 'Point resolved' }, { w: 3.5, label: 'How' }], rows: sub.resolved.map((r0) => [r0.rule, r0.page ? 'p. ' + r0.page : 'doc', r0.title, r0.how]) });
+    };
     if (!desk) {
       section('What this document is');
       b.push({ t: 'p', text: p.subject ? p.subject : 'Described by the pre-review as: ' + (p.material_kind || 'a marketing communication') + '.' });
       b.push({ t: 'p', text: 'The pre-review raises ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ' on this document; ' + highs.length + ' high ' + (highs.length === 1 ? 'point needs' : 'points need') + ' an answer before submission.' });
+      changesSection();
       section('Points to answer before submission');
       if (highs.length) { b.push(indexTable(sub, highs, false, 1)); highs.forEach((f, i) => b.push(pointDetail(sub, f, i + 1, false))); }
       else b.push({ t: 'p', text: 'None: no high point was asserted on this document.', muted: true });
@@ -139,6 +150,12 @@ const Notify = (() => {
     }
 
     // ---- the desk brief: everything
+    changesSection();
+    if (sub.memory && ((sub.memory.similar || []).length || sub.memory.hints)) {
+      section('Reviewer memory');
+      if ((sub.memory.similar || []).length) b.push({ t: 'table', size: 8.8, cols: [{ w: 4.2, label: 'Similar submission' }, { w: 1.2, label: 'Alike' }, { w: 2.2, label: 'Reviewed by' }, { w: 1.8, label: 'Decision' }, { w: 2.4, label: 'Confirmed / dismissed' }], rows: sub.memory.similar.slice(0, 6).map((x) => [x.name, x.sameDoc ? 'same file' : Math.round(x.score * 100) + ' %', (x.reviewers || []).join(', ') || '–', x.decision ? (x.status === 'approved' ? 'Approved' : x.status === 'escalated' ? 'Escalated' : 'Changes requested') : 'open', Array.from(new Set(x.confirmed || [])).join(', ') + (x.dismissed && x.dismissed.length ? ' / ' + Array.from(new Set(x.dismissed)).join(', ') : '')]) });
+      b.push({ t: 'p', text: (sub.memory.hints ? sub.memory.hints + ' point' + (sub.memory.hints === 1 ? '' : 's') + ' of this submission carried a colleague\'s verdict on similar material. ' : '') + (sub.memory.differs ? sub.memory.differs + ' verdict' + (sub.memory.differs === 1 ? '' : 's') + ' differ from a colleague\'s on a similar point.' : 'No verdict differs from a colleague\'s.'), muted: true });
+    }
     section('Overview');
     b.push({ t: 'table', size: 9, cols: [{ w: 2.2, label: 'Asserted to the banker' }, { w: 1, label: 'High', align: 'right' }, { w: 1, label: 'Medium', align: 'right' }, { w: 1, label: 'Low', align: 'right' }, { w: 1.6, label: 'Pending', align: 'right' }, { w: 1.6, label: 'Answered', align: 'right' }, { w: 1.6, label: 'Set aside', align: 'right' }],
       rows: [[String(c.certain) + ' of ' + c.total, String(highs.length), String(others.filter((f) => f.severity === 'medium').length), String(others.filter((f) => f.severity === 'low').length), String(c.verify), String(answered), String((r.suppressed || []).length)]] });
@@ -183,7 +200,7 @@ const Notify = (() => {
     const meta = r.meta || {};
     const details = [];
     if (meta.calls && meta.calls.length) details.push(['Model calls', meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ': ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' page images' : '')).join('; ')]);
-    if (meta.learning) details.push(['Learning applied', meta.learning.rules + ' learned rule' + (meta.learning.rules === 1 ? '' : 's') + ', ' + meta.learning.precedents + ' precedent' + (meta.learning.precedents === 1 ? '' : 's') + ' from reviewer verdicts']);
+    if (meta.learning) details.push(['Learning applied', meta.learning.rules + ' learned rule' + (meta.learning.rules === 1 ? '' : 's') + (meta.learning.reviewerRules ? ' (' + meta.learning.reviewerRules + ' from the reviewer)' : '') + ', ' + meta.learning.precedents + ' precedent' + (meta.learning.precedents === 1 ? '' : 's') + ' from ' + (meta.learning.verdicts || 0) + ' reviewer verdicts' + (meta.learning.reviewer ? ', adapted to ' + meta.learning.reviewer : '')]);
     if (meta.reference) details.push(['Source', 'Reference pre-review (the reviewer\'s verdicts on the calibration deck), not a live run']);
     if (meta.deterministicOnly) details.push(['Source', 'Deterministic checks only: the model was not available']);
     if (sub.calibration) details.push(['Calibration', sub.calibration.recall + '/' + sub.calibration.expectedTotal + ' validated flags found, ' + sub.calibration.fpCount + ' rejected flags raised']);

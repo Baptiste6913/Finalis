@@ -73,7 +73,7 @@ const Extract = (() => {
   async function pdf(bytes) {
     if (!window.pdfjsLib) throw new Error('pdf.js did not load');
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
-    const doc = await window.pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+    const doc = await window.pdfjsLib.getDocument({ data: bytes.slice(), isEvalSupported: false }).promise;
     const pages = [];
     for (let n = 1; n <= doc.numPages; n += 1) {
       const page = await doc.getPage(n);

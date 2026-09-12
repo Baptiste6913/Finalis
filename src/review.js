@@ -19,11 +19,13 @@ const Review = (() => {
     facts.required.forEach((r) => {
       const base = { tier: 'A', rule: r.id, category: RULES.CATEGORY_NAMES[r.id] || r.name, det: true, confidence: 'high', basis: r.citation, pages: [], quote: '' };
       if (r.status === 'missing') {
+        const unread = facts.unreadable || [];
+        const blind = unread.length > 0 && (r.scope === 'first_page' ? unread.includes(1) : unread.length >= (facts.pageCount || unread.length));
         out.push(Object.assign(base, {
           severity: r.severity || 'high', page: r.scope === 'first_page' ? 1 : null, pages: r.scope === 'first_page' ? [1] : [],
           title: r.name + ' is missing', issue: 'Required by the SOP for this lane and document type; not found in the text layer' + (r.near ? ' (' + r.near + ')' : '') + '.' + (r.note ? ' ' + r.note : ''),
-          text_to_add: r.text, placement: r.placement || '', action: r.note ? 'confirm' : 'add', rewrite: '',
-        }));
+          text_to_add: r.text, placement: r.placement || '', action: r.note || blind ? 'confirm' : 'add', rewrite: '',
+        }, blind ? { det: false, confidence: 'low', unreadable: true, note: 'The page' + (r.scope === 'first_page' ? '' : 's') + ' searched ' + (r.scope === 'first_page' ? 'has' : 'have') + ' no text layer (scanned or image-only), so the block may be present as an image: confirm by eye.' } : {}));
       } else if (r.status === 'forbidden_present') {
         out.push(Object.assign(base, { severity: 'high', page: r.page, pages: [r.page], quote: r.excerpt, title: r.name, issue: 'The legend restricts the material to institutional investors while the declared audience includes natural persons: either the legend or the questionnaire is wrong.', text_to_add: '', rewrite: '', placement: '', action: 'confirm', boxes: r.boxes }));
       } else if (r.status === 'illegible') {
@@ -141,7 +143,7 @@ const Review = (() => {
       else if (f.rule === 'B4' && verbatim.pref && !argues) why = 'the SOP preferred-return text is on page ' + verbatim.pref.page + ' (verbatim match ' + verbatim.pref.score + '%)';
       else if (f.rule === 'B5' && verbatim.distributions && !argues) why = 'the SOP distributions line is on page ' + verbatim.distributions.page;
       else if (f.rule === 'B7' && verbatim.testimonial && !argues) why = 'the testimonial legend is on page ' + verbatim.testimonial.page;
-      else if (f.rule === 'B6' && verbatim.logos && (f.pages || [f.page]).every((n) => n === verbatim.logos.page) && !argues) why = 'the logo disclosure is on page ' + verbatim.logos.page + ', with the logos';
+      else if (f.rule === 'B6' && verbatim.logos && !argues) { const ps = f.pages && f.pages.length ? f.pages : (f.page ? [f.page] : []); if (ps.length && ps.every((n) => n === verbatim.logos.page)) why = 'the logo disclosure is on page ' + verbatim.logos.page + ', with the logos'; }
       if (why) suppressed.push({ rule: f.rule, pages: f.pages && f.pages.length ? f.pages : (f.page ? [f.page] : []), quote: (f.quote || f.title).slice(0, 160), reason: 'Coverage guard: ' + why + '. Calibration rule 3.' });
       else keep.push(f);
     });
@@ -155,7 +157,7 @@ const Review = (() => {
       const st = stats.byRule[f.rule];
       if (f.det || f.tier === 'A' || !st || st.total < 5) { keep.push(f); return; }
       const bad = st.incorrect / st.total;
-      if (st.total >= 8 && bad >= 0.8) { suppressed.push({ rule: f.rule, pages: f.pages || [], quote: (f.quote || f.title).slice(0, 160), reason: 'Set aside by the desk\'s track record: reviewers rejected ' + st.incorrect + ' of ' + st.total + ' ' + f.rule + ' flags.' }); return; }
+      if (st.total >= 8 && bad >= 0.8) { suppressed.push({ rule: f.rule, pages: f.pages || [], quote: (f.quote || f.title).slice(0, 160), reason: 'Set aside by the reviewers\' track record: they rejected ' + st.incorrect + ' of ' + st.total + ' ' + f.rule + ' flags.' }); return; }
       if (bad >= 0.6) { f.severity = 'low'; f.confidence = 'low'; f.note = (f.note ? f.note + ' ' : '') + 'Low-confidence rule: reviewers rejected ' + st.incorrect + ' of ' + st.total + ' ' + f.rule + ' flags.'; }
       keep.push(f);
     });
@@ -168,7 +170,7 @@ const Review = (() => {
     const keep = [];
     findings.forEach((f) => {
       const v = byId[f.id];
-      if (!v || f.det) { keep.push(f); return; }
+      if (!v || f.det || f.tier === 'A') { keep.push(f); return; } // required SOP blocks are never the verifier's to drop
       if (v.verdict === 'drop') { suppressed.push({ rule: f.rule, pages: f.pages || [], quote: (f.quote || f.title).slice(0, 160), reason: 'Verifier: ' + String(v.reason || '').slice(0, 300) }); return; }
       if (v.verdict === 'downgrade') { f.severity = SEV[String(v.severity || '').toLowerCase()] ? String(v.severity).toLowerCase() : (f.severity === 'high' ? 'medium' : 'low'); f.confidence = 'low'; if (f.action !== 'escalate' && f.tier === 'C') f.action = 'escalate'; f.note = (f.note ? f.note + ' ' : '') + 'Verifier: ' + String(v.reason || '').slice(0, 200); }
       f.verdict = v.verdict === 'downgrade' ? 'downgrade' : 'keep';
@@ -193,6 +195,7 @@ const Review = (() => {
     (facts.lexicon || []).forEach((l) => { (lexByPage[l.page] = lexByPage[l.page] || []).push(U.normalize(l.phrase)); });
     findings.forEach((f) => {
       f.why_verify = '';
+      if (f.unreadable) { f.assurance = 'verify'; f.why_verify = 'the searched pages have no text layer'; return; }
       if (f.det) { f.assurance = 'certain'; return; }
       if (opts && opts.reference) { // the reference pre-review: the desk's own verdicts stand in for the second pass
         const validated = /reviewer verdict: (?:correct|well)/i.test(f.basis || '');
@@ -381,6 +384,7 @@ const Review = (() => {
         onStep('verify', { status: 'done', detail: 'verifier unavailable (' + (e && e.code ? e.code : 'error') + '), points kept as found' });
       }
     }
+    if (ctx.learning) { Learn.applyPrecedents(out, ctx.learning); sortFindings(out.findings); }
     out.meta = meta;
     out.pages = pages;
     out.facts = facts;

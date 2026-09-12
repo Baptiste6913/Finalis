@@ -1,7 +1,8 @@
-import os, asyncio, sys, os
+import os, asyncio, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from harness import *
-FAKE = open('test_flow.py').read().split('FAKE = r"""')[1].split('"""')[0]
+OUT = os.path.join(ROOT, 'tests', 'out'); os.makedirs(OUT, exist_ok=True)
+FAKE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_flow.py')).read().split('FAKE = r"""')[1].split('"""')[0]
 async def main():
     async with async_playwright() as pw:
         browser, page = await open_page(pw, page_html='dist/prescreen.html', width=1440, height=900, init_script=FAKE)
@@ -11,7 +12,7 @@ async def main():
         await page.click('#btn-submit-form'); await page.wait_for_selector('#btn-start', timeout=30000); await page.click('#btn-start')
         await page.wait_for_function("document.getElementById('wh-status-text').textContent.includes('complete')", timeout=60000)
         await page.wait_for_timeout(600)
-        await page.screenshot(path='shot_brand.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_brand.png'))
         # zoom in twice then walk pages with highlights
         await page.click('#zoom-in'); await page.click('#zoom-in'); await page.wait_for_timeout(600)
         for n in [1, 6, 21, 22, 27]:
@@ -21,7 +22,7 @@ async def main():
             await page.evaluate(f"document.getElementById('viewer').scrollTo({{top: document.getElementById('page-{n}').offsetTop - 12}})")
             await page.wait_for_timeout(900)
             box = await page.query_selector(f'#page-{n}')
-            await box.screenshot(path=f'hl_p{n}.png')
+            await box.screenshot(path=os.path.join(OUT, f'hl_p{n}.png'))
         # keyboard nav
         await page.keyboard.press('j'); await page.wait_for_timeout(300)
         print('point nav:', await page.text_content('#pt-label'), 'active', await page.evaluate('UI.S.active'))
@@ -33,6 +34,6 @@ async def main():
         if marks:
             await marks[0].click(); await page.wait_for_timeout(400)
             print('after mark click active', await page.evaluate('UI.S.active'), 'tab', await page.evaluate('UI.S.tab'), 'card active', await page.evaluate("!!document.querySelector('.card.active')"))
-        await page.screenshot(path='shot_markclick.png')
+        await page.screenshot(path=os.path.join(OUT, 'shot_markclick.png'))
         await browser.close()
 asyncio.run(main())

@@ -1,6 +1,7 @@
 import os, asyncio, json, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from harness import *
+OUT = os.path.join(ROOT, 'tests', 'out'); os.makedirs(OUT, exist_ok=True)
 
 FAKE = r"""
 window.__calls = [];
@@ -39,7 +40,7 @@ async def main():
         await page.wait_for_selector('#view-work:not([hidden])')
         await page.wait_for_selector('#btn-start', timeout=10000)
         print('setup phase status:', await page.text_content('#wh-status-text'))
-        await page.screenshot(path='shot_setup.png', full_page=False)
+        await page.screenshot(path=os.path.join(OUT, 'shot_setup.png'), full_page=False)
         print('audience prefilled for the calibration deck:', await page.evaluate("document.getElementById('audience').value"))
         await page.select_option('#audience', '')
         await page.click('#btn-start')  # audience missing: refused
@@ -59,7 +60,8 @@ async def main():
             suppressed: r.suppressed.length, steps: S.steps.map(s=>s.key+':'+s.status) };
         }''')
         print(json.dumps(st, indent=1))
-        await page.screenshot(path='shot_work.png', full_page=False)
+        checks = {'findings': st['n'] >= 9 and st['calib']['recall'] >= 8, 'steps': st['steps'][-1] == 'assemble:done'}
+        await page.screenshot(path=os.path.join(OUT, 'shot_work.png'), full_page=False)
         # gate: try submit before answers
         print('submit disabled before answers:', await page.evaluate("document.getElementById('btn-submit').disabled"))
         # answer high findings: click 'Fixed in the new version' on each high card
@@ -69,18 +71,19 @@ async def main():
             await page.click(f'#tab-{tab}')
             await page.click(f'[data-card="{fid}"] .resp .chips button:first-child')
         await page.check('#ack')
-        print('submit enabled after answers:', not await page.evaluate("document.getElementById('btn-submit').disabled"))
+        checks['gate'] = not await page.evaluate("document.getElementById('btn-submit').disabled")
+        print('submit enabled after answers:', checks['gate'])
         await page.click('#btn-submit')
         await page.wait_for_selector('#view-done:not([hidden])', timeout=10000)
         txt = await page.text_content('#done-card')
         print('DONE VIEW:', txt[:300].replace('\n',' '))
-        await page.screenshot(path='shot_done.png', full_page=True)
+        await page.screenshot(path=os.path.join(OUT, 'shot_done.png'), full_page=True)
         # reviewer inbox
         await page.click('#mode-reviewer')
         await page.wait_for_selector('#view-inbox:not([hidden])')
         await page.wait_for_timeout(300)
         print('INBOX:', (await page.text_content('#inbox-list'))[:200].replace('\n',' '))
-        await page.screenshot(path='shot_inbox.png', full_page=True)
+        await page.screenshot(path=os.path.join(OUT, 'shot_inbox.png'), full_page=True)
         await page.click('#inbox-list .trow:not(.h) .btn.primary')
         await page.wait_for_selector('#view-work:not([hidden])')
         await page.wait_for_timeout(800)
@@ -95,25 +98,31 @@ async def main():
             await page.click(f'[data-card="{pend[0]}"] .verdict button[data-verify="confirm"]')
             await page.wait_for_timeout(300)
             print('after confirm:', await page.text_content(f'[data-card="{pend[0]}"] .verdict'))
-            await page.screenshot(path='shot_verify.png', full_page=False)
+            await page.screenshot(path=os.path.join(OUT, 'shot_verify.png'), full_page=False)
         cal = await page.evaluate("Store.listCalibration(10)")
         print('CALIBRATION ENTRIES:', len(cal), cal[0] if cal else None)
-        mem = await page.evaluate("Store.memoryLines()")
+        mem = await page.evaluate("async () => (await Learn.precedents(UI.S.facts, UI.S.doc.pages, 30)).lines")
         print('MEMORY:', mem)
-        await page.screenshot(path='shot_reviewer.png', full_page=False)
+        checks['calibration'] = len(cal) >= 2 and all(e.get('reviewer') and e['reviewer'].get('email') for e in cal)
+        checks['precedents'] = len(mem) >= 1
+        await page.screenshot(path=os.path.join(OUT, 'shot_reviewer.png'), full_page=False)
         # learning view
         await page.click('#btn-back'); await page.wait_for_timeout(300)
         await page.click('#btn-learning'); await page.wait_for_timeout(600)
         print('LEARNING:', (await page.text_content('#learning-body'))[:220].replace('\n',' '))
-        await page.screenshot(path='shot_learning.png', full_page=True)
+        await page.screenshot(path=os.path.join(OUT, 'shot_learning.png'), full_page=True)
         exp = await page.evaluate("Learn.exportState()")
+        checks['export'] = exp.get('version') == 2 and len(exp.get('verdicts', [])) >= 2
         print('EXPORT keys:', list(exp.keys()), 'verdicts', len(exp['verdicts']))
         # back to the submission, other tabs
         await page.click('#btn-learning-back'); await page.wait_for_timeout(300)
         await page.click('#inbox-list .trow:not(.h) .btn.primary'); await page.wait_for_timeout(800)
         await page.click('#tab-language'); await page.wait_for_timeout(200)
-        await page.screenshot(path='shot_language.png', full_page=False)
+        await page.screenshot(path=os.path.join(OUT, 'shot_language.png'), full_page=False)
         await page.click('#tab-summary'); await page.wait_for_timeout(200)
-        await page.screenshot(path='shot_summary.png', full_page=False)
+        await page.screenshot(path=os.path.join(OUT, 'shot_summary.png'), full_page=False)
         await browser.close()
+        bad = [k for k, v in checks.items() if not v]
+        print('ALL OK' if not bad else 'FAILURES: ' + ', '.join(bad))
+        sys.exit(1 if bad else 0)
 asyncio.run(main())

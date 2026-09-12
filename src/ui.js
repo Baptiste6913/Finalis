@@ -8,7 +8,9 @@ const UI = (() => {
     caps: { sample: null, db: null, assets: null, downloads: null, limits: null }, running: false, abort: null,
     steps: [], reference: false, calib: null, settings: {}, railOpen: false, zoom: 1, page: 1, expanded: {}, ai: {},
     phase: 'landing', prefill: {},
+    edits: [], editing: null, version: 1, resolved: [], history: [], correctedBytes: null, correctedDirty: false, user: null,
   };
+  const DOC_CACHE = new Map();
   const $ = (id) => document.getElementById(id);
   const el = U.el;
   const ICON = {
@@ -27,6 +29,7 @@ const UI = (() => {
     alert: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
     inbox: '<svg class="i s" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
     stop: '<svg class="i s" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+    pen: '<svg class="i s" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   };
   const LABELS = { A1a: 'Missing disclaimer', A1b: 'Missing disclaimer', A1e: 'Missing disclaimer', A1p: 'Disclosure to confirm', A1l: 'Missing disclosure', A1r: 'Missing disclaimer', A1w: 'Missing disclosure', A2: 'Missing line', A3: 'Missing legend', A4: 'Audience legend', A5: 'Missing disclosure', A6: 'Legibility', A7: 'Source needed', B1: 'Forecast', B2: 'Illustration', B3: 'Past performance', B4: 'Preferred return', B5: 'Distributions', B6: 'Logos', B7: 'Testimonial', B8: 'Award', B9: 'Illiquidity', B10: 'Audience', B11: 'Social media', B12: 'Email', B13: 'Article', C1: 'Exaggerated', C2: 'Promissory', C3: 'Pressure', C4: 'Unsupported', C5: 'Disparaging', C6: 'Comparison', C7: 'Legal history', C8: 'Cherry-picked', C9: 'Misleading', C10: 'Attribution', C11: 'Promissory image', C12: 'Complexity', C13: 'Emphasis', C14: 'Font size' };
   const DOC_HINTS = {
@@ -48,12 +51,14 @@ const UI = (() => {
   /* ---------- views ---------- */
   function show(view) {
     S.view = view;
-    ['form', 'work', 'done', 'inbox', 'learning'].forEach((v) => { $('view-' + v).hidden = v !== view; });
+    ['login', 'form', 'work', 'done', 'inbox', 'learning'].forEach((v) => { $('view-' + v).hidden = v !== view; });
+    document.body.setAttribute('data-view', view);
     renderChrome();
     window.scrollTo(0, 0);
   }
-  const STASH_KEYS = ['doc', 'form', 'facts', 'result', 'responses', 'steps', 'calib', 'reference', 'submission', 'ack', 'active', 'tab', 'filter', 'expanded', 'ai', 'phase', 'prefill'];
+  const STASH_KEYS = ['doc', 'form', 'facts', 'result', 'responses', 'steps', 'calib', 'reference', 'submission', 'ack', 'active', 'tab', 'filter', 'expanded', 'ai', 'phase', 'prefill', 'edits', 'editing', 'version', 'resolved', 'history', 'correctedBytes', 'correctedDirty'];
   function setMode(mode) {
+    S.focus = null; if ($('chatdock')) { $('chatdock').hidden = true; $('btn-chat').setAttribute('aria-pressed', 'false'); }
     if (mode === S.mode) { if (mode === 'reviewer' && S.viewing) { S.viewing = null; renderInbox(); show('inbox'); } return; }
     if (mode === 'reviewer') { if (S.running && S.abort) S.abort.abort(); S.stash = {}; STASH_KEYS.forEach((k) => { S.stash[k] = S[k]; }); }
     S.mode = mode;
@@ -72,8 +77,13 @@ const UI = (() => {
     document.body.setAttribute('data-platform', desk ? 'desk' : 'banker');
     $('mode-banker').setAttribute('aria-pressed', String(!desk));
     $('mode-reviewer').setAttribute('aria-pressed', String(desk));
-    $('avatar').textContent = desk ? 'CO' : 'JD';
-    $('avatar').title = desk ? 'Signed in to the reviewer platform' : 'Signed in to the banker platform';
+    const u = S.user || {};
+    $('avatar').textContent = initials(u.name || (desk ? 'Compliance Officer' : 'Jane Doe'));
+    $('avatar').title = (u.name ? u.name + ' · ' : '') + (desk ? 'Reviewer platform' : 'Banker platform');
+    $('am-name').textContent = u.name || (desk ? 'Finalis reviewer' : 'Banker'); $('am-email').textContent = u.email || ''; $('am-role').textContent = desk ? 'Reviewer platform' : 'Banker platform' + (u.firm ? ' · ' + u.firm : '');
+    $('am-switch').textContent = desk ? 'Open the banker platform (demo)' : 'Open the reviewer platform (demo)';
+    $('am-switch').hidden = lockedPlatforms();
+    const seg = document.querySelector('.appbar .seg'); if (seg) seg.hidden = lockedPlatforms();
     $('product-name').textContent = desk ? 'Reviewer platform' : 'Banker platform';
     $('crumb-root').textContent = desk ? 'Inbox' : 'Marketing materials';
     const ai = $('crumb-ai');
@@ -160,7 +170,7 @@ const UI = (() => {
     $('involved').value = ''; $('doc-type').value = 'deal-deck'; $('doc-type-hint').textContent = DOC_HINTS['deal-deck'];
     document.querySelectorAll('#dist-menu input').forEach((i) => { i.checked = false; });
     renderDistLabel(); toggleDistMenu(false);
-    S.result = null; S.facts = null; S.responses = {}; S.submission = null; S.ack = false; S.expanded = {}; S.ai = {}; S.phase = 'landing'; S.prefill = {}; S.form = {};
+    S.result = null; S.facts = null; S.responses = {}; S.submission = null; S.ack = false; S.expanded = {}; S.ai = {}; S.phase = 'landing'; S.prefill = {}; S.form = {}; S.edits = []; S.editing = null; S.version = 1; S.resolved = []; S.history = []; S.correctedBytes = null;
     updateSubmit();
   }
   function bindForm() {
@@ -289,7 +299,7 @@ const UI = (() => {
     const f4 = el('div', { class: 'field' });
     f4.append(el('span', { class: 'label', text: 'Depth' }));
     const opts = el('div', { class: 'opts' });
-    [['complex', 'Thorough', 'Most capable model plus a second pass; 2 to 4 minutes on a long deck. Only a thorough run lets points be asserted to you as certain.', 'depth-thorough'], ['default', 'Fast', 'About a minute. Every model point is then left for the Finalis reviewer to verify.', 'depth-fast']].forEach(([v, t, d, id]) => {
+    [['complex', 'Thorough', 'Most capable model plus a second pass; 2 to 5 minutes on a long deck. Only a thorough run lets points be asserted to you as certain.', 'depth-thorough'], ['default', 'Fast', 'About a minute. Every model point is then left for the Finalis reviewer to verify.', 'depth-fast']].forEach(([v, t, d, id]) => {
       const o = el('label', { class: 'opt' + ((S.form.depth || 'complex') === v ? ' on' : ''), id: 'opt-' + (v === 'complex' ? 'thorough' : 'fast') });
       const r = el('input', { type: 'radio', name: 'depth', value: v, id });
       if ((S.form.depth || 'complex') === v) r.checked = true;
@@ -325,7 +335,7 @@ const UI = (() => {
     if (!setup.audience) { U.toast('Select the intended audience.'); const a = $('audience'); if (a) a.focus(); return; }
     const form = Object.assign({}, S.form, setup);
     S.form = form; S.result = null; S.responses = {}; S.steps = []; S.reference = false; S.calib = null; S.active = null; S.tab = 'disclosures'; S.filter = 'all'; S.expanded = {}; S.ai = {}; S.ack = false;
-    S.phase = 'review';
+    S.phase = 'review'; S.edits = []; S.editing = null; S.version = 1; S.resolved = []; S.history = []; S.correctedBytes = null; S.correctedDirty = false; S.chat = []; S.focus = null;
     renderRail();
     setStep('extract', { status: 'done', detail: S.doc.pages.length + (S.doc.kind === 'pdf' ? ' pages read' : S.doc.kind === 'image' ? ' image' : ' sections') });
     setStep('blocks', { status: 'run' });
@@ -335,7 +345,9 @@ const UI = (() => {
     renderHead();
     await runModel(false);
   }
+  let runToken = 0;
   async function runModel(noCache) {
+    const token = ++runToken; // a run that was abandoned (platform switch, new document) must not write into the state that replaced it
     if (!S.caps.sample) {
       if (Calibration.isReferenceDeck(S.doc.pages)) {
         S.result = Fixture.build(S.facts, S.form, S.doc.pages); S.reference = true;
@@ -351,17 +363,19 @@ const UI = (() => {
     S.abort = new AbortController();
     renderRail();
     try {
-      const learning = await Learn.memoryFor(S.facts, S.doc.pages);
-      S.learningUsed = { rules: learning.memory.rules.length, precedents: learning.memory.verdicts.length };
+      const learning = await Learn.memoryFor(S.facts, S.doc.pages, (S.settings && S.settings.reviewerEmail) || '');
+      S.learningUsed = { rules: learning.memory.rules.length, precedents: learning.memory.verdicts.length, reviewerRules: learning.reviewerRules.length, reviewer: learning.reviewer, verdicts: learning.entries.length };
       const result = await Review.run({
-        doc: S.doc, pages: S.doc.pages, form: S.form, facts: S.facts, caps: S.caps, memory: learning.memory, stats: learning.stats, noCache,
+        doc: S.doc, pages: S.doc.pages, form: S.form, facts: S.facts, caps: S.caps, memory: learning.memory, stats: learning.stats, learning, noCache,
         signal: S.abort.signal, onStep: setStep,
         onPagesReplaced: (pages, facts) => { S.doc.pages = pages; S.facts = facts; renderViewer(); },
       });
+      if (token !== runToken || S.mode !== 'banker') return;
       S.result = result;
       result.meta.learning = S.learningUsed;
       setStep('assemble', { status: 'done', detail: result.findings.length + ' attention points' });
     } catch (e) {
+      if (token !== runToken || S.mode !== 'banker') return;
       console.warn('pre-review failed', e);
       const code = e && e.code ? e.code : 'upstream_error';
       const copy = {
@@ -376,7 +390,8 @@ const UI = (() => {
       S.result = Review.deterministicOnly(S.facts, S.form, S.doc.pages);
       S.result.meta.error = S.lastError;
       setStep('assemble', { status: 'fail', detail: code === 'cancelled' ? 'Stopped by you' : S.lastError });
-    } finally { S.running = false; S.abort = null; }
+    } finally { if (token === runToken) { S.running = false; S.abort = null; } }
+    if (token !== runToken || S.mode !== 'banker') return;
     finishRun();
   }
   function finishRun() {
@@ -396,6 +411,8 @@ const UI = (() => {
     if (f) {
       meta.append(el('span', { class: 'tag grey', text: f.lane === 'institutional' ? 'Institutional' : 'Retail' }));
       meta.append(el('span', { class: 'tag grey', text: S.doc.pages.length + (S.doc.kind === 'pdf' ? ' pages' : S.doc.kind === 'image' ? ' image' : ' sections') }));
+      if (S.version > 1) meta.append(el('span', { class: 'tag blue', text: 'v' + S.version + ' corrected' }));
+      const rp = readinessPill(); if (rp) meta.append(rp);
     }
     $('pg-of').textContent = '/ ' + S.doc.pages.length;
     $('pg-input').value = String(S.page);
@@ -527,6 +544,7 @@ const UI = (() => {
       pin.append(el('span', { class: 'd', style: 'background:' + (hi ? 'var(--danger)' : 'var(--warn)') }), document.createTextNode(list.length + (list.length === 1 ? ' point' : ' points')));
       badge.append(pin);
     });
+    drawEdits();
   }
   function highlightText(n, findings) {
     const node = document.querySelector('[data-textpage="' + n + '"]');
@@ -632,7 +650,7 @@ const UI = (() => {
     if (S.result && S.caps.sample && !S.running && !S.viewing) {
       const rerun = el('button', { class: 'btn ghost icon', type: 'button', title: 'Run again (fresh answer)', 'aria-label': 'Run again' });
       rerun.append(svg('refresh'));
-      rerun.addEventListener('click', async () => { S.result = null; S.steps = S.steps.filter((s) => s.key === 'extract' || s.key === 'blocks'); S.calib = null; S.reference = false; S.expanded = {}; S.ai = {}; renderHead(); renderStatus(); renderRail(); await runModel(true); });
+      rerun.addEventListener('click', async () => { S.result = null; S.steps = S.steps.filter((s) => s.key === 'extract' || s.key === 'blocks'); S.calib = null; S.reference = false; S.expanded = {}; S.ai = {}; S.responses = {}; S.ack = false; S.edits.forEach((e) => { e.fid = null; }); renderHead(); renderStatus(); renderRail(); await runModel(true); });
       sub.append(rerun);
     }
     if (S.result && S.caps.downloads && !S.running) {
@@ -661,7 +679,7 @@ const UI = (() => {
       wrap.append(st);
     });
     body.append(wrap);
-    if (S.running) body.append(el('div', { class: 'helper', style: 'margin:-4px 2px 12px', text: 'Thorough runs take 2 to 4 minutes on a long deck. The first call asks you to allow Claude for this page.' }));
+    if (S.running) body.append(el('div', { class: 'helper', style: 'margin:-4px 2px 12px', text: 'Thorough runs take 2 to 5 minutes on a long deck. The first call asks you to allow Claude for this page.' }));
   }
   function renderList(body, list) {
     renderSteps(body);
@@ -671,6 +689,9 @@ const UI = (() => {
     { const w = modelWarning(); if (w) body.append(w); }
     if (S.result && S.result.meta.truncated) { const n = el('div', { class: 'note amber', style: 'margin-bottom:10px' }); n.append(el('span', { text: 'The model\'s answer was cut short; some points may be missing.' })); body.append(n); }
     if (!S.result && !S.running) return;
+    if (S.focus) { const fcd = focusCard(); if (fcd) { body.append(fcd); return; } }
+    if (S.viewing) { const mc = memoryCard(); if (mc) body.append(mc); }
+    { const fc = fixCard(); if (fc) body.append(fc); const eb = editBar(); if (eb) body.append(eb); }
     const filters = el('div', { class: 'filters' });
     const opts = S.tab === 'language' ? [['all', 'All'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']] : [['all', 'All'], ['high', 'High'], ['A', 'Required'], ['B', 'Triggered']];
     opts.forEach(([k, label]) => {
@@ -680,7 +701,7 @@ const UI = (() => {
     });
     body.append(filters);
     const shown = list.filter((f) => S.filter === 'all' || (['high', 'medium', 'low'].includes(S.filter) ? f.severity === S.filter : f.tier === S.filter));
-    if (!shown.length) { body.append(el('div', { class: 'empty', text: S.running ? 'Reading…' : (list.length ? 'Nothing in this filter.' : (S.tab === 'language' ? 'No language points. The wording reads as fair and balanced under the rulebook.' : 'No disclosure points.')) })); return; }
+    if (!shown.length) { body.append(el('div', { class: 'empty', text: S.running ? 'Reading…' : (list.length ? 'Nothing in this filter.' : (S.tab === 'language' ? 'No language points. The wording reads as fair and balanced under the rulebook.' : 'No disclosure points.')) })); resolvedSection(body); return; }
     const certain = shown.filter((f) => Review.isCertain(f));
     const verify = shown.filter((f) => !Review.isCertain(f));
     if (S.tab === 'disclosures') {
@@ -703,6 +724,7 @@ const UI = (() => {
         body.append(d);
       }
     }
+    resolvedSection(body);
   }
   function sectionHead(label, n, verify) {
     const h = el('div', { class: 'section-h' + (verify ? ' v' : '') });
@@ -886,7 +908,12 @@ const UI = (() => {
       if (ai.altBusy) w.append(el('div', { class: 'helper', text: 'Writing alternatives…' }));
       if (ai.alts && ai.alts.length) {
         const ul = el('ul', { class: 'alts' });
-        ai.alts.forEach((t) => { const li = el('li'); const cp = el('button', { class: 'btn xs', type: 'button', 'aria-label': 'Copy' }); cp.append(svg('copy')); cp.addEventListener('click', () => U.copyText(t)); li.append(el('span', { text: t }), cp); ul.append(li); });
+        ai.alts.forEach((t) => {
+          const li = el('li'); const cp = el('button', { class: 'btn xs', type: 'button', 'aria-label': 'Copy' }); cp.append(svg('copy')); cp.addEventListener('click', () => U.copyText(t));
+          li.append(el('span', { text: t }), cp);
+          if (canEdit() && f.boxes && f.boxes.length) { const use = el('button', { class: 'btn xs', type: 'button', title: 'Replace the passage in the document with this wording' }); use.append(svg('pen'), document.createTextNode('Use')); use.addEventListener('click', () => { const opt = Fix.optionsFor(Object.assign({}, f, { rewrite: t }), S.doc, S.edits, S.form).find((o) => o.key === 'replace'); if (opt) applyOption(f, opt); }); li.append(use); }
+          ul.append(li);
+        });
         w.append(ul);
       }
     }
@@ -905,6 +932,7 @@ const UI = (() => {
     lbl.append(el('span', { text: 'Your answer' }));
     if (certain && f.severity === 'high' && r.status === 'none') lbl.append(el('span', { class: 'need', text: 'Required before submission' }));
     wrap.append(lbl);
+    if (canEdit()) { wrap.append(fixButton(f)); if ((S.expanded[f.id] || {}).fix) wrap.append(fixMenu(f)); }
     const chips = el('div', { class: 'chips' });
     Object.keys(RESP).forEach((k) => {
       const ch = el('button', { class: 'chip' + (r.status === k ? ' on' : ''), type: 'button' });
@@ -935,29 +963,435 @@ const UI = (() => {
     yes.addEventListener('click', () => setVerdict(f, 'correct'));
     no.addEventListener('click', () => setVerdict(f, 'incorrect'));
     row.append(yes, no);
+    if (v.verdict && v.by && S.user && v.byEmail && v.byEmail !== String(S.user.email || '').toLowerCase()) row.append(el('span', { class: 'tag grey', text: 'by ' + v.by }));
     if (!certain && !v.verdict) row.append(el('span', { class: 'tag vtag', text: 'Awaiting' }));
     if (!certain && v.verdict === 'correct') row.append(el('span', { class: 'tag ok', text: 'Confirmed as a point' }));
     if (!certain && v.verdict === 'incorrect') row.append(el('span', { class: 'tag grey', text: 'Dismissed' }));
     wrap.append(row);
-    if (v.verdict === 'incorrect') {
-      const input = el('input', { type: 'text', id: 'verdict-' + f.id, placeholder: 'Why? This teaches the next pre-reviews.', value: v.reason || '' });
-      input.addEventListener('change', () => setVerdict(f, 'incorrect', input.value));
-      wrap.append(input);
-    }
+    const input = el('input', { type: 'text', id: 'verdict-' + f.id, placeholder: v.verdict === 'incorrect' ? 'Why? This teaches the next pre-reviews.' : 'Comment for the banker and the AI (optional)', value: v.reason || '' });
+    // saved as you type (debounced), never re-rendered from here: a click that follows the typing must land
+    let timer = null;
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { const cur = (sub.verdicts && sub.verdicts[f.id]) || {}; if (cur.verdict) setVerdict(f, cur.verdict, input.value, 'comment'); else setComment(f, input.value); }, 500); });
+    wrap.append(input);
+    const mem = S.memory && S.memory.byFinding && S.memory.byFinding[f.id];
+    const art = (score) => (score >= 96 ? 'an identical' : 'a similar');
+    if (mem) {
+      if (mem.mine) { const pr = el('div', { class: 'precedent' }); pr.append(el('b', { text: 'You ' + (mem.mine.entry.verdict === 'incorrect' ? 'dismissed' : 'confirmed') + ' ' + art(mem.mine.score) + ' point' + (mem.mine.entry.docName ? ' on ' + mem.mine.entry.docName.replace(/\.pdf$/i, '') : '') + (mem.mine.entry.at ? ' (' + mem.mine.entry.at.slice(0, 10) + ')' : '') }), document.createTextNode(mem.mine.entry.reason ? ': “' + mem.mine.entry.reason.slice(0, 140) + '”' : '.')); wrap.append(pr); }
+      if (mem.colleagues && mem.colleagues.length) { const pr = el('div', { class: 'precedent desk' }); mem.colleagues.slice(0, 2).forEach((t, i) => { if (i) pr.append(el('br')); pr.append(el('b', { text: (t.entry.reviewer && t.entry.reviewer.name ? t.entry.reviewer.name : 'A colleague') + ' ' + (t.entry.verdict === 'incorrect' ? 'dismissed' : 'confirmed') + ' ' + art(t.score) + ' point' + (t.entry.docName ? ' on ' + t.entry.docName.replace(/\.pdf$/i, '') : '') + (t.entry.at ? ' (' + t.entry.at.slice(0, 10) + ')' : '') }), document.createTextNode(t.entry.reason ? ': “' + t.entry.reason.slice(0, 140) + '”' : '.')); }); wrap.append(pr); }
+    } else if (f.precedent) { const pr = el('div', { class: 'precedent' }); pr.append(el('b', { text: (f.precedent.mine ? 'You' : (f.precedent.by || 'A reviewer')) + ' ' + (f.precedent.verdict === 'incorrect' ? 'dismissed' : 'confirmed') + ' ' + art(f.precedent.score) + ' point' + (f.precedent.at ? ' on ' + f.precedent.at.slice(0, 10) : '') }), document.createTextNode(f.precedent.reason ? ': “' + f.precedent.reason.slice(0, 160) + '”' : '.')); wrap.append(pr); }
     return wrap;
   }
-  async function setVerdict(f, verdict, reason) {
+  async function setVerdict(f, verdict, reason, source) {
     const sub = S.viewing;
     sub.verdicts = sub.verdicts || {};
     const cur = sub.verdicts[f.id] || {};
-    if (cur.verdict === verdict && reason === undefined) delete sub.verdicts[f.id];
-    else sub.verdicts[f.id] = { verdict, reason: reason !== undefined ? reason : (cur.reason || ''), at: new Date().toISOString() };
+    if (cur.verdict === verdict && reason === undefined) { if (cur.reason) sub.verdicts[f.id] = { reason: cur.reason, at: new Date().toISOString(), by: cur.by || '', byEmail: cur.byEmail || '' }; else delete sub.verdicts[f.id]; }
+    else sub.verdicts[f.id] = { verdict, reason: reason !== undefined ? reason : (cur.reason || ''), at: new Date().toISOString(), by: S.user ? S.user.name : '', byEmail: S.user ? String(S.user.email || '').toLowerCase() : '' };
     await Store.updateSubmission(sub.id, { verdicts: sub.verdicts });
-    if (sub.verdicts[f.id] && (verdict === 'correct' || reason)) await Store.addCalibration({ rule: f.rule, lane: sub.lane, docType: sub.form.docType, page: f.page, quote: f.quote || f.title, verdict, reason: reason || '', submission: sub.id });
-    renderRail();
+    const v = sub.verdicts[f.id];
+    if (v) await Learn.record(sub, f, v.verdict || null, v.reason, S.user, source || 'card'); // every verdict teaches, with or without a comment; a kept comment stays a comment
+    else await Store.upsertCalibration({ id: 'cal-' + String(sub.id || 'x').replace(/[^a-z0-9]/gi, '').slice(-12) + '-' + String(f.id || 'f').replace(/[^a-z0-9]/gi, ''), type: 'withdrawn', rule: f.rule, submission: sub.id, findingId: f.id, at: new Date().toISOString() });
+    scheduleMemory();
+    if (source !== 'focus' && source !== 'comment') renderRail();
+  }
+  /* a comment on a point, with or without a verdict: it teaches the next pre-reviews and reaches the banker */
+  async function setComment(f, text) {
+    const sub = S.viewing;
+    sub.verdicts = sub.verdicts || {};
+    const cur = sub.verdicts[f.id] || {};
+    sub.verdicts[f.id] = Object.assign({}, cur, { reason: text, at: new Date().toISOString(), by: S.user ? S.user.name : '', byEmail: S.user ? String(S.user.email || '').toLowerCase() : '' });
+    if (!sub.verdicts[f.id].verdict && !text.trim()) delete sub.verdicts[f.id];
+    await Store.updateSubmission(sub.id, { verdicts: sub.verdicts });
+    await Learn.record(sub, f, cur.verdict || null, text, S.user, 'comment');
+    const why = document.querySelector('#gate .why'); if (why) why.textContent = why.textContent.replace(/\d+ verdicts? recorded/, Object.keys(sub.verdicts).length + ' verdict' + (Object.keys(sub.verdicts).length === 1 ? '' : 's') + ' recorded');
   }
 
   /* ---------- summary tab ---------- */
+  /* ---------- in-app document editing (banker platform, PDF) ---------- */
+  function canEdit() { return S.mode === 'banker' && !S.viewing && S.doc && S.doc.kind === 'pdf' && !!S.doc.pdf && !!S.result && !S.running; }
+  function editById(id) { return S.edits.find((e) => e.id === id) || null; }
+  function pageBox(n) { return $('page-' + n); }
+  function pctBox(b) { return 'left:' + (b.x * 100).toFixed(3) + '%;top:' + (b.y * 100).toFixed(3) + '%;width:' + (b.w * 100).toFixed(3) + '%;height:' + (b.h * 100).toFixed(3) + '%'; }
+  function editStyle(e, page) {
+    const pw = page.width || 612;
+    const size = (e.size / pw) * 100; const pad = ((e.pad !== undefined ? e.pad : e.size * 0.45) / pw) * 100;
+    return pctBox(e.box) + ';font-size:' + size.toFixed(3) + 'cqw;padding:' + pad.toFixed(3) + 'cqw;font-weight:' + (e.bold ? '700' : '400');
+  }
+  function drawEdits() {
+    document.querySelectorAll('.edit, .edit-wo, .edit-outline').forEach((n) => n.remove());
+    if (!S.doc || S.doc.kind !== 'pdf') return;
+    if (S.viewing) {
+      if (S.showOriginal) return;
+      (S.changes || []).forEach((c, i) => {
+        const overlay = document.querySelector('[data-overlay="' + c.page + '"]');
+        if (!overlay || !c.box) return;
+        const node = el('div', { class: 'edit-outline ' + (c.kind || 'text'), style: pctBox(c.box), title: c.label || c.kind, 'data-change': String(i) });
+        node.append(el('span', { class: 'edit-tag', text: c.kind === 'whiteout' ? 'removed' : (c.kind === 'replace' ? 'rewritten' : 'added') }));
+        overlay.append(node);
+      });
+      return;
+    }
+    S.edits.forEach((e) => {
+      const overlay = document.querySelector('[data-overlay="' + e.page + '"]');
+      const page = S.doc.pages.find((p) => p.number === e.page);
+      if (!overlay || !page) return;
+      (e.whiteout || []).forEach((b) => overlay.append(el('div', { class: 'edit-wo', style: pctBox(b) })));
+      const node = el('div', { class: 'edit' + (e.kind === 'whiteout' ? ' wo' : '') + (S.editing === e.id ? ' sel' : ''), 'data-edit': e.id, style: editStyle(e, page), title: e.label, tabindex: '0' });
+      if (e.kind !== 'whiteout') node.append(el('span', { class: 'edit-text', text: e.text || '' }));
+      if (!e.text && e.kind !== 'whiteout') node.append(el('span', { class: 'edit-empty', text: 'Type the text in the panel' }));
+      node.append(el('span', { class: 'edit-tag', text: e.kind === 'whiteout' ? 'removed' : (e.kind === 'replace' ? 'rewritten' : 'added') }));
+      const hdl = el('span', { class: 'edit-hdl', title: 'Resize' });
+      node.append(hdl);
+      bindEditPointer(node, hdl, e);
+      overlay.append(node);
+    });
+  }
+  function bindEditPointer(node, hdl, e) {
+    let drag = null;
+    const start = (ev, mode) => {
+      if (!canEdit()) return;
+      const box = pageBox(e.page); if (!box) return;
+      ev.preventDefault(); ev.stopPropagation();
+      if (S.editing !== e.id) { S.editing = e.id; renderRail(); drawEdits(); }
+      drag = { mode, x: ev.clientX, y: ev.clientY, box: Object.assign({}, e.box), pw: box.clientWidth, ph: box.clientHeight };
+      try { node.setPointerCapture(ev.pointerId); } catch (err) { /* synthetic events */ }
+      node.classList.add('dragging');
+    };
+    const move = (ev) => {
+      if (!drag) return;
+      const dx = (ev.clientX - drag.x) / drag.pw; const dy = (ev.clientY - drag.y) / drag.ph;
+      if (drag.mode === 'move') { e.box.x = U.clamp(drag.box.x + dx, 0, 1 - e.box.w); e.box.y = U.clamp(drag.box.y + dy, 0, 1 - e.box.h); }
+      else { e.box.w = U.clamp(drag.box.w + dx, 0.04, 1 - e.box.x); e.box.h = U.clamp(drag.box.h + dy, 0.01, 1 - e.box.y); }
+      const live = document.querySelector('[data-edit="' + e.id + '"]');
+      if (live) live.setAttribute('style', editStyle(e, S.doc.pages.find((p) => p.number === e.page)));
+    };
+    const end = () => { if (!drag) return; drag = null; node.classList.remove('dragging'); S.correctedDirty = true; renderEditCardOnly(); };
+    node.addEventListener('pointerdown', (ev) => { if (ev.target === hdl) return; start(ev, 'move'); });
+    hdl.addEventListener('pointerdown', (ev) => start(ev, 'resize'));
+    node.addEventListener('pointermove', move);
+    node.addEventListener('pointerup', end);
+    node.addEventListener('pointercancel', end);
+    node.addEventListener('click', (ev) => { ev.stopPropagation(); if (S.editing !== e.id) { S.editing = e.id; renderRail(); drawEdits(); } });
+    node.addEventListener('keydown', (ev) => { if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); removeEdit(e.id); } });
+  }
+  function selectEdit(id, scroll) {
+    S.editing = id;
+    const e = editById(id);
+    if (e && scroll) { const box = pageBox(e.page); const viewer = $('viewer'); if (box && viewer) { const y = box.offsetTop + e.box.y * box.clientHeight; viewer.scrollTo({ top: Math.max(box.offsetTop - 12, y - viewer.clientHeight * 0.4), behavior: 'smooth' }); S.page = e.page; $('pg-input').value = String(e.page); } }
+    renderRail(); drawEdits();
+    if (e) { const node = document.querySelector('[data-edit="' + id + '"]'); if (node) node.focus({ preventScroll: true }); }
+  }
+  function addEdit(e, fid) {
+    S.edits.push(e); S.correctedDirty = true;
+    if (fid) { const r = S.responses[fid] || {}; if (r.status !== 'fixed') S.responses[fid] = Object.assign({}, r, { status: 'fixed', note: r.note || 'Edited in the app' }); }
+    selectEdit(e.id, true);
+    return e;
+  }
+  function removeEdit(id) {
+    const e = editById(id); if (!e) return;
+    S.edits = S.edits.filter((x) => x.id !== id); S.correctedDirty = true;
+    if (S.editing === id) S.editing = null;
+    if (e.fid && !S.edits.some((x) => x.fid === e.fid)) { const r = S.responses[e.fid]; if (r && r.status === 'fixed' && r.note === 'Edited in the app') S.responses[e.fid] = Object.assign({}, r, { status: 'none', note: '' }); }
+    renderRail(); drawEdits(); renderHead();
+  }
+  function applyOption(f, opt) { const e = opt.make(); e.label = e.label || opt.label; addEdit(e, f.id); renderHead(); U.toast(opt.label + ' · drag the box to move it, use the handle to resize'); }
+  function applyAllFixes() {
+    if (!canEdit()) return;
+    let n = 0; const skipped = [];
+    currentFindings().forEach((f) => {
+      if (f.resolved) return;
+      if (S.edits.some((e) => e.fid === f.id)) return;
+      const opt = Fix.defaultOption(f, S.doc, S.edits, S.form);
+      if (opt) { const e = opt.make(); e.label = e.label || opt.label; S.edits.push(e); const r = S.responses[f.id] || {}; S.responses[f.id] = Object.assign({}, r, { status: 'fixed', note: 'Edited in the app' }); n += 1; }
+      else skipped.push(f);
+    });
+    S.correctedDirty = true; S.editing = null;
+    renderRail(); drawEdits(); renderHead();
+    U.toast(n + ' fix' + (n === 1 ? '' : 'es') + ' placed in the document' + (skipped.length ? ' · ' + skipped.length + ' point' + (skipped.length === 1 ? ' needs' : 's need') + ' your input (sources, facts)' : ''));
+  }
+  function fixMenu(f) {
+    const wrap = el('div', { class: 'fixmenu' });
+    Fix.optionsFor(f, S.doc, S.edits, S.form).forEach((opt) => {
+      const b = el('button', { class: 'fixopt', type: 'button' });
+      b.append(el('b', { text: opt.label }), el('small', { text: opt.key === 'add' ? 'The SOP wording, placed as a text box you can move and resize' : opt.key === 'replace' ? 'The original passage is covered and the suggested rewrite is set in its place' : opt.key === 'remove' ? 'The passage is covered with a white box' : opt.key === 'source' ? 'A source line under the exhibit; complete it with the actual source' : 'An empty box to type your own wording' }));
+      b.addEventListener('click', (ev) => { ev.stopPropagation(); const ex = S.expanded[f.id] || {}; ex.fix = false; S.expanded[f.id] = ex; applyOption(f, opt); });
+      wrap.append(b);
+    });
+    return wrap;
+  }
+  function fixButton(f) {
+    const has = S.edits.filter((e) => e.fid === f.id);
+    const b = el('button', { class: 'btn sm fixbtn' + (has.length ? ' done' : ''), type: 'button' });
+    b.append(svg(has.length ? 'check' : 'pen'), document.createTextNode(has.length ? (has.length === 1 ? 'Fixed in the document' : has.length + ' edits in the document') : 'Fix in the document'));
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); if (has.length) { selectEdit(has[0].id, true); return; } const ex = S.expanded[f.id] || {}; ex.fix = !ex.fix; S.expanded[f.id] = ex; renderRail(); });
+    return b;
+  }
+  function renderEditCardOnly() { const card = document.querySelector('.fixcard'); if (!card) return; const fresh = fixCard(); if (fresh) card.replaceWith(fresh); }
+  function fixCard() {
+    const e = editById(S.editing); if (!e) return null;
+    const f = allFindings().find((x) => x.id === e.fid);
+    const page = S.doc.pages.find((p) => p.number === e.page);
+    const c = el('div', { class: 'fixcard' });
+    const top = el('div', { class: 'top' });
+    top.append(svg('pen'), el('b', { text: e.kind === 'whiteout' ? 'Passage removed' : e.kind === 'replace' ? 'Passage rewritten' : 'Text added' }), el('span', { class: 'code', text: 'p. ' + e.page }), el('span', { class: 'grow' }));
+    const done = el('button', { class: 'btn xs primary', type: 'button', text: 'Done' }); done.addEventListener('click', () => { S.editing = null; renderRail(); drawEdits(); });
+    top.append(done);
+    c.append(top);
+    if (f) c.append(el('div', { class: 'helper', text: f.rule + ' · ' + f.title }));
+    if (e.kind !== 'whiteout') {
+      const ta = el('textarea', { rows: '4', placeholder: 'Text as it will appear in the document' });
+      ta.value = e.text || '';
+      ta.addEventListener('input', () => { e.text = ta.value; e.box.h = Math.max(e.box.h, Fix.autoHeight(e, page)); S.correctedDirty = true; const live = document.querySelector('[data-edit="' + e.id + '"]'); if (live) { live.setAttribute('style', editStyle(e, page)); const t = live.querySelector('.edit-text'); if (t) t.textContent = e.text; const em = live.querySelector('.edit-empty'); if (em) em.hidden = !!e.text; } });
+      c.append(ta);
+      const ctl = el('div', { class: 'fixctl' });
+      const minus = el('button', { class: 'btn xs', type: 'button', text: '−', title: 'Smaller' }); const plus = el('button', { class: 'btn xs', type: 'button', text: '+', title: 'Larger' });
+      const sz = el('span', { class: 'sz', text: e.size + ' pt' });
+      const setSize = (v) => { e.size = U.clamp(Math.round(v * 2) / 2, 4, 36); sz.textContent = e.size + ' pt'; e.box.h = Math.max(e.box.h, Fix.autoHeight(e, page)); S.correctedDirty = true; const live = document.querySelector('[data-edit="' + e.id + '"]'); if (live) live.setAttribute('style', editStyle(e, page)); };
+      minus.addEventListener('click', () => setSize(e.size - 0.5)); plus.addEventListener('click', () => setSize(e.size + 0.5));
+      const bold = el('button', { class: 'btn xs' + (e.bold ? ' on' : ''), type: 'button', text: 'Bold', 'aria-pressed': String(!!e.bold) });
+      bold.addEventListener('click', () => { e.bold = !e.bold; bold.setAttribute('aria-pressed', String(e.bold)); bold.classList.toggle('on', e.bold); S.correctedDirty = true; const live = document.querySelector('[data-edit="' + e.id + '"]'); if (live) live.setAttribute('style', editStyle(e, page)); });
+      const fit = el('button', { class: 'btn xs', type: 'button', text: 'Fit height' }); fit.addEventListener('click', () => { e.box.h = Fix.autoHeight(e, page); S.correctedDirty = true; drawEdits(); });
+      ctl.append(minus, sz, plus, bold, fit);
+      if (S.doc.pages.length > 1) {
+        const sel = el('select', { 'aria-label': 'Page' });
+        S.doc.pages.forEach((p) => sel.append(el('option', { value: String(p.number), text: 'Page ' + p.number, selected: p.number === e.page ? 'selected' : null })));
+        sel.addEventListener('change', () => { e.page = +sel.value; e.whiteout = []; S.correctedDirty = true; drawEdits(); selectEdit(e.id, true); });
+        ctl.append(sel);
+      }
+      c.append(ctl);
+    } else c.append(el('div', { class: 'helper', text: 'The passage is covered with a white box in the corrected file. Drag to move, use the handle to resize.' }));
+    const foot = el('div', { class: 'fixfoot' });
+    const del = el('button', { class: 'btn xs danger', type: 'button', text: 'Remove this edit' }); del.addEventListener('click', () => removeEdit(e.id));
+    foot.append(el('span', { class: 'helper', text: 'Drag the box to move it · handle to resize · Delete key removes it' }), el('span', { class: 'grow' }), del);
+    c.append(foot);
+    return c;
+  }
+  /* points the app can fix without the banker's input (SOP text to add, a rewrite in place) and not yet edited */
+  function autoFixable() { return canEdit() ? currentFindings().filter((f) => !f.resolved && !S.edits.some((e) => e.fid === f.id) && Fix.defaultOption(f, S.doc, S.edits, S.form)) : []; }
+  function editBar() {
+    if (S.viewing) return reviewerChanges();
+    if (!S.doc || S.doc.kind !== 'pdf') return null;
+    const auto = autoFixable();
+    if (!S.edits.length && S.version === 1) {
+      if (!auto.length) return null;
+      const bar = el('div', { class: 'editbar' });
+      const head = el('div', { class: 'eb-head' });
+      head.append(svg('pen'), el('b', { text: auto.length + ' point' + (auto.length === 1 ? '' : 's') + ' can be fixed in the document for you' }), el('span', { class: 'grow' }));
+      bar.append(head, el('div', { class: 'helper', style: 'margin:4px 0 0', text: 'The SOP wording placed on the right page, flagged passages rewritten in place. Every box stays yours to move, resize or edit.' }));
+      const acts = el('div', { class: 'eb-acts' });
+      const all = el('button', { class: 'btn sm primary', type: 'button', id: 'btn-apply-all' }); all.append(svg('pen'), document.createTextNode('Apply all suggested fixes'));
+      all.addEventListener('click', () => applyAllFixes());
+      acts.append(all); bar.append(acts);
+      return bar;
+    }
+    const bar = el('div', { class: 'editbar' });
+    const n = S.edits.length;
+    const head = el('div', { class: 'eb-head' });
+    head.append(svg('pen'), el('b', { text: S.version > 1 ? 'Version ' + S.version + ' · corrected in the app' : n + ' change' + (n === 1 ? '' : 's') + ' in the document' }), el('span', { class: 'grow' }));
+    bar.append(head);
+    if (n) {
+      const list = el('div', { class: 'eb-list' });
+      S.edits.forEach((e) => { const row = el('button', { class: 'eb-row' + (S.editing === e.id ? ' on' : ''), type: 'button' }); row.append(el('span', { class: 'code', text: 'p. ' + e.page }), el('span', { text: e.label || e.kind })); row.addEventListener('click', () => selectEdit(e.id, true)); list.append(row); });
+      bar.append(list);
+    }
+    if (S.resolved && S.resolved.length) bar.append(el('div', { class: 'helper', text: S.resolved.length + ' point' + (S.resolved.length === 1 ? '' : 's') + ' resolved by the corrected version' }));
+    const acts = el('div', { class: 'eb-acts' });
+    if (n && canEdit()) {
+      const rc = el('button', { class: 'btn sm primary', type: 'button' }); rc.append(svg('refresh'), document.createTextNode('Re-check the corrected version'));
+      rc.addEventListener('click', () => recheckCorrected());
+      acts.append(rc);
+    }
+    if (auto.length && canEdit()) {
+      const more = el('button', { class: 'btn sm', type: 'button', id: 'btn-apply-all' }); more.append(svg('pen'), document.createTextNode('Apply ' + auto.length + ' more suggested fix' + (auto.length === 1 ? '' : 'es')));
+      more.addEventListener('click', () => applyAllFixes());
+      acts.append(more);
+    }
+    if (n && S.caps.downloads) {
+      const dl = el('button', { class: 'btn sm', type: 'button' }); dl.append(svg('download'), document.createTextNode('Download corrected PDF'));
+      dl.addEventListener('click', () => downloadCorrected(dl));
+      acts.append(dl);
+    }
+    if (S.version > 1 && S.caps.downloads) {
+      const dl2 = el('button', { class: 'btn sm', type: 'button' }); dl2.append(svg('download'), document.createTextNode('Download v' + S.version + ' (PDF)'));
+      dl2.addEventListener('click', () => { S.caps.downloads.save({ filename: S.doc.name, data: S.doc.bytes }); });
+      acts.append(dl2);
+    }
+    if (S.version > 1 && S.caps.sample && !S.running) {
+      const full = el('button', { class: 'btn sm', type: 'button' }); full.append(svg('spark'), document.createTextNode('Full pre-review of v' + S.version));
+      full.addEventListener('click', () => fullRerun());
+      acts.append(full);
+    }
+    if (acts.childNodes.length) bar.append(acts);
+    if (canEdit()) { const ob = officeButtons(); if (ob) { ob.prepend(el('span', { class: 'helper', style: 'align-self:center;margin:0', text: 'Export as' })); bar.append(ob); } }
+    return bar;
+  }
+  /* reviewer platform: the two memories (personal, shared) for the open submission */
+  let memoryTimer = null;
+  async function refreshMemory(quiet) {
+    const sub = S.viewing; if (!sub) return;
+    try {
+      const m = await Learn.deskMemory(sub, S.user, S.inbox);
+      if (S.viewing !== sub) return;
+      S.memory = m; sub.memory = { similar: m.desk.similar, hints: m.desk.hints, differs: m.desk.differs.length, personal: { missed: m.personal.missed.length, differs: m.personal.differs.length } };
+      if (quiet) { const old = document.querySelector('.memcard'); const fresh = memoryCard(); if (old && fresh) old.replaceWith(fresh); else if (old && !fresh) old.remove(); }
+      else renderRail();
+    } catch (e) { console.warn('memory unavailable', e); }
+  }
+  function scheduleMemory() { clearTimeout(memoryTimer); memoryTimer = setTimeout(() => refreshMemory(true), 400); }
+  function memoryCard() {
+    const m = S.memory; if (!m || !S.viewing) return null;
+    const p = m.personal; const d = m.desk;
+    const hasPersonal = p.habits.length || p.missed.length || p.differs.length;
+    const hasDesk = d.similar.length || d.hints || d.differs.length;
+    if (!hasPersonal && !hasDesk) return null;
+    const card = el('div', { class: 'memcard' });
+    const head = el('div', { class: 'mc-head' }); head.append(svg('bulb'), el('b', { text: 'Memory' }), el('span', { class: 'helper', style: 'margin:0', text: 'yours, and the reviewers\'' })); card.append(head);
+    const goto = (id) => { const f = allFindings().find((x) => x.id === id); if (f) { S.tab = tierOfTab(f); selectFinding(f, { scrollPage: true, scrollPanel: true }); renderRail(); } };
+    const row = (cls, html, id) => { const r = el(id ? 'button' : 'div', { class: 'mc-row ' + cls, html }); if (id) { r.type = 'button'; r.addEventListener('click', () => goto(id)); } return r; };
+    const where = (x) => x.rule + (x.page ? ' p. ' + x.page : '');
+    const sec = (title, sub2) => { const h = el('div', { class: 'mc-sec' }); h.append(el('b', { text: title })); if (sub2) h.append(el('span', { text: sub2 })); return h; };
+    if (hasPersonal) {
+      card.append(sec('For you', m.reviewer ? m.reviewer.name : ''));
+      if (p.habits.length) card.append(row('', 'On these rules you ' + p.habits.slice(0, 5).map((h) => (h.correct >= h.incorrect ? 'confirm ' : 'dismiss ') + '<span class="code">' + U.esc(h.rule) + '</span> ' + (h.correct >= h.incorrect ? h.correct : h.incorrect) + '/' + h.total).join(', ') + '.'));
+      p.missed.slice(0, 6).forEach((x) => card.append(row('warn', '<span class="code">' + U.esc(where(x)) + '</span> not verdicted yet, and ' + U.esc(x.why) + '.', x.id)));
+      p.differs.slice(0, 6).forEach((x) => card.append(row('warn', '<span class="code">' + U.esc(where(x)) + '</span> you ' + (x.now === 'correct' ? 'confirmed' : 'dismissed') + ' it here but ' + (x.habit ? 'you usually ' + (x.before === 'correct' ? 'confirm' : 'dismiss') + ' ' + U.esc(x.rule) + ' (' + (x.before === 'correct' ? x.habit.correct : x.habit.incorrect) + '/' + x.habit.total + ')' : (x.before === 'correct' ? 'confirmed' : 'dismissed') + ' the same passage on ' + U.esc((x.at || '').slice(0, 10)) + (x.doc ? ' (' + U.esc(x.doc) + ')' : '') + (x.reason ? ': “' + U.esc(x.reason.slice(0, 120)) + '”' : '')) + '.', x.id)));
+    }
+    if (hasDesk) {
+      card.append(sec('From the other reviewers', d.similar.length ? d.similar.length + ' similar submission' + (d.similar.length === 1 ? '' : 's') : ''));
+      d.similar.slice(0, 4).forEach((x) => card.append(row('', '<b>' + U.esc(x.name) + '</b>' + (x.sameDoc ? ' <span class="tag grey">same document</span>' : ' <span class="m">' + Math.round(x.score * 100) + '% alike</span>') + ' · ' + U.esc(U.fmtDate(x.at)) + (x.reviewers.length ? ' · ' + U.esc(x.reviewers.join(', ')) : '') + (x.decision ? ' · <b>' + U.esc(STATUS_LABEL[x.status] || x.status) + '</b>' : ' · not decided') + (x.confirmed.length ? ' · confirmed ' + U.esc(Array.from(new Set(x.confirmed)).join(', ')) : '') + (x.dismissed.length ? ' · dismissed ' + U.esc(Array.from(new Set(x.dismissed)).join(', ')) : ''))));
+      if (d.hints) card.append(row('', d.hints + ' point' + (d.hints === 1 ? '' : 's') + ' of this submission ' + (d.hints === 1 ? 'was' : 'were') + ' seen by colleagues on similar material; their verdicts sit under each point.'));
+      d.differs.slice(0, 6).forEach((x) => card.append(row('warn', '<span class="code">' + U.esc(where(x)) + '</span> you ' + (x.now === 'correct' ? 'confirmed' : 'dismissed') + ' it, ' + U.esc(x.by) + ' ' + (x.theirs === 'correct' ? 'confirmed' : 'dismissed') + ' a similar point' + (x.doc ? ' on ' + U.esc(x.doc) : '') + (x.reason ? ': “' + U.esc(x.reason.slice(0, 120)) + '”' : '') + '. Keep yours or align; either way write why.', x.id)));
+    }
+    return card;
+  }
+  /* reviewer platform: what the banker changed in the app, with a switch to the original file when it is at hand */
+  function reviewerChanges() {
+    const ch = S.changes || [];
+    if (!ch.length && !(S.viewing && S.viewing.version > 1)) return null;
+    const bar = el('div', { class: 'editbar desk' });
+    const head = el('div', { class: 'eb-head' });
+    head.append(svg('pen'), el('b', { text: 'Version ' + (S.viewing.version || 1) + ' · corrected by the banker in the app' }), el('span', { class: 'grow' }));
+    if (S.originalDoc && S.doc.kind === 'pdf') {
+      const seg = el('div', { class: 'seg xs', role: 'group' });
+      const a = el('button', { type: 'button', 'aria-pressed': String(!S.showOriginal), text: 'Corrected' }); const b = el('button', { type: 'button', 'aria-pressed': String(!!S.showOriginal), text: 'Original' });
+      const swap = (orig) => { if (S.showOriginal === orig) return; S.showOriginal = orig; const cur = S.doc; S.doc = orig ? Object.assign({}, S.originalDoc, { kind: 'pdf' }) : S.correctedDoc; if (orig) S.correctedDoc = cur; renderViewer(); renderHead(); renderRail(); };
+      a.addEventListener('click', () => swap(false)); b.addEventListener('click', () => swap(true));
+      seg.append(a, b); head.append(seg);
+    }
+    bar.append(head);
+    if (S.showOriginal) bar.append(el('div', { class: 'helper', text: 'Original file as uploaded, before the corrections. The attention points refer to the corrected version.' }));
+    const list = el('div', { class: 'eb-list' });
+    ch.forEach((c) => {
+      const row = el('button', { class: 'eb-row', type: 'button' });
+      row.append(el('span', { class: 'code', text: 'p. ' + c.page }), el('span', { text: (c.label || c.kind) + (c.text ? ' · “' + c.text.slice(0, 70) + (c.text.length > 70 ? '…' : '') + '”' : '') }));
+      row.addEventListener('click', () => { scrollToPage(c.page); const node = document.querySelector('[data-change="' + ch.indexOf(c) + '"]'); if (node) { node.classList.add('pulse'); setTimeout(() => node.classList.remove('pulse'), 2400); } });
+      list.append(row);
+    });
+    bar.append(list);
+    if (S.resolved && S.resolved.length) bar.append(el('div', { class: 'helper', text: S.resolved.length + ' point' + (S.resolved.length === 1 ? '' : 's') + ' from the first pre-review resolved by these changes; listed under each tab.' }));
+    return bar;
+  }
+  async function buildCorrected() {
+    if (!S.edits.length) return null;
+    if (S.correctedBytes && !S.correctedDirty) return S.correctedBytes;
+    const bytes = await Fix.corrected(S.doc, S.edits);
+    S.correctedBytes = bytes; S.correctedDirty = false;
+    return bytes;
+  }
+  /* Office exports: pages as pictures of the uploaded file, corrections as editable boxes (PowerPoint) or an
+     editable change sheet (Word) */
+  const MIME = { pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+  async function exportOffice(kind, btn) {
+    if (!S.doc || S.doc.kind !== 'pdf' || !S.doc.pdf) { U.toast('Office exports need a PDF'); return; }
+    try {
+      if (btn) { btn.disabled = true; }
+      setStatus('Building the ' + (kind === 'pptx' ? 'PowerPoint' : 'Word') + ' file…');
+      const base = S.history && S.history.length && S.history[0].doc && S.history[0].doc.pdf ? S.history[0].doc : S.doc;
+      const changes = ((S.result && S.result.meta && S.result.meta.changes) || []).concat(Fix.changeLog(S.edits, allFindings()));
+      const points = (S.viewing ? allFindings() : currentFindings()).concat(S.resolved || []);
+      const title = (S.doc.sourceName || S.doc.name).replace(/\.pdf$/i, '');
+      const bytes = kind === 'pptx' ? await Exports.pptx(base, changes, points, { title, version: S.version }) : await Exports.docx(base, changes, points, { title, version: S.version });
+      const filename = title.replace(/ \(corrected v\d+\)/, '') + (changes.length ? ' (corrected)' : '') + '.' + kind;
+      await S.caps.downloads.save({ filename, data: new Blob([bytes], { type: MIME[kind] }) });
+      setStatus(''); U.toast((kind === 'pptx' ? 'PowerPoint' : 'Word') + ' file saved');
+    } catch (e) { console.error(e); setStatus(''); U.toast('Could not build the file: ' + (e.message || e)); }
+    finally { if (btn) btn.disabled = false; }
+  }
+  function officeButtons() {
+    if (!S.caps.downloads || !S.doc || S.doc.kind !== 'pdf' || !S.doc.pdf) return null;
+    const wrap = el('div', { class: 'eb-acts' });
+    const pp = el('button', { class: 'btn sm', type: 'button' }); pp.append(svg('download'), document.createTextNode('PowerPoint')); pp.title = 'Every page as a slide, corrections as editable text boxes';
+    pp.addEventListener('click', () => exportOffice('pptx', pp));
+    const wd = el('button', { class: 'btn sm', type: 'button' }); wd.append(svg('download'), document.createTextNode('Word')); wd.title = 'Change sheet: corrected pages with editable corrections, then the attention points';
+    wd.addEventListener('click', () => exportOffice('docx', wd));
+    wrap.append(pp, wd);
+    return wrap;
+  }
+  function correctedName(name, v) { return String(name || 'document.pdf').replace(/\.pdf$/i, '') + ' (corrected v' + v + ').pdf'; }
+  async function downloadCorrected(btn) {
+    try {
+      if (btn) { btn.disabled = true; }
+      const bytes = await buildCorrected();
+      await S.caps.downloads.save({ filename: correctedName(S.doc.name, S.version + 1), data: bytes });
+      U.toast('Corrected PDF saved');
+    } catch (e) { console.error(e); U.toast('Could not build the corrected PDF: ' + (e.message || e)); }
+    finally { if (btn) btn.disabled = false; }
+  }
+  /* corrected version becomes the working document: deterministic re-check, resolved points, new highlights */
+  async function recheckCorrected() {
+    if (!canEdit() || !S.edits.length) return;
+    setStatus('Building the corrected version…');
+    try {
+      const bytes = await buildCorrected();
+      const extracted = await Extract.pdf(bytes);
+      const pages = Fix.maskPages(extracted.pages, S.edits);
+      const sha = await U.sha256(bytes);
+      const v = S.version + 1;
+      S.history = S.history || [];
+      S.history.push({ version: S.version, doc: S.doc, facts: S.facts, findings: S.result.findings, edits: S.edits, resolved: S.resolved || [] });
+      const changes = Fix.changeLog(S.edits, allFindings());
+      S.doc = Object.assign({ kind: 'pdf', name: correctedName(S.doc.name.replace(/ \(corrected v\d+\)/, ''), v), size: bytes.length, file: null, bytes, sha, sourceName: S.doc.sourceName || S.doc.name }, extracted, { pages });
+      S.facts = Engine.analyze(S.doc.pages, S.form);
+      const rc = Fix.recheck(S.result.findings, S.facts, S.doc.pages, S.form, S.edits);
+      S.result = Object.assign({}, S.result, { findings: rc.findings, meta: Object.assign({}, S.result.meta, { version: v, recheck: 'deterministic', changes: (S.result.meta.changes || []).concat(changes.map((c) => Object.assign({ version: v }, c))) }) });
+      S.resolved = (S.resolved || []).concat(rc.resolved);
+      rc.resolved.forEach((f) => { S.responses[f.id] = { status: 'fixed', note: 'Resolved in v' + v + ': ' + f.resolved.how }; });
+      S.version = v; S.edits = []; S.editing = null; S.correctedBytes = null; S.correctedDirty = false; S.active = null;
+      renderViewer(); renderHead(); renderStatus(); renderRail();
+      setStatus('');
+      U.toast('Version ' + v + ' checked: ' + rc.resolved.length + ' point' + (rc.resolved.length === 1 ? '' : 's') + ' resolved, ' + rc.findings.length + ' open');
+    } catch (e) { console.error(e); setStatus(''); U.toast('Could not re-check: ' + (e.message || e)); }
+  }
+  async function fullRerun() {
+    if (!S.caps.sample || S.running) return;
+    const keepResolved = S.resolved || [];
+    S.result = null; S.steps = []; S.active = null; S.expanded = {}; S.ai = {}; S.responses = {}; S.ack = false; S.edits.forEach((e) => { e.fid = null; }); // the new run renumbers the points
+    setStep('extract', { status: 'done', detail: S.doc.pages.length + ' pages read (version ' + S.version + ')' });
+    setStep('blocks', { status: 'run' });
+    S.facts = Engine.analyze(S.doc.pages, S.form);
+    setStep('blocks', { status: 'done', detail: 'lane ' + S.facts.lane });
+    renderHead(); renderRail();
+    await runModel(true);
+    S.resolved = keepResolved;
+    if (S.result) S.result.meta.version = S.version;
+    renderRail(); renderHead();
+  }
+  function readinessPill() {
+    if (!S.result) return null;
+    const r = Fix.readiness(allFindings(), S.viewing ? (S.viewing.responses || {}) : S.responses, { all: !!S.viewing });
+    const p = el('span', { class: 'ready ' + r.band, title: r.open + ' open point' + (r.open === 1 ? '' : 's') });
+    p.append(el('b', { text: String(r.score) }), document.createTextNode(' ' + r.label));
+    return p;
+  }
+  function resolvedSection(body) {
+    const list = (S.resolved || []).filter((f) => tierOfTab(f) === S.tab);
+    if (!list.length) return;
+    const d = el('details', { class: 'resolved', open: S.version > 1 ? '' : null });
+    const sm = el('summary'); sm.append(svg('check'), document.createTextNode(list.length + ' point' + (list.length === 1 ? '' : 's') + ' resolved in this version'));
+    d.append(sm);
+    list.forEach((f) => { const row = el('div', { class: 'sub-item' }); row.append(el('span', { class: 'code', text: f.rule + (f.page ? ' · p. ' + f.page : '') }), document.createTextNode(' ' + f.title + ' · ' + (f.resolved ? f.resolved.how : 'fixed'))); d.append(row); });
+    body.append(d);
+  }
   function renderSummary(body, findings) {
     renderSteps(body);
     const r = S.result;
@@ -1039,6 +1473,7 @@ const UI = (() => {
     [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s2 = el('div', { class: 'stat' }); s2.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s2); });
     st.append(grid);
     st.append(el('p', { class: 'helper', text: 'Required blocks ' + c.A + ' · triggered disclosures ' + c.B + ' · language ' + c.C + (r.suppressed && r.suppressed.length ? ' · ' + r.suppressed.length + ' candidates set aside' : '') }));
+    { const tl = el('div', { class: 'gc', style: 'padding-top:8px' }); tl.append(el('h5', { text: 'Timeline' }), timelineBlock(sub)); st.append(tl); }
     if (!r.meta.deterministicOnly) {
       const a = el('div', { class: 'gc', style: 'padding-top:8px' });
       a.append(el('span', { class: 'tag ok', text: String(c.certain) }), el('span', { html: '<b style="font-weight:500">asserted to the banker</b> <span style="color:var(--text-3)">deterministic checks and points confirmed by the second pass with a verbatim quote located on the page</span>' }));
@@ -1091,7 +1526,7 @@ const UI = (() => {
     }
     if (r.brief) { const b = el('div', { class: 'summary-card' }); b.append(el('h4', { text: 'Brief' }), el('div', { class: 'brief', text: r.brief })); body.append(b); }
     if (r.banker_message) { const b = el('div', { class: 'summary-card' }); b.append(el('h4', { text: 'Comment to the banker' }), copyBox('Ready to paste', r.banker_message)); body.append(b); }
-    if (r.meta && r.meta.learning) body.append(el('div', { class: 'helper', style: 'padding:0 4px 6px', text: 'Learning applied to this pre-review: ' + r.meta.learning.rules + ' learned rule' + (r.meta.learning.rules === 1 ? '' : 's') + ', ' + r.meta.learning.precedents + ' precedent' + (r.meta.learning.precedents === 1 ? '' : 's') + ' from reviewer verdicts.' }));
+    if (r.meta && r.meta.learning) { const L = r.meta.learning; body.append(el('div', { class: 'helper', style: 'padding:0 4px 6px', text: 'Learning applied to this pre-review: ' + L.rules + ' learned rule' + (L.rules === 1 ? '' : 's') + (L.reviewerRules ? ' (' + L.reviewerRules + ' from the reviewer this goes to)' : '') + ', ' + L.precedents + ' precedent' + (L.precedents === 1 ? '' : 's') + ' out of ' + (L.verdicts || 0) + ' reviewer verdict' + (L.verdicts === 1 ? '' : 's') + (L.reviewer ? ', adapted to ' + L.reviewer : '') + '.' })); }
     if (r.meta && r.meta.calls && r.meta.calls.length) body.append(el('div', { class: 'helper', style: 'padding:0 4px', text: 'Model calls: ' + r.meta.calls.map((x) => x.pass + (x.batch ? ' ' + x.batch : '') + ' ' + Math.round(x.ms / 1000) + ' s, ' + Math.round(x.bytes / 1024) + ' KB' + (x.images ? ', ' + x.images + ' images' : '')).join(' · ') }));
   }
   function scoreCard(c) {
@@ -1114,6 +1549,7 @@ const UI = (() => {
   /* ---------- gate and submission ---------- */
   function gateState() {
     if (!S.result) return { ok: false, why: 'Waiting for the pre-review.' };
+    if (S.edits.length) return { ok: false, why: S.edits.length + ' correction' + (S.edits.length === 1 ? '' : 's') + ' placed in the document: re-check the corrected version (or remove them) before submitting, so the reviewer receives the corrected file.' };
     const high = S.result.findings.filter((f) => f.severity === 'high' && Review.isCertain(f));
     const unanswered = high.filter((f) => !S.responses[f.id] || S.responses[f.id].status === 'none');
     if (unanswered.length) return { ok: false, why: unanswered.length + ' high point' + (unanswered.length === 1 ? '' : 's') + ' still need' + (unanswered.length === 1 ? 's' : '') + ' an answer.' };
@@ -1157,8 +1593,15 @@ const UI = (() => {
     const sub = Object.assign(currentSubmissionShape(), { id, status: 'submitted', verdicts: {}, calibration: S.calib ? { recall: S.calib.recall, expectedTotal: S.calib.expectedTotal, fpCount: S.calib.fpCount } : null });
     sub.facts.required = S.facts.required.map((r) => ({ id: r.id, name: r.name, status: r.status, page: r.page, score: Math.round(r.score) }));
     sub.file.assetId = null;
-    if (S.caps.assets && S.doc.file && S.doc.kind === 'pdf') {
-      try { const up = await S.caps.assets.upload(S.doc.file, { type: 'application/pdf' }); sub.file.assetId = up.id; } catch (e) { console.warn('asset upload failed', e); }
+    sub.version = S.version; sub.changes = (S.result.meta && S.result.meta.changes) || [];
+    sub.resolved = (S.resolved || []).map((f) => ({ id: f.id, rule: f.rule, title: f.title, page: f.page || null, how: f.resolved ? f.resolved.how : 'fixed', version: f.resolved ? f.resolved.version : S.version }));
+    sub.original = S.history && S.history.length ? { name: S.history[0].doc.name, sha: S.history[0].doc.sha, pages: S.history[0].doc.pages.length } : null;
+    sub.readiness = Fix.readiness(S.result.findings, S.responses, { all: false });
+    sub.submitted_by = S.user ? { name: S.user.name, email: S.user.email, firm: S.user.firm } : null;
+    if (S.doc.kind === 'pdf' && S.doc.bytes) DOC_CACHE.set(S.doc.sha, { pages: S.doc.pages, pdf: S.doc.pdf, bytes: S.doc.bytes, name: S.doc.name });
+    (S.history || []).forEach((h) => { if (h.doc && h.doc.sha && h.doc.kind === 'pdf') DOC_CACHE.set(h.doc.sha, { pages: h.doc.pages, pdf: h.doc.pdf, bytes: h.doc.bytes, name: h.doc.name }); });
+    if (S.caps.assets && S.doc.kind === 'pdf' && S.doc.bytes) {
+      try { const file = S.doc.file || new File([S.doc.bytes], S.doc.name, { type: 'application/pdf' }); const up = await S.caps.assets.upload(file, { type: 'application/pdf' }); sub.file.assetId = up.id; sub.file.assetUrl = up.url || ('/_blob/' + up.id); } catch (e) { console.warn('asset upload failed', e); }
     }
     const to = (S.settings && S.settings.reviewerEmail) || '';
     const msg = Notify.compose(sub);
@@ -1176,7 +1619,8 @@ const UI = (() => {
     const answered = Object.keys(sub.responses).filter((k) => sub.responses[k].status !== 'none').length;
     const ic = el('div', { class: 'done-ic' }); ic.append(svg('checkCircle'));
     card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: 'Sent to Finalis Compliance' }));
-    card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ', ' + answered + ' answered' + (c.verify ? ' · ' + c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' left to the reviewer' : '') + '.' }));
+    card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ', ' + answered + ' answered' + (c.verify ? ' · ' + c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' left to the reviewer' : '') + '.' + (sub.readiness ? ' Readiness ' + sub.readiness.score + '/100.' : '') }));
+    if ((sub.version || 1) > 1) card.append(el('p', { class: 'helper', style: 'margin:-6px 0 12px', text: 'You submitted version ' + sub.version + ', corrected in the app: ' + (sub.changes || []).length + ' change' + ((sub.changes || []).length === 1 ? '' : 's') + ', ' + (sub.resolved || []).length + ' point' + ((sub.resolved || []).length === 1 ? '' : 's') + ' resolved before submission. The reviewer sees the corrections outlined on the pages and can compare with the original.' }));
     const n = el('div', { class: 'note green', style: 'margin-bottom:16px' });
     n.append(svg('inbox'), el('span', { class: 'grow', text: 'The Finalis reviewer' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received your document, the pre-review, your answers and the brief' + (mode === 'shared' ? '.' : ' (in this browser\'s demo inbox; open this page in the Claude app to reach the shared inbox).') + ' The reviewer platform is a separate application: you will hear back from the reviewer, not from this page.' }));
     card.append(n);
@@ -1187,82 +1631,280 @@ const UI = (() => {
     const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
     again.addEventListener('click', () => { resetForm(); show('form'); });
     row.append(again);
+    if (S.caps.downloads && S.doc && S.doc.kind === 'pdf' && S.doc.bytes && (sub.version || 1) > 1) { const cp = el('button', { class: 'btn', type: 'button' }); cp.append(svg('download'), document.createTextNode('Corrected PDF (v' + sub.version + ')')); cp.addEventListener('click', () => S.caps.downloads.save({ filename: S.doc.name, data: S.doc.bytes })); row.append(cp); }
+    { const ob = officeButtons(); if (ob) { ob.style.marginTop = '0'; row.append(ob); } }
     if (S.caps.downloads) { const ex = el('button', { class: 'btn', type: 'button' }); ex.append(svg('download'), document.createTextNode('Download my summary (PDF)')); ex.addEventListener('click', () => savePdf(sub, 'banker')); row.append(ex); }
     row.append(el('span', { style: 'flex:1' }));
-    const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the reviewer platform (demo)' });
-    inbox.addEventListener('click', () => setMode('reviewer'));
-    row.append(inbox);
+    if (!lockedPlatforms()) { const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the reviewer platform (demo)' }); inbox.addEventListener('click', () => setMode('reviewer')); row.append(inbox); }
     card.append(row);
   }
 
   /* ---------- reviewer inbox ---------- */
-  function renderInbox() {
-    const list = $('inbox-list');
-    list.innerHTML = '';
-    $('store-status').textContent = Store.status() === 'shared' ? 'Shared inbox: the whole desk sees it.' : 'Private inbox in this browser. Open the page in the Claude app for the shared inbox.';
-    const head = el('div', { class: 'trow h' });
-    ['Document', 'Submitted by', 'Lane', 'Points', 'Status', ''].forEach((t) => head.append(el('span', { text: t })));
-    list.append(head);
-    if (!S.inbox.length) { list.append(el('div', { class: 'empty', text: 'No submissions yet. Submit a pre-reviewed document as a banker to see it here.' })); return; }
-    S.inbox.forEach((sub) => {
-      const c = Review.counts(sub.findings || []);
-      const row = el('div', { class: 'trow' });
-      const d = el('div'); d.append(el('div', { class: 't', text: sub.file.name }), el('div', { class: 's', text: U.fmtDate(sub.created_at) + ' · ' + (sub.file.pages || 0) + ' p.' }));
-      const by = el('div'); by.append(el('div', { text: sub.submitter || 'unknown', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }), el('div', { class: 's', text: sub.form && sub.form.bankName ? sub.form.bankName : '' }));
-      const lane = el('span', { class: 'tag grey', text: sub.lane === 'institutional' ? 'Institutional' : 'Retail' });
-      const pts = el('div', { class: 'pts' });
-      pts.append(el('span', { class: 'tag high', text: String(c.high) }), el('span', { class: 'tag medium', text: String(c.medium) }), el('span', { class: 'tag low', text: String(c.low) }));
-      const status = el('span', { class: 'tag ' + (sub.status === 'approved' ? 'ok' : sub.status === 'changes' ? 'medium' : 'info'), text: sub.status === 'approved' ? 'Approved' : sub.status === 'changes' ? 'Changes requested' : 'Awaiting review' });
-      const acts = el('div', { class: 'acts' });
-      const fb = el('button', { class: 'btn sm', type: 'button', text: 'Feedback' });
-      fb.addEventListener('click', () => openDialog('Feedback sent to the reviewer', (body) => { body.append(el('div', { class: 'mailpreview', text: 'Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body })); const cp = el('button', { class: 'btn sm', type: 'button', style: 'margin-top:10px' }); cp.append(svg('copy'), document.createTextNode('Copy')); cp.addEventListener('click', () => U.copyText('Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body)); body.append(cp); }));
-      const open = el('button', { class: 'btn sm primary', type: 'button', text: 'Open' });
-      open.addEventListener('click', () => openSubmission(sub));
-      if (S.caps.downloads) { const pdf = el('button', { class: 'btn sm', type: 'button', title: 'Export the brief as PDF' }); pdf.append(svg('download'), document.createTextNode('PDF')); pdf.addEventListener('click', () => savePdf(sub, 'desk')); acts.append(pdf); }
-      acts.append(fb, open);
-      row.append(d, by, lane, pts, status, acts);
-      list.append(row);
-    });
-  }
   async function openSubmission(sub) {
     S.viewing = sub; S.result = null; S.tab = 'disclosures'; S.filter = 'all'; S.active = null; S.expanded = {}; S.ai = {}; S.zoom = 1; S.page = 1;
     show('work');
     $('wh-title').textContent = sub.file.name;
     let pages = null; let pdf = null;
-    if (S.doc && S.doc.sha && S.doc.sha === sub.file.sha) { pages = S.doc.pages; pdf = S.doc.pdf; }
+    if (DOC_CACHE.has(sub.file.sha)) { const c = DOC_CACHE.get(sub.file.sha); pages = c.pages; pdf = c.pdf; }
+    else if (S.doc && S.doc.sha && S.doc.sha === sub.file.sha) { pages = S.doc.pages; pdf = S.doc.pdf; }
     else if (S.stash && S.stash.doc && S.stash.doc.sha === sub.file.sha) { pages = S.stash.doc.pages; pdf = S.stash.doc.pdf; }
     else if (sub.file.assetId) {
-      try { const res = await fetch('/_blob/' + sub.file.assetId); if (res.ok) { const bytes = new Uint8Array(await res.arrayBuffer()); const ex = await Extract.pdf(bytes); pages = ex.pages; pdf = ex.pdf; } } catch (e) { console.warn('asset fetch failed', e); }
+      try { const res = await fetch(sub.file.assetUrl || ('/_blob/' + sub.file.assetId)); if (res.ok) { const bytes = new Uint8Array(await res.arrayBuffer()); const ex = await Extract.pdf(bytes); pages = ex.pages; pdf = ex.pdf; } } catch (e) { console.warn('asset fetch failed', e); }
     }
     if (!pages) {
       pages = [Extract.pageFromText(1, 'The document itself was not stored with this submission (' + sub.file.name + ', ' + sub.file.pages + ' pages). The attention points quote the passages; open the file in the case to see them in place.')];
       S.doc = { kind: 'text', name: sub.file.name, pages, pdf: null, sha: sub.file.sha };
     } else S.doc = { kind: pdf ? 'pdf' : 'text', name: sub.file.name, pages, pdf, sha: sub.file.sha };
     S.form = sub.form;
+    S.version = sub.version || 1; S.changes = sub.changes || []; S.edits = []; S.editing = null; S.showOriginal = false; S.chat = []; S.focus = null; S.decisionDraft = undefined; if ($('chatdock')) chatOpen(false);
+    S.resolved = (sub.resolved || []).map((r) => ({ id: r.id, rule: r.rule, tier: (r.rule || 'C').charAt(0), title: r.title, page: r.page, resolved: { how: r.how, version: r.version } }));
+    S.originalDoc = sub.original && DOC_CACHE.has(sub.original.sha) ? Object.assign({ kind: 'pdf', name: sub.original.name, sha: sub.original.sha }, DOC_CACHE.get(sub.original.sha)) : null;
     S.facts = Engine.analyze(pages, sub.form);
     const findings = JSON.parse(JSON.stringify(sub.findings || []));
     Review.attachBoxes(findings, pages);
     S.result = { profile: sub.result.profile, findings, suppressed: sub.result.suppressed || [], gut_check: sub.result.gut_check, brief: sub.result.brief, banker_message: sub.result.banker_message, meta: sub.result.meta || {} };
     S.steps = []; S.reference = !!(sub.result.meta && sub.result.meta.reference);
     S.calib = Calibration.isReferenceDeck(pages) && !(sub.result.meta && sub.result.meta.deterministicOnly) ? Calibration.score(findings) : null;
+    S.memory = null;
     renderViewer(); renderHead(); renderStatus(); renderRail();
+    refreshMemory(false);
+  }
+  /* ---------- reviewer platform: queue ---------- */
+  const STATUS_LABEL = { submitted: 'New', changes: 'Changes requested', approved: 'Approved', escalated: 'Escalated' };
+  const STATUS_TAG = { submitted: 'info', changes: 'medium', approved: 'ok', escalated: 'esc' };
+  function subReadiness(sub) { return sub.readiness || Fix.readiness(sub.findings || [], sub.responses || {}, { all: false }); }
+  function pendingCount(sub) { return (sub.findings || []).filter((f) => !Review.isCertain(f) && !(sub.verdicts && sub.verdicts[f.id] && sub.verdicts[f.id].verdict)).length; }
+  function inboxRows() {
+    const q = (S.inboxQuery || '').trim().toLowerCase();
+    const flt = S.inboxFilter || 'all';
+    let rows = S.inbox.filter((sub) => {
+      if (flt === 'new' && sub.status !== 'submitted') return false;
+      if (flt === 'verify' && !pendingCount(sub)) return false;
+      if (flt === 'changes' && sub.status !== 'changes') return false;
+      if (flt === 'approved' && sub.status !== 'approved') return false;
+      if (flt === 'escalated' && sub.status !== 'escalated') return false;
+      if (q) { const hay = [sub.file && sub.file.name, sub.submitter, sub.form && sub.form.bankName, sub.lane].join(' ').toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+    const sort = S.inboxSort || 'priority';
+    const weight = { submitted: 0, escalated: 1, changes: 2, approved: 3 };
+    rows = rows.slice().sort((a, b) => {
+      if (sort === 'newest') return (b.created_at || '').localeCompare(a.created_at || '');
+      if (sort === 'readiness') return subReadiness(a).score - subReadiness(b).score;
+      const w = (weight[a.status] || 0) - (weight[b.status] || 0); if (w) return w;
+      const r = subReadiness(a).score - subReadiness(b).score; if (r) return r;
+      return (b.created_at || '').localeCompare(a.created_at || '');
+    });
+    return rows;
+  }
+  function renderInbox() {
+    const list = $('inbox-list');
+    list.innerHTML = '';
+    $('store-status').textContent = Store.status() === 'shared' ? 'Shared inbox: every reviewer sees it.' : 'Private inbox in this browser. Open the page in the Claude app for the shared inbox.';
+    // KPIs
+    const k = $('inbox-kpis'); k.innerHTML = '';
+    const all = S.inbox; const fresh = all.filter((s) => s.status === 'submitted').length; const toVerify = all.reduce((n, s) => n + pendingCount(s), 0);
+    const decided = all.filter((s) => s.status !== 'submitted').length; const corrected = all.filter((s) => (s.version || 1) > 1).length;
+    const avg = all.length ? Math.round(all.reduce((n, s) => n + subReadiness(s).score, 0) / all.length) : null;
+    [[fresh, 'new submission' + (fresh === 1 ? '' : 's')], [toVerify, 'point' + (toVerify === 1 ? '' : 's') + ' to verify'], [corrected, 'corrected in the app before submission'], [avg === null ? '–' : avg, 'average readiness at submission'], [decided, 'decided']].forEach(([v, l]) => { const c = el('div', { class: 'kpi' }); c.append(el('b', { text: String(v) }), el('span', { text: l })); k.append(c); });
+    // filters
+    const fl = $('inbox-filters'); fl.innerHTML = '';
+    [['all', 'All'], ['new', 'New'], ['verify', 'To verify'], ['changes', 'Changes requested'], ['approved', 'Approved'], ['escalated', 'Escalated']].forEach(([key, label]) => {
+      const b = el('button', { type: 'button', 'aria-pressed': String((S.inboxFilter || 'all') === key), text: label });
+      b.addEventListener('click', () => { S.inboxFilter = key; renderInbox(); });
+      fl.append(b);
+    });
+    if (!$('inbox-sort').dataset.bound) { $('inbox-sort').dataset.bound = '1'; $('inbox-sort').addEventListener('change', () => { S.inboxSort = $('inbox-sort').value; renderInbox(); }); $('inbox-search').addEventListener('input', () => { S.inboxQuery = $('inbox-search').value; renderInbox(); }); }
+    const head = el('div', { class: 'trow h' });
+    ['Document', 'Submitted by', 'Lane', 'Readiness', 'Points', 'Status', ''].forEach((t) => head.append(el('span', { text: t })));
+    list.append(head);
+    const rows = inboxRows();
+    if (!S.inbox.length) { list.append(el('div', { class: 'empty', text: 'No submissions yet. Submit a pre-reviewed document as a banker to see it here.' })); return; }
+    if (!rows.length) { list.append(el('div', { class: 'empty', text: 'Nothing matches this filter.' })); return; }
+    rows.forEach((sub) => {
+      const c = Review.counts(sub.findings || []);
+      const row = el('div', { class: 'trow' });
+      const d = el('div'); const t = el('div', { class: 't', text: sub.file.name }); if ((sub.version || 1) > 1) t.append(el('span', { class: 'vbadge', text: 'v' + sub.version + ' · ' + (sub.changes || []).length + ' edits' })); d.append(t, el('div', { class: 's', text: U.fmtDate(sub.created_at) + ' · ' + (sub.file.pages || 0) + ' p.' + (sub.resolved && sub.resolved.length ? ' · ' + sub.resolved.length + ' resolved before submission' : '') }));
+      const by = el('div'); by.append(el('div', { text: sub.submitter || 'unknown', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }), el('div', { class: 's', text: sub.form && sub.form.bankName ? sub.form.bankName : '' }));
+      const lane = el('span', { class: 'tag grey', text: sub.lane === 'institutional' ? 'Institutional' : 'Retail' });
+      const rd = subReadiness(sub); const rp = el('span', { class: 'ready ' + rd.band }); rp.append(el('b', { text: String(rd.score) }), document.createTextNode(' ' + rd.label));
+      const pts = el('div', { class: 'pts' });
+      pts.append(el('span', { class: 'tag high', text: String(c.high) }), el('span', { class: 'tag medium', text: String(c.medium) }), el('span', { class: 'tag low', text: String(c.low) }));
+      const pc = pendingCount(sub); if (pc) pts.append(el('span', { class: 'tv', text: pc + ' to verify' }));
+      const status = el('span', { class: 'tag ' + (STATUS_TAG[sub.status] || 'info'), text: STATUS_LABEL[sub.status] || 'New' });
+      const acts = el('div', { class: 'acts' });
+      const fb = el('button', { class: 'btn sm', type: 'button', text: 'Feedback' });
+      fb.addEventListener('click', () => openDialog('Feedback sent to the reviewer', (body) => { body.append(el('div', { class: 'mailpreview', text: 'Subject: ' + sub.notification.subject + '\n\n' + sub.notification.body })); }));
+      const open = el('button', { class: 'btn sm primary', type: 'button', text: 'Open' });
+      open.addEventListener('click', () => openSubmission(sub));
+      if (S.caps.downloads) { const pdf = el('button', { class: 'btn sm', type: 'button', title: 'Export the brief as PDF' }); pdf.append(svg('download'), document.createTextNode('PDF')); pdf.addEventListener('click', () => savePdf(sub, 'desk')); acts.append(pdf); }
+      acts.append(fb, open);
+      row.append(d, by, lane, rp, pts, status, acts);
+      list.append(row);
+    });
+  }
+  /* ---------- reviewer platform: decision bar ---------- */
+  async function recordDecision(sub, kind, message) {
+    const by = S.user ? S.user.name : 'Finalis reviewer';
+    const at = new Date().toISOString();
+    const entry = { at, by, event: kind, message: message || '' };
+    sub.status = kind === 'approve' ? 'approved' : kind === 'escalate' ? 'escalated' : 'changes';
+    sub.decision = { kind, message: message || '', by, at };
+    sub.history = (sub.history || []).concat([entry]);
+    await Store.updateSubmission(sub.id, { status: sub.status, decision: sub.decision, history: sub.history });
+    U.toast(kind === 'approve' ? 'Approved · the banker is notified' : kind === 'escalate' ? 'Escalated to the CCO' : 'Changes requested · the banker is notified');
+    renderGate(); renderRail();
+    try { await Learn.recordDecision(sub, kind, message, S.user); } catch (e) { console.warn('decision not recorded', e); }
+    autoDigest();
+  }
+  /* after each decision the digest reads the new comments and verdicts and updates the learned rules */
+  let digestBusy = false;
+  async function autoDigest() {
+    if (!S.caps.sample || digestBusy) return;
+    digestBusy = true;
+    try { const r = await Learn.digest(S.caps.sample); if (r.changed) U.toast('Learning: ' + r.changed + ' rule' + (r.changed === 1 ? '' : 's') + ' learned from the reviewers\' comments'); }
+    catch (e) { console.warn('digest failed', e); }
+    finally { digestBusy = false; }
   }
   function renderReviewerGate(g) {
     const sub = S.viewing;
     g.hidden = false;
     g.innerHTML = '';
-    const verdicts = Object.keys(sub.verdicts || {}).length;
-    const pending = (sub.findings || []).filter((f) => !Review.isCertain(f) && !(sub.verdicts && sub.verdicts[f.id])).length;
-    g.append(el('div', { class: 'why', text: (pending ? pending + ' point' + (pending === 1 ? '' : 's') + ' awaiting your verification · ' : '') + verdicts + ' verdict' + (verdicts === 1 ? '' : 's') + ' recorded · verdicts calibrate the next pre-reviews' }));
-    const row = el('div', { class: 'row', style: 'flex-wrap:wrap' });
-    const copy = el('button', { class: 'btn sm', type: 'button' }); copy.append(svg('copy'), document.createTextNode('Comment to banker'));
-    copy.addEventListener('click', () => U.copyText(sub.result.banker_message || sub.notification.body));
-    const changes = el('button', { class: 'btn sm', type: 'button', text: 'Request changes' });
-    changes.addEventListener('click', async () => { sub.status = 'changes'; await Store.updateSubmission(sub.id, { status: 'changes' }); U.toast('Marked: changes requested'); });
-    const approve = el('button', { class: 'btn sm success', type: 'button', text: 'Approve' });
-    approve.addEventListener('click', async () => { sub.status = 'approved'; await Store.updateSubmission(sub.id, { status: 'approved' }); U.toast('Approved'); });
-    row.append(copy, changes, approve);
-    g.append(row);
+    const verdicts = Object.values(sub.verdicts || {}).filter((v) => v && v.verdict).length;
+    const pending = pendingCount(sub);
+    const wrap = el('div', { class: 'decision' });
+    const why = el('div', { class: 'why' });
+    why.textContent = (pending ? pending + ' point' + (pending === 1 ? '' : 's') + ' awaiting your verification · ' : 'Every pending point verified · ') + verdicts + ' verdict' + (verdicts === 1 ? '' : 's') + ' recorded';
+    wrap.append(why);
+    if (pending && !S.focus) { const fb = el('button', { class: 'btn sm', type: 'button', style: 'align-self:flex-start' }); fb.append(svg('spark'), document.createTextNode('Verify one by one (keyboard)')); fb.addEventListener('click', () => startFocus()); wrap.append(fb); }
+    if (sub.decision) { const dd = el('div', { class: 'decided' }); dd.append(svg('checkCircle'), el('span', { html: '<b>' + U.esc(STATUS_LABEL[sub.status] || sub.status) + '</b> by ' + U.esc(sub.decision.by || '') + ' · ' + U.esc(U.fmtDate(sub.decision.at)) })); wrap.append(dd); }
+    const ta = el('textarea', { id: 'decision-msg', placeholder: 'Message to the banker (drafted by Claude from your verdicts, or write your own)' });
+    ta.value = S.decisionDraft !== undefined ? S.decisionDraft : (sub.decision && sub.decision.message) || '';
+    ta.addEventListener('input', () => { S.decisionDraft = ta.value; });
+    wrap.append(ta);
+    const row = el('div', { class: 'row' });
+    if (S.caps.sample) {
+      const draft = el('button', { class: 'btn sm', type: 'button' }); draft.append(svg('spark'), document.createTextNode('Draft with Claude'));
+      draft.addEventListener('click', async () => {
+        const kind = pending ? 'changes' : (Review.counts(sub.findings || []).certain ? 'changes' : 'approve');
+        draft.disabled = true; ta.value = 'Drafting…';
+        try { const txt = await Ask.decision(S.caps.sample, sub, kind, aiCtx()); S.decisionDraft = txt; const cur = $('decision-msg') || ta; cur.value = txt; } catch (e) { const cur = $('decision-msg') || ta; cur.value = S.decisionDraft || ''; U.toast('Claude could not draft the message'); }
+        finally { draft.disabled = false; }
+      });
+      row.append(draft);
+    }
+    const copy = el('button', { class: 'btn sm', type: 'button' }); copy.append(svg('copy'), document.createTextNode('Copy'));
+    copy.addEventListener('click', () => U.copyText(ta.value || sub.result.banker_message || sub.notification.body));
+    row.append(copy, el('span', { class: 'grow' }));
+    const esc = el('button', { class: 'btn sm', type: 'button', text: 'Escalate' }); esc.addEventListener('click', () => recordDecision(sub, 'escalate', ta.value));
+    const changes = el('button', { class: 'btn sm', type: 'button', text: 'Request changes' }); changes.addEventListener('click', () => recordDecision(sub, 'changes', ta.value));
+    const approve = el('button', { class: 'btn sm success', type: 'button', text: 'Approve' }); approve.title = pending ? pending + ' point(s) still pending verification' : 'Approve the material'; approve.addEventListener('click', () => recordDecision(sub, 'approve', ta.value));
+    row.append(esc, changes, approve);
+    wrap.append(row);
+    g.append(wrap);
+  }
+  /* ---------- reviewer platform: focus mode (one pending point at a time, keyboard) ---------- */
+  function focusIds() { const sub = S.viewing; return allFindings().filter((f) => !Review.isCertain(f) && !(sub.verdicts && sub.verdicts[f.id] && sub.verdicts[f.id].verdict)).map((f) => f.id); }
+  function startFocus() {
+    const ids = focusIds(); if (!ids.length) { U.toast('Nothing left to verify'); return; }
+    S.focus = { ids, i: 0, done: 0 };
+    const f = allFindings().find((x) => x.id === ids[0]); S.tab = tierOfTab(f);
+    selectFinding(f, { scrollPage: true, scrollPanel: false });
+    renderRail();
+  }
+  function stopFocus() { S.focus = null; renderRail(); renderGate(); }
+  function focusStep(delta) {
+    if (!S.focus) return;
+    const ids = S.focus.ids; let i = S.focus.i + delta;
+    if (i < 0) i = 0;
+    if (i >= ids.length) { const d = S.focus.done; S.focus = null; renderRail(); renderGate(); U.toast(d + ' point' + (d === 1 ? '' : 's') + ' verified'); return; }
+    S.focus.i = i;
+    const f = allFindings().find((x) => x.id === ids[i]);
+    if (f) { S.tab = tierOfTab(f); selectFinding(f, { scrollPage: true, scrollPanel: false }); }
+    renderRail();
+  }
+  async function focusVerdict(verdict) {
+    if (!S.focus) return;
+    const f = allFindings().find((x) => x.id === S.focus.ids[S.focus.i]); if (!f) return;
+    const note = document.getElementById('verdict-' + f.id);
+    await setVerdict(f, verdict === 'confirm' ? 'correct' : verdict === 'dismiss' ? 'incorrect' : verdict, note && note.value ? note.value : '', 'focus');
+    S.focus.done += 1;
+    focusStep(1);
+  }
+  function focusCard() {
+    if (!S.focus) return null;
+    const f = allFindings().find((x) => x.id === S.focus.ids[S.focus.i]); if (!f) return null;
+    const box = el('div', { class: 'focus' });
+    const fh = el('div', { class: 'fh' }); fh.append(el('b', { text: 'Verifying ' + (S.focus.i + 1) + ' of ' + S.focus.ids.length }), el('span', { class: 'grow' }));
+    const exit = el('button', { class: 'btn xs', type: 'button', text: 'Exit' }); exit.addEventListener('click', stopFocus); fh.append(exit);
+    box.append(fh);
+    const bar = el('div', { class: 'fbar' }); bar.append(el('i', { style: 'width:' + Math.round((S.focus.i / S.focus.ids.length) * 100) + '%' })); box.append(bar);
+    box.append(f.tier === 'C' ? cardLanguage(f) : cardDisclosure(f));
+    const big = el('div', { class: 'big' });
+    const c = el('button', { class: 'btn success', type: 'button' }); c.append(svg('check'), document.createTextNode('Confirm · would send')); c.addEventListener('click', () => focusVerdict('confirm'));
+    const d = el('button', { class: 'btn', type: 'button' }); d.append(svg('x'), document.createTextNode('Dismiss · would not send')); d.addEventListener('click', () => focusVerdict('dismiss'));
+    big.append(c, d); box.append(big);
+    const keys = el('div', { class: 'fkeys' }); keys.innerHTML = '<span><kbd>C</kbd> confirm</span><span><kbd>D</kbd> dismiss</span><span><kbd>J</kbd>/<kbd>K</kbd> next / previous</span><span><kbd>Esc</kbd> exit</span>';
+    box.append(keys);
+    return box;
+  }
+  function focusKeys(ev) {
+    if (!S.focus || S.view !== 'work') return;
+    if (ev.target && ev.target.closest && ev.target.closest('.chatdock, .fixcard, .decision')) return;
+    if (ev.target && /^(input|textarea|select)$/i.test(ev.target.tagName)) return;
+    const k = ev.key.toLowerCase();
+    if (k === 'c') { ev.preventDefault(); focusVerdict('confirm'); }
+    else if (k === 'd') { ev.preventDefault(); focusVerdict('dismiss'); }
+    else if (k === 'j' || k === 'arrowright') { ev.preventDefault(); focusStep(1); }
+    else if (k === 'k' || k === 'arrowleft') { ev.preventDefault(); focusStep(-1); }
+    else if (k === 'escape') { ev.preventDefault(); stopFocus(); }
+  }
+  function timelineBlock(sub) {
+    const ul = el('ul', { class: 'timeline' });
+    const add = (t, s, when) => { const li = el('li'); li.append(el('b', { text: t })); if (s) li.append(document.createTextNode(' ' + s)); li.append(el('small', { text: U.fmtDate(when) })); ul.append(li); };
+    if (sub.original) add('Uploaded', sub.original.name + ' · pre-reviewed in the app', sub.created_at);
+    if ((sub.version || 1) > 1) add('Corrected in the app', (sub.changes || []).length + ' edits, ' + (sub.resolved || []).length + ' points resolved, version ' + sub.version, sub.created_at);
+    add('Submitted', 'by ' + (sub.submitter || 'the banker') + ' · readiness ' + (sub.readiness ? sub.readiness.score : '–'), sub.created_at);
+    (sub.history || []).forEach((h) => add(STATUS_LABEL[h.event === 'approve' ? 'approved' : h.event === 'escalate' ? 'escalated' : 'changes'], 'by ' + h.by + (h.message ? ' · message sent' : ''), h.at));
+    return ul;
+  }
+  /* ---------- document chat (both platforms) ---------- */
+  function chatOpen(open) {
+    const dock = $('chatdock'); dock.hidden = !open; $('btn-chat').setAttribute('aria-pressed', String(open));
+    if (open) { renderChat(); $('chat-input').focus(); }
+  }
+  function chatFindings() { return S.viewing ? allFindings() : currentFindings(); }
+  function renderChat() {
+    const body = $('chat-body'); body.innerHTML = '';
+    if (!S.caps.sample) { body.append(el('div', { class: 'cd-hint', text: 'Claude is not available in this view. Open the page in the Claude app or run the local server to ask questions about the document.' })); return; }
+    if (!(S.chat || []).length) {
+      body.append(el('div', { class: 'cd-hint', text: 'Questions are answered from the document text, the rulebook and the pre-review, with page references. Nothing you ask here changes the pre-review.' }));
+      const chips = el('div', { class: 'cd-chips' });
+      const sugg = S.viewing ? ['Which points would you send first and why?', 'Is anything in the disclaimers page deficient?', 'Summarise the banker\'s corrections and what is still open'] : ['What must I change before this can go out?', 'Which claims need a source?', 'Explain the institutional lane to me in two sentences'];
+      sugg.forEach((q) => { const b = el('button', { type: 'button', text: q }); b.addEventListener('click', () => askChat(q)); chips.append(b); });
+      body.append(chips);
+    }
+    (S.chat || []).forEach((m) => body.append(el('div', { class: 'cd-msg ' + m.role + (m.busy ? ' busy' : ''), text: m.text })));
+    body.scrollTop = body.scrollHeight;
+  }
+  async function askChat(q) {
+    q = String(q || '').trim(); if (!q || !S.caps.sample || !S.doc) return;
+    S.chat = S.chat || [];
+    const ai = { role: 'ai', text: '', busy: true };
+    S.chat.push({ role: 'user', text: q }, ai);
+    renderChat(); $('chat-input').value = ''; $('chat-send').disabled = true;
+    try {
+      const history = S.chat.slice(0, -2);
+      await Ask.chat(S.caps.sample, history, aiCtx(), chatFindings(), q, (t) => { ai.text = t; const last = $('chat-body').lastElementChild; if (last) { last.textContent = t; $('chat-body').scrollTop = $('chat-body').scrollHeight; } });
+      const r = ai.text; if (!r) { const last = S.chat[S.chat.length - 1]; last.text = last.text || '(no answer)'; }
+    } catch (e) { ai.text = 'Claude could not answer: ' + (e && e.message ? e.message : 'error'); }
+    finally { ai.busy = false; $('chat-send').disabled = false; renderChat(); }
+  }
+  function bindChat() {
+    $('btn-chat').addEventListener('click', () => chatOpen($('chatdock').hidden));
+    $('chat-close').addEventListener('click', () => chatOpen(false));
+    $('chat-form').addEventListener('submit', (ev) => { ev.preventDefault(); askChat($('chat-input').value); });
+    document.addEventListener('keydown', focusKeys);
   }
 
   /* ---------- learning view (reviewer) ---------- */
@@ -1271,14 +1913,41 @@ const UI = (() => {
     const body = $('learning-body');
     body.innerHTML = '';
     body.append(el('div', { class: 'empty', text: 'Loading the learning state…' }));
-    const [st, rules, verdicts] = await Promise.all([Learn.stats(), Learn.learnedRules(), Store.listCalibration(400)]);
+    const [st, rules, verdictsAll, profiles, meta] = await Promise.all([Learn.stats(), Learn.learnedRules(), Store.listCalibration(600), Learn.profiles(), Learn.meta()]);
+    const verdicts = verdictsAll.filter((e) => e && e.rule && (!e.type || e.type === 'verdict'));
+    const comments = verdictsAll.filter((e) => e && ((e.reason && (!e.type || e.type === 'verdict' || e.type === 'comment')) || (e.type === 'decision' && e.message))).length;
     body.innerHTML = '';
     const grid = el('div', { class: 'lgrid' });
     const stat = (n, l) => { const c = el('div', { class: 'summary-card', style: 'margin:0' }); c.append(el('div', { class: 'n', style: 'font-size:22px;font-weight:600', text: String(n) }), el('div', { class: 'helper', style: 'margin-top:2px', text: l })); return c; };
     const rulesTracked = Object.keys(st.byRule).length;
     const demoted = Object.values(st.byRule).filter((r) => r.status !== 'active').length;
-    grid.append(stat(st.total, 'verdicts recorded'), stat(rulesTracked, 'rules with a track record'), stat(rules.length, 'learned calibration rules'), stat(demoted, 'rules demoted or set aside'));
+    grid.append(stat(st.total, 'verdicts recorded'), stat(comments, 'comments and decision messages read'), stat(profiles.length, 'reviewer' + (profiles.length === 1 ? '' : 's') + ' teaching'), stat(rules.length, 'learned calibration rules'), stat(rulesTracked, 'rules with a track record'), stat(demoted, 'rules demoted or set aside'));
     body.append(grid);
+    // how it learns, in one paragraph, with the last digest
+    const how = el('div', { class: 'note blue', style: 'margin-bottom:14px;display:block' });
+    how.append(el('div', { html: '<b>How the pre-review learns.</b> Every verdict and every comment on the reviewer platform is recorded with the reviewer\'s name. Before each pre-review the closest precedents (same rule, same lane, similar passage, the reviewer the submission goes to first) are put in front of the model; an identical passage the desk dismissed is set aside before the banker sees it; a rule this reviewer keeps rejecting is left to the reviewer instead of asserted. After each decision, Claude reads the new comments and decision messages (the digest) and writes durable calibration rules, desk-wide or for one reviewer.' + (meta.lastDigestAt ? ' Last digest ' + U.esc(U.fmtDate(meta.lastDigestAt)) + (meta.lastSummary ? ': ' + U.esc(meta.lastSummary) : '') : ' No digest has run yet.') }));
+    const dg = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' });
+    const digestBtn = el('button', { class: 'btn sm primary', type: 'button', id: 'btn-digest' }); digestBtn.append(svg('spark'), document.createTextNode('Digest the new comments now')); digestBtn.disabled = !S.caps.sample;
+    digestBtn.addEventListener('click', async () => { digestBtn.disabled = true; digestBtn.textContent = 'Reading…'; try { const r = await Learn.digest(S.caps.sample, { all: false }); U.toast(r.skipped ? 'Nothing new since the last digest' : r.changed + ' rule' + (r.changed === 1 ? '' : 's') + ' learned from ' + r.considered + ' new entries'); } catch (e) { U.toast('The digest could not run: ' + (e && e.message ? e.message : 'error')); } renderLearning(); });
+    const digestAll = el('button', { class: 'btn sm', type: 'button', text: 'Re-read everything', id: 'btn-digest-all' }); digestAll.disabled = !S.caps.sample;
+    digestAll.addEventListener('click', async () => { digestAll.disabled = true; try { const r = await Learn.digest(S.caps.sample, { all: true }); U.toast(r.changed + ' rule' + (r.changed === 1 ? '' : 's') + ' learned'); } catch (e) { U.toast('The digest could not run'); } renderLearning(); });
+    dg.append(digestBtn, digestAll); how.append(dg);
+    body.append(how);
+    // reviewer profiles
+    body.append(el('div', { class: 'label', text: 'Reviewers (what each one confirms, dismisses and says; the pre-review adapts to the reviewer a submission goes to)' }));
+    const pt = el('div', { class: 'table', id: 'profiles', style: 'margin-bottom:14px' });
+    if (!profiles.length) pt.append(el('div', { class: 'empty', text: 'No reviewer has recorded a verdict yet. Sign in on the reviewer platform, open a submission, confirm or dismiss the points and write comments.' }));
+    profiles.forEach((p) => {
+      const item = el('div', { class: 'rule-item' });
+      const g = el('div', { class: 'grow' });
+      g.append(el('div', { html: '<b>' + U.esc(p.name || p.email) + '</b> <span class="m">' + U.esc(p.email) + ' · ' + p.verdicts + ' verdict' + (p.verdicts === 1 ? '' : 's') + ' (' + p.confirmed + ' confirmed, ' + p.dismissed + ' dismissed) · ' + p.comments + ' comment' + (p.comments === 1 ? '' : 's') + ' · ' + p.decisions + ' decision' + (p.decisions === 1 ? '' : 's') + (p.lastAt ? ' · last ' + U.esc(U.fmtDate(p.lastAt)) : '') + '</span>' }));
+      if (p.topDismissed.length) g.append(el('div', { class: 'm', html: 'Keeps dismissing: ' + p.topDismissed.map((r) => '<span class="code">' + U.esc(r.rule) + '</span> ' + r.incorrect + '/' + r.total).join(' · ') + (p.topDismissed.some((r) => r.total >= 4 && r.incorrect / r.total >= 0.75) ? ' <span class="tag vtag">left to this reviewer, not asserted, on their submissions</span>' : '') }));
+      if (p.topConfirmed.length) g.append(el('div', { class: 'm', html: 'Keeps confirming: ' + p.topConfirmed.map((r) => '<span class="code">' + U.esc(r.rule) + '</span> ' + r.correct + '/' + r.total).join(' · ') }));
+      if (p.rules.length) g.append(el('div', { class: 'm', html: 'Rules learned from this reviewer: ' + p.rules.map((r) => '“' + U.esc(r.text) + '”').join(' · ') }));
+      if (p.quotes.length) g.append(el('div', { class: 'm', html: 'Said: ' + p.quotes.slice(0, 3).map((q) => '<span class="code">' + U.esc(q.rule) + '</span> “' + U.esc(q.reason.slice(0, 110)) + '”').join(' · ') }));
+      item.append(g); pt.append(item);
+    });
+    body.append(pt);
     // per-rule table
     const table = el('div', { class: 'table', style: 'margin-bottom:14px' });
     const head = el('div', { class: 'lrow h' });
@@ -1298,11 +1967,11 @@ const UI = (() => {
     // learned rules
     body.append(el('div', { class: 'label', text: 'Learned calibration rules (injected into every pre-review)' }));
     const rl = el('div', { class: 'table', style: 'margin-bottom:10px' });
-    if (!rules.length) rl.append(el('div', { class: 'empty', text: 'None yet. Rules are distilled from three or more rejections of the same rule that carry a reason, or written by hand below.' }));
+    if (!rules.length) rl.append(el('div', { class: 'empty', text: 'None yet. Rules are read from the reviewers\' comments and decisions by the digest, distilled from three or more rejections of the same rule that carry a reason, or written by hand below.' }));
     rules.forEach((r) => {
       const item = el('div', { class: 'rule-item' });
       const g = el('div', { class: 'grow' });
-      g.append(el('div', { text: r.text }), el('div', { class: 'm', text: (r.rule ? r.rule + ' · ' : '') + (r.source === 'synthesized' ? 'distilled from ' + r.evidence + ' rejection' + (r.evidence === 1 ? '' : 's') : 'written by the desk') + ' · ' + U.fmtDate(r.at) }));
+      g.append(el('div', { text: r.text }), el('div', { class: 'm', text: (r.rule ? r.rule + ' · ' : '') + (r.scope === 'reviewer' ? 'preference of ' + (r.reviewer || 'a reviewer') + ' · ' : 'every reviewer · ') + (r.source === 'synthesized' ? 'distilled from ' + r.evidence + ' rejection' + (r.evidence === 1 ? '' : 's') : r.source === 'digest' ? 'read from the reviewers\' comments' + (r.evidence ? ' (' + r.evidence + ')' : '') : 'written by hand') + ' · ' + U.fmtDate(r.at) }));
       const del = el('button', { class: 'btn ghost icon', type: 'button', 'aria-label': 'Remove rule' }); del.append(svg('x'));
       del.addEventListener('click', async () => { await Learn.removeRule(r.id); renderLearning(); });
       item.append(g, del);
@@ -1334,6 +2003,13 @@ const UI = (() => {
     io.append(exp, imp, impInput, replay, clear);
     body.append(io);
     body.append(el('div', { id: 'replay-out' }));
+    // learning log
+    const log = (meta.log || []).slice().reverse();
+    body.append(el('div', { class: 'label', style: 'margin-top:18px', text: 'What the pre-review learned, in order (' + log.length + ')' }));
+    const lg = el('div', { class: 'table', id: 'learning-log', style: 'margin-bottom:10px' });
+    if (!log.length) lg.append(el('div', { class: 'empty', text: 'Nothing yet.' }));
+    log.slice(0, 30).forEach((e) => { const item = el('div', { class: 'rule-item' }); item.append(el('div', { class: 'grow', html: '<span class="code">' + U.esc(e.event || '') + '</span> ' + U.esc(e.text || '') + (e.by && e.by.name ? ' · ' + U.esc(e.by.name) : '') + ' <span class="m">' + U.esc(U.fmtDate(e.at)) + '</span>' })); lg.append(item); });
+    body.append(lg);
     // recent verdicts
     body.append(el('div', { class: 'label', style: 'margin-top:18px', text: 'Recent verdicts (' + verdicts.length + ')' }));
     const vt = el('div', { class: 'table' });
@@ -1341,7 +2017,7 @@ const UI = (() => {
     verdicts.slice(0, 40).forEach((v) => {
       const item = el('div', { class: 'rule-item' });
       const g = el('div', { class: 'grow' });
-      g.append(el('div', { html: '<span class="code">' + U.esc(v.rule || '?') + '</span> <span class="tag ' + (v.verdict === 'correct' ? 'ok' : 'high') + '">' + (v.verdict === 'correct' ? 'correct' : 'incorrect') + '</span> <i>' + U.esc((v.quote || '').slice(0, 140)) + '</i>' }), el('div', { class: 'm', text: [v.lane, v.docType, v.page ? 'p. ' + v.page : '', v.reason ? '— ' + v.reason : '', U.fmtDate(v.at)].filter(Boolean).join(' · ') }));
+      g.append(el('div', { html: '<span class="code">' + U.esc(v.rule || '?') + '</span> <span class="tag ' + (v.verdict === 'correct' ? 'ok' : 'high') + '">' + (v.verdict === 'correct' ? 'confirmed' : 'dismissed') + '</span> <i>' + U.esc((v.quote || '').slice(0, 140)) + '</i>' }), el('div', { class: 'm', text: [v.reviewer && v.reviewer.name ? v.reviewer.name : '', v.lane, v.docType, v.page ? 'p. ' + v.page : '', v.source ? v.source : '', v.reason ? '— ' + v.reason : '', U.fmtDate(v.at)].filter(Boolean).join(' · ') }));
       item.append(g);
       vt.append(item);
     });
@@ -1429,7 +2105,7 @@ const UI = (() => {
     $('pt-prev').addEventListener('click', () => stepFinding(-1));
     $('pt-next').addEventListener('click', () => stepFinding(1));
     document.addEventListener('keydown', (e) => {
-      if (S.view !== 'work') return;
+      if (S.view !== 'work' || S.focus) return; // focus mode has its own keys
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.key === 'j' || e.key === 'ArrowDown' && e.altKey) { e.preventDefault(); stepFinding(1); }
@@ -1440,16 +2116,70 @@ const UI = (() => {
     $('btn-learning').addEventListener('click', () => renderLearning());
     $('btn-learning-back').addEventListener('click', () => { renderInbox(); show('inbox'); });
     $('reviewer-email').addEventListener('change', async () => { S.settings = await Store.setSettings({ reviewerEmail: $('reviewer-email').value.trim() }); });
+    bindChat();
     window.addEventListener('resize', () => { if (!isMobile()) { $('rail').style.display = ''; $('viewer').style.display = ''; } if (S.view === 'work') { applyZoom(); rerenderVisible(); } });
+  }
+  /* ---------- sign-in ---------- */
+  function initials(name) { return String(name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?'; }
+  function loadUser() { try { const u = JSON.parse(localStorage.getItem('prescreen.user') || 'null'); return u && u.email ? u : null; } catch (e) { return null; } }
+  function saveUser(u) { try { if (u) localStorage.setItem('prescreen.user', JSON.stringify(u)); else localStorage.removeItem('prescreen.user'); } catch (e) { /* storage unavailable */ } }
+  function signIn(user, remember) {
+    S.user = user; if (remember) saveUser(user);
+    if (user.role === 'banker') { S.prefill = Object.assign({}, S.prefill, { bankName: user.firm || S.prefill.bankName || '', submitter: user.name + (user.email ? ' · ' + user.email : '') }); }
+    renderChrome();
+    const want = user.role === 'reviewer' ? 'reviewer' : 'banker';
+    if (S.mode !== want) setMode(want);
+    else if (want === 'reviewer') { renderInbox(); show('inbox'); }
+    else show(S.submission ? 'done' : (S.result && S.doc ? 'work' : 'form'));
+    U.toast('Signed in as ' + user.name);
+  }
+  function signOut() {
+    S.user = null; saveUser(null); $('avatar-menu').hidden = true; $('avatar').setAttribute('aria-expanded', 'false');
+    if (window.claude && window.claude.local && S.health && S.health.passcode) fetch((window.PRESCREEN_API || '') + '/api/logout', { method: 'POST', headers: { 'X-Prescreen': '1' } }).catch(() => {});
+    show('login'); const em = $('login-email'); if (em) em.focus();
+  }
+  /* on a team install (passcode set) the demo switch between the platforms is off: the platform is the role you signed in with */
+  function lockedPlatforms() { return !!(window.claude && window.claude.local && S.health && S.health.passcode); }
+  function bindLogin() {
+    const form = $('login-form'); if (!form) return;
+    const roleInputs = Array.from(form.querySelectorAll('input[name=role]'));
+    const syncRole = () => { const r = (roleInputs.find((i) => i.checked) || {}).value || 'banker'; $('login-firm-field').hidden = r === 'reviewer'; $('login-pass-field').hidden = !(r === 'reviewer' && S.health && S.health.passcode); };
+    roleInputs.forEach((i) => i.addEventListener('change', syncRole)); syncRole();
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const role = (roleInputs.find((i) => i.checked) || {}).value || 'banker';
+      const email = $('login-email').value.trim(); const name = $('login-name').value.trim(); const firm = $('login-firm').value.trim();
+      const err = $('login-err');
+      const fail = (msg) => { err.textContent = msg; err.hidden = false; };
+      err.hidden = true;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('Enter your work email.');
+      if (!name) return fail('Enter your name.');
+      const btn = $('login-submit'); btn.disabled = true; btn.textContent = 'Signing in…';
+      try {
+        if (window.claude && window.claude.local && S.health && S.health.passcode) {
+          // a team install: every sign-in opens a server session; the reviewer role needs the passcode
+          const res = await fetch((window.PRESCREEN_API || '') + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json', 'X-Prescreen': '1' }, body: JSON.stringify({ email, name, role, passcode: role === 'reviewer' ? $('login-pass').value : '' }) });
+          if (!res.ok) { const j = await res.json().catch(() => ({})); return fail(j.message || 'Sign-in refused.'); }
+        }
+        signIn({ name, email, firm: role === 'banker' ? firm : 'Finalis Securities LLC', role, since: new Date().toISOString() }, $('login-remember').checked);
+      } finally { btn.disabled = false; btn.textContent = 'Continue'; }
+      return undefined;
+    });
+    $('avatar').addEventListener('click', (ev) => { ev.stopPropagation(); const m = $('avatar-menu'); m.hidden = !m.hidden; $('avatar').setAttribute('aria-expanded', String(!m.hidden)); });
+    document.addEventListener('click', (ev) => { const m = $('avatar-menu'); if (!m.hidden && !ev.target.closest('.avatar-wrap')) { m.hidden = true; $('avatar').setAttribute('aria-expanded', 'false'); } });
+    $('am-switch').addEventListener('click', () => { $('avatar-menu').hidden = true; setMode(S.mode === 'reviewer' ? 'banker' : 'reviewer'); });
+    $('am-signout').addEventListener('click', signOut);
+    $('login-foot').textContent = window.claude && window.claude.local ? 'Any email opens the platform for the role you choose. The reviewer platform asks for a passcode when PRESCREEN_PASSCODE is set in .env.' : 'Demo sign-in: any email opens the platform for the role you choose. On a team install the reviewer platform can require a passcode.';
   }
   function renderBrand() {
     renderChrome();
     const logo = (typeof window !== 'undefined' && window.FINALIS_LOGO) || '';
-    ['brand-logo', 'brand-logo-2'].forEach((id) => {
+    const dark = (typeof window !== 'undefined' && window.FINALIS_LOGO_DARK) || '';
+    ['brand-logo', 'brand-logo-2', 'brand-logo-3'].forEach((id) => {
       const slot = $(id);
       if (!slot) return;
       slot.innerHTML = '';
-      if (logo) slot.append(el('img', { src: logo, alt: 'Finalis' }));
+      if (logo) { slot.append(el('img', { src: logo, alt: 'Finalis', class: 'light' })); if (dark) slot.append(el('img', { src: dark, alt: '', class: 'dark', 'aria-hidden': 'true' })); }
       else slot.append(el('span', { class: 'wm', text: 'finalis' }));
     });
   }
@@ -1467,6 +2197,11 @@ const UI = (() => {
       if (S.view === 'inbox') renderInbox();
     });
     if (!caps.sample) $('form-foot').textContent = 'Claude is not available in this view: the pre-review will check the required blocks only' + (typeof SAMPLE_DECK_B64 !== 'undefined' ? ', and the calibration deck shows the reference pre-review.' : '.');
+    bindLogin();
+    const remembered = loadUser();
+    const sessionOk = !lockedPlatforms() || !!(S.health && S.health.signedIn); // a locked install needs a live server session, not only a remembered name
+    if (remembered && sessionOk && !window.PRESCREEN_FORCE_LOGIN) { S.user = remembered; renderChrome(); if (remembered.role === 'reviewer' && S.mode !== 'reviewer') setMode('reviewer'); }
+    else { if (remembered) { $('login-email').value = remembered.email || ''; $('login-name').value = remembered.name || ''; $('login-firm').value = remembered.firm || ''; } show('login'); }
   }
-  return { bind, start, S, openRulebook, readLanding, readSetup };
+  return { bind, start, S, openRulebook, readLanding, readSetup, applyAllFixes, buildCorrected, recheckCorrected, selectEdit, removeEdit, signIn, signOut, exportOffice };
 })();

@@ -49,8 +49,9 @@ everything lives.
    disclosure: the SOP wording is absent from the material; for a language point: the quote contains a term
    of the desk's language guide, or an unsourced figure for substantiation; judgement categories C8 to C19
    are never asserted, except projected returns and distribution rates on retail material). Everything
-   else is shown as "For Finalis review": possible, not asserted, no answer required; the reviewer confirms
-   or dismisses it, and the reason it was not asserted is printed on the card and in the feedback. A fast
+   else is never shown to the banker: it waits on the reviewer platform under "Awaiting your verification",
+   where the reviewer confirms or dismisses it, and the reason it was not asserted is printed on the card
+   and in the brief. A fast
    run (no second pass) asserts only the deterministic points.
 9. Gate: every asserted high point needs an answer (fixed / already covered / disagree) and an
    acknowledgement; pending points never block.
@@ -63,19 +64,44 @@ everything lives.
 
 ## Permanent learning
 
-Every verdict (rule, lane, document type, page, quote, correct/incorrect, reason) is a structured example.
-From these the desk gets, on every new pre-review:
+Every act on the reviewer platform is a structured example carrying the reviewer's identity, stored under
+`calibration/` (one document per submission and point, upserted): verdicts (rule, tier, severity, assurance,
+lane, document type, page, quote, title, issue, correct/incorrect, comment, the banker's answer, the source:
+card, focus mode, comment) and decisions (kind, message to the banker, the confirmed and dismissed points,
+the version and the corrections). From these the desk gets, on every new pre-review (`Learn.memoryFor`):
 
-- precedents: the closest past verdicts (same rules and lane, lexical overlap with the material, recency)
-  injected into the findings and verifier prompts;
-- learned calibration rules: one rule per rule id distilled by Claude from three or more rejections that
-  carry a reason ("Distill rules from rejections" in the Learning view), plus rules written by hand; injected
-  into every prompt as L1, L2, ...;
-- a track record per rule (accuracy and Wilson confidence) that demotes or sets aside rules the reviewers
-  keep rejecting;
-- an export/import of the whole state as JSON (so it outlives the page and can be shared between the
-  artifact and the local build), and a replay of the calibration deck scored against the reviewer's ground
-  truth after any change.
+- precedents: the closest past verdicts (same rules and lane, lexical overlap with the material, recency, a
+  comment, the reviewer the submission goes to) injected into the findings and verifier prompts;
+- learned calibration rules, injected into every prompt: read from the reviewers' comments and decision
+  messages by the digest (`Learn.digest`, one model call per digest, run after each decision and on demand),
+  scoped to the desk or to one reviewer (whose rules are injected as "Reviewer preference" only when the
+  submission goes to that reviewer); distilled from three or more rejections of the same rule that carry a
+  reason (`Learn.synthesize`); or written by hand;
+- a track record per rule, desk-wide (demoted at 60 % rejected over 5 verdicts, set aside at 80 % over 8)
+  and per reviewer (left to the reviewer, never asserted, at 75 % rejected over 4 verdicts on that reviewer's
+  submissions);
+- precedents applied before the banker sees the points (`Learn.applyPrecedents`): an identical passage the
+  desk dismissed is set aside with the reviewer, date and comment as the reason; a close passage (fuzzy
+  ratio 80 or more) leaves the point to the reviewer; every point that has a precedent carries it, and the
+  reviewer platform shows it under the point;
+- reviewer profiles (`Learn.profiles`), a learning log (`learning/meta`), and an export/import of the whole
+  state as JSON (verdicts, rules, log) so it outlives the page and can be shared between the artifact and
+  the local build; a replay of the calibration deck scored against the reviewer's ground truth after any
+  change.
+
+Required blocks (Tier A) and deterministic points are never set aside by precedent: a reviewer preference
+can lower severity or change wording, never remove an SOP disclosure. The digest treats the reviewers' text as
+data (the prompt says so) and a rule that would learn an SOP block away, or that reads like an instruction to
+the model, is discarded before it is saved.
+
+**Memory on a submission (`Learn.deskMemory`).** Computed when a reviewer opens a submission and refreshed
+after each verdict: the personal side (habits per rule from the reviewer's own verdicts, open points matching
+what they usually confirm or a passage they confirmed before, their verdicts that differ from their own
+record) and the shared side (similar submissions from the inbox scored on firm, lane, document type, file
+name, the pre-review's subject and the rules raised, with their reviewers and decisions; colleagues' verdicts
+on similar points, fuzzy-matched on rule and passage; verdicts that differ from a colleague's). A verdict on
+the open submission by another reviewer is attributed to them (`byEmail`), never presented as the reader's
+own. The memory feeds the reviewer platform's Memory card, the hints under each point and the desk brief.
 
 ## Calibration against the reviewer's sheet
 
@@ -84,13 +110,62 @@ validated, 23 flags the reviewer rejected, 4 items without a verdict. The refere
 (`src/fixture.js`) reproduces the validated flags and none of the rejected ones; the mocked test flow and
 the mock backend replay it.
 
+## Correcting the document in the app
+
+The banker does not leave the platform to fix the material. An edit is a box placed on a page in page
+fractions (the same space as the highlight boxes): a text box (a disclosure, a legend, a source line), a
+rewrite in place (white boxes over the located passage, the new text set at the size of the original line,
+measured from the text layer) or a removal (white boxes only). `src/fix.js` proposes the fix for each point
+from what the pre-review already carries (`text_to_add`, `rewrite`, `action`, the located boxes), fills the
+`{Bank Name}` / `[Firm Name]` placeholders from the form, and places added text in the lowest band of the
+page that carries no text and no edit yet.
+
+`src/pdfedit.js` builds the corrected file without a library, as an incremental update (ISO 32000-1 §7.5.6):
+the uploaded bytes are left intact and the update appends, per edited page, a `q` stream before the original
+content and a `Q` + overlay stream after it (white rectangles and Helvetica text through WinAnsi), a copy of
+the page's resources with the two font objects, the redefined page object, and a cross-reference section
+of the same kind as the file (a classic table, or an XRef stream when the file uses object streams). The
+objects are found by scanning the file the way readers rebuild a damaged table, and object streams are
+inflated with the browser's `DecompressionStream`; the page objects come from pdf.js (`page.ref`), the
+geometry from the inverse of the pdf.js viewport transform, so rotated pages and offset media boxes are
+handled. `tests/test_pdfedit.py` checks the result on a classic-xref file and on the object-stream calibration
+deck with `qpdf --check`, `pdftotext` and a pdf.js re-read.
+
+**Re-check.** The corrected bytes are re-read; the text under a white box is still in the content stream (an
+overlay edit does not delete text), so the re-check masks the spans whose centre falls inside a white box
+before running the deterministic engine again. A point is resolved when its required block is now present
+(Tier A), when the text the banker added for it is located on its page (disclosures, legends, source lines),
+when its quoted passage can no longer be located (rewritten or removed), or when the coverage facts now find
+the SOP wording (document-level disclosures). The resolved points keep their history (`resolved.how`,
+version); new deterministic points a correction may raise (a legend that became too small) are added. A full
+model pre-review of the corrected version is one click away and reuses the same pipeline. The readiness
+score (`Fix.readiness`) is 100 minus the open points weighted by severity (high 12, medium 6, low 2, plus 3
+for a required block), counting only asserted points for the banker and pending points at half weight for
+the reviewer; it sorts the reviewer's queue.
+
+**Exports.** `src/exports.js` writes PowerPoint (every page as a picture of the uploaded file, every
+correction as an editable text box at the same position, a closing slide with the points) and Word (a change
+sheet: corrected pages with their editable corrections, then the points) as Office Open XML in a STORE zip.
+`tests/test_office.py` opens both with python-pptx / python-docx and converts them with LibreOffice.
+
+**Sign-in.** The page opens on a sign-in screen (email, name, firm, role); the role chooses the platform, the
+identity prefills the form and travels with the submission; on a team install the reviewer platform asks for
+the passcode set in `.env` (`/api/login`). The demo accepts any email.
+
+**Reviewer platform.** The queue sorts by priority (new first, lowest readiness first) with filters and
+search; a submission shows the corrections outlined on the pages with a Corrected / Original switch when the
+original is at hand; focus mode walks the candidates to verify with the keyboard; the decision bar drafts
+the message to the banker from the verdicts (`Ask.decision`) and records approve / request changes /
+escalate with a timeline. `Ask.chat` answers document-level questions from the rulebook, the pre-review and
+the relevant page texts, on both platforms.
+
 ## Files
 
 - `shell.html`: markup and CSS. `build.py`: assembles the three flavours.
 - `src/util.js`, `src/extract.js` (pdf.js, DOCX, text, images), `src/rules.js` (SOP texts, required
   blocks, coverage, triggers, lexicon, rulebook, schemas), `src/engine.js` (deterministic analysis and
   quote location), `src/prompts.js` (profile, findings, verifier and transcription prompts, batching),
-  `src/review.js` (orchestration, guards, merge), `src/store.js` (db or localStorage), `src/pdfout.js` (a small PDF writer: Helvetica, WinAnsi, wrapping, page numbers), `src/notify.js`
+  `src/review.js` (orchestration, guards, merge), `src/store.js` (db or localStorage), `src/pdfout.js` (a small PDF writer: Helvetica, WinAnsi, wrapping, page numbers, the logo), `src/pdfedit.js` (the incremental-update editor), `src/fix.js` (fixes, corrected build, re-check, readiness), `src/exports.js` (PowerPoint and Word), `src/notify.js`
   (feedback to the reviewer, the banker summary and desk brief as PDF), `src/calibration.js` (ground truth), `src/fixture.js` (reference
   pre-review), `src/sample_deck.js` (the calibration deck, base64), `src/ask.js` (on-demand Claude per
   point), `src/learn.js` (learning system), `src/ui.js`, `src/boot.js`, `src/shim.js` (local runtime).
@@ -101,12 +176,51 @@ the mock backend replay it.
   `test_flow.py` (modal to AI Prescreen to reviewer to learning, mocked Claude, calibration score,
   verification), `test_more.py` (DOCX, pasted post, image transcription, mobile, dark), `test_local.py`
   (the local build against `server.py` in mock mode), `test_hl.py` (quote location on the calibration
-  deck), `test_landing.py` and `test_shots*.py` (screenshots).
+  deck), `test_landing.py` and `test_shots*.py` (screenshots), `test_pdfedit.py` (the PDF editor), `test_edit.py`
+  (the in-app correction loop end to end), `test_office.py` (Office exports), `test_login.py` (sign-in),
+  `test_desk.py` (reviewer queue, focus mode, decision, chat).
 
     pip install playwright && python -m playwright install chromium
     python3 tests/test_local.py
 
+## Reliability and security posture
+
+- No framework, no build step beyond `build.py`, no runtime dependency besides pdf.js (vendored) and Python's
+  standard library; the whole app is readable in an afternoon.
+- `tests/run_all.py` runs 17 checks: a cross-module lint (`lint_modules.py`: every `Module.member` used is
+  exported, every UI state key read is set), the deterministic engine and quote location, the PDF editor
+  on two file structures (validated by qpdf, pdftotext and a pdf.js re-read), the banker and reviewer flows,
+  in-app correction, sign-in, the reviewer platform, learning and memory with two reviewers, Office exports
+  opened by python-pptx / python-docx and converted by LibreOffice, and the local server end to end.
+- Everything a user or a model writes is inserted as text or escaped (`U.esc`) before it reaches the DOM;
+  no `innerHTML` carries unescaped input.
+- The local server binds 127.0.0.1 by default and refuses requests whose Host is not local (or the configured
+  `PRESCREEN_PUBLIC_HOST`), cross-origin requests, and mutating requests without the page's own `X-Prescreen`
+  header (no CSRF, no DNS rebinding); bodies are size-checked before they are read; asset ids are validated,
+  uploads are limited to PDF and image types and served with `nosniff` as attachments; a corrupt store is
+  reported (500) and copied aside, never overwritten. With `PRESCREEN_PASSCODE` set, sign-in opens a server
+  session (HttpOnly, SameSite=Strict cookie, 12 h), the reviewer role needs the passcode (constant-time compare,
+  five wrong attempts per minute per client), reviewer routes refuse banker sessions and bankers read only their
+  own submissions. Secrets stay in `.env` (never committed). The `claude` CLI is always run with tools off, one
+  turn, no session persistence, strict MCP config and a minimal environment. `tests/test_server.py` exercises
+  all of this over HTTP.
+- Learning data is shared state: verdicts and comments are data for the digest, never instructions; learned
+  rules are capped in length, deduplicated, scoped, and cannot remove SOP blocks.
+- Every write to the store is upserted by a deterministic id (one entry per submission and point), so a
+  changed verdict never leaves a duplicate; the localStorage fallback is capped (600 entries).
+
 ## Honest limits
+
+- Sign-in is identity, not authentication: the demo accepts any email; a team install adds a passcode on the
+  reviewer platform. Real SSO belongs in front of the server (Finalis's existing login).
+
+- An in-app correction is an overlay: the original text stays in the content stream under the white box, so
+  a text extractor reads both unless it masks the covered spans (the re-check does; the reviewer is told).
+  The corrected PDF is a draft for the reviewer and the banker's designer, not a typeset final.
+- The PowerPoint export carries the pages as pictures with the corrections as editable boxes; it does not
+  reconstruct the original slides' text as editable objects.
+- Fonts in the corrections are Helvetica (a standard PDF font, never embedded); the original deck's typeface
+  is not matched.
 
 - Live runs were executed through the local build with the CLI backend (see `docs/SIMULATIONS.md`); a live
   run inside the claude.ai artifact itself could not be executed from the build environment, so that path

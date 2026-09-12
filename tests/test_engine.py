@@ -29,4 +29,8 @@ async def main():
         print('LEXICON', json.dumps(res['lexicon'], indent=1))
         print('PAGE6\n', res['page6']); print('PAGE9\n', res['page9']); print('PAGE27\n', res['page27'])
         await browser.close()
+        req = {r['id']: r['status'] for r in res['required']}
+        ok = len(res['pages']) == 28 and all(p['textLayer'] for p in res['pages']) and req.get('A3') == 'missing' and req.get('A1a') == 'missing' and any(c['key'] == 'forward_generic' for c in res['coverage']) and res['analyzeMs'] < 5000
+        print('ALL OK' if ok else 'FAILURES: required=%s pages=%d' % (req, len(res['pages'])))
+        sys.exit(0 if ok else 1)
 asyncio.run(main())
