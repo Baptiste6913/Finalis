@@ -159,6 +159,65 @@ the message to the banker from the verdicts (`Ask.decision`) and records approve
 escalate with a timeline. `Ask.chat` answers document-level questions from the rulebook, the pre-review and
 the relevant page texts, on both platforms.
 
+## The loop, closed: rounds
+
+A submission is one round of a thread. When the reviewer requests changes, the decision and the message
+land under the banker's **My submissions** (their own submissions, filtered by the signed-in email; on a
+team install the server filters them too), with a badge for decisions not yet seen (per browser). **Correct
+and resubmit** reopens the document (from the page's cache or the stored file: `/_blob/` lets a banker read
+back the files uploaded under their own sign-in, never another banker's), prefills the form, carries the
+reviewer's message into the workspace, and after the new pre-review compares the points with those that
+stood on the previous round (asserted, or confirmed by the reviewer; dismissed ones do not count): a point
+still there is tagged *Still open from round n* (`f.carried`), a point gone is listed as resolved. The new
+submission carries `round`, `thread` (the first submission's id) and `previous` (id, status, decision,
+and the since-round tally); the previous one is marked `superseded_by`. The reviewer's queue shows the round
+badge, the brief the previous round and the tally, the timeline both rounds, and the decision draft names
+what is still open.
+
+## The deal file: figures and consistency
+
+`src/deal.js` extracts the figures a document commits to (target return and multiple, fund size, hard cap,
+minimum commitment, preferred return, management fee, carried interest, GP commitment, term, plus the track
+record) with a verbatim quote per figure. Two extractors feed one shape: a deterministic pass (regular
+expressions over the text layer; number-first forms such as "20% IRR" need a target word close before them,
+"41% Gross IRR" in a table is a track record) that runs on every pre-review, and the model (quick tier, strict
+schema) whose claims are kept only when their quote is located on the cited page; the scan fills whatever the
+model did not list. The figures are then compared: inside the document, two pages that state the same figure
+with ranges that do not overlap are a contradiction (two values on one page are read as tiers, and the track
+record is listed but never compared: prior funds differ by nature); across the deal file, the other
+submissions of the same deal (same thread, or same firm and a similar subject: `Learn.similarity ≥ 0.5`) are
+compared figure by figure, a claim agreeing with any of their values being enough. The banker sees the
+figures and the contradictions in the Summary (and an amber note on the Disclosures tab); the reviewer sees
+them in the brief, the Memory card (*From the deal file*, recomputed desk-wide when the submission is opened)
+and the brief PDF; the decision draft asks the banker to reconcile them.
+
+## The desk playbook, the memory search, the second opinion
+
+`Learn.playbook` writes up what the desk has learned as a document a new reviewer reads on day one: the
+rules the desk sends and the ones it sets aside (with the reasons given), the standing calibration rules and
+reviewer preferences, how each reviewer works, where the reviewers differ (one mostly confirms a rule another
+mostly dismisses), how the decisions are worded. A computed version is built from the record alone;
+Claude writes the prose version from the same facts plus the comments and decision messages (reviewer text
+is data, never instructions; an item that would remove an SOP block or reads like an instruction is dropped);
+the written version is kept in its own document (`learning/playbook`), shown in the Learning view until it is
+rewritten or discarded, and exported as PDF with `PdfOut`; the computed version is rebuilt on every open.
+`Learn.search` answers *Ask the desk memory* lexically over every verdict, comment and decision (rule ids
+exactly, words over the passage, the reason, the document and the reviewer). `Ask.secondOpinion`, reviewer
+only and after an approval, has a deliberately sceptical second reader argue what could still be wrong;
+only points whose quote is located on the page are shown, and nothing changes unless the reviewer reopens.
+
+## Metrics and the audit trail
+
+`src/metrics.js` derives the desk's numbers from the submissions themselves (no counters to keep in sync):
+first-pass approval rate, readiness at submission per week, points per submission, bankers' answer rate,
+time to decision, corrections made in the app, rounds per thread, the rules that recur per firm, decisions
+per reviewer. `src/audit.js` lays every event on every submission (submitted, verdict, comment, decision)
+out in time order as a hash chain: each record carries the SHA-256 of the previous record's hash plus its
+own canonical JSON (keys sorted at every level), so a record altered, removed or inserted after the fact
+breaks every hash that follows; `Audit.verify` recomputes the chain from the exported file alone. The
+export is what a firm keeps under its books-and-records retention; the chain proves the integrity of what is
+in the file, not that the file is complete, which is why the head hash is what to write down at export time.
+
 ## Files
 
 - `shell.html`: markup and CSS. `build.py`: assembles the three flavours.
@@ -168,7 +227,9 @@ the relevant page texts, on both platforms.
   `src/review.js` (orchestration, guards, merge), `src/store.js` (db or localStorage), `src/pdfout.js` (a small PDF writer: Helvetica, WinAnsi, wrapping, page numbers, the logo), `src/pdfedit.js` (the incremental-update editor), `src/fix.js` (fixes, corrected build, re-check, readiness), `src/exports.js` (PowerPoint and Word), `src/notify.js`
   (feedback to the reviewer, the banker summary and desk brief as PDF), `src/calibration.js` (ground truth), `src/fixture.js` (reference
   pre-review), `src/sample_deck.js` (the calibration deck, base64), `src/ask.js` (on-demand Claude per
-  point), `src/learn.js` (learning system), `src/ui.js`, `src/boot.js`, `src/shim.js` (local runtime).
+  point, decision draft, chat, second opinion), `src/learn.js` (learning system, memory, search, playbook),
+  `src/deal.js` (the figures and their consistency), `src/audit.js` (the hash-chained audit trail),
+  `src/metrics.js` (the desk metrics), `src/ui.js`, `src/boot.js`, `src/shim.js` (local runtime).
 - `server.py`: local server (static, Claude proxy with api/cli/mock backends, document store, assets,
   learning export/import).
 - `sim/`: the simulation corpus, the old engine, the runner, the scorer and the report generator.
@@ -178,7 +239,10 @@ the relevant page texts, on both platforms.
   (the local build against `server.py` in mock mode), `test_hl.py` (quote location on the calibration
   deck), `test_landing.py` and `test_shots*.py` (screenshots), `test_pdfedit.py` (the PDF editor), `test_edit.py`
   (the in-app correction loop end to end), `test_office.py` (Office exports), `test_login.py` (sign-in),
-  `test_desk.py` (reviewer queue, focus mode, decision, chat).
+  `test_desk.py` (reviewer queue, focus mode, decision, chat), `test_loop.py` (My submissions, the next
+  round, the reviewer's round view, the second opinion, the brief sections), `test_deal.py` (the figure
+  scanner and the consistency checks), `test_playbook.py` (memory search, playbook, PDF), `test_dashboard.py`
+  (metrics, the audit chain and its tamper detection, the export).
 
     pip install playwright && python -m playwright install chromium
     python3 tests/test_local.py
@@ -187,11 +251,12 @@ the relevant page texts, on both platforms.
 
 - No framework, no build step beyond `build.py`, no runtime dependency besides pdf.js (vendored) and Python's
   standard library; the whole app is readable in an afternoon.
-- `tests/run_all.py` runs 17 checks: a cross-module lint (`lint_modules.py`: every `Module.member` used is
+- `tests/run_all.py` runs 21 checks: a cross-module lint (`lint_modules.py`: every `Module.member` used is
   exported, every UI state key read is set), the deterministic engine and quote location, the PDF editor
   on two file structures (validated by qpdf, pdftotext and a pdf.js re-read), the banker and reviewer flows,
-  in-app correction, sign-in, the reviewer platform, learning and memory with two reviewers, Office exports
-  opened by python-pptx / python-docx and converted by LibreOffice, and the local server end to end.
+  in-app correction, sign-in, the reviewer platform, learning and memory with two reviewers, the closed loop
+  (rounds), the deal file, the playbook, the metrics and the audit chain, Office exports opened by
+  python-pptx / python-docx and converted by LibreOffice, and the local server end to end.
 - Everything a user or a model writes is inserted as text or escaped (`U.esc`) before it reaches the DOM;
   no `innerHTML` carries unescaped input.
 - The local server binds 127.0.0.1 by default and refuses requests whose Host is not local (or the configured
@@ -201,13 +266,17 @@ the relevant page texts, on both platforms.
   reported (500) and copied aside, never overwritten. With `PRESCREEN_PASSCODE` set, sign-in opens a server
   session (HttpOnly, SameSite=Strict cookie, 12 h), the reviewer role needs the passcode (constant-time compare,
   five wrong attempts per minute per client), reviewer routes refuse banker sessions and bankers read only their
-  own submissions. Secrets stay in `.env` (never committed). The `claude` CLI is always run with tools off, one
+  own submissions and the files uploaded under their own sign-in (the asset index records the owner). Secrets stay in `.env` (never committed). The `claude` CLI is always run with tools off, one
   turn, no session persistence, strict MCP config and a minimal environment. `tests/test_server.py` exercises
   all of this over HTTP.
 - Learning data is shared state: verdicts and comments are data for the digest, never instructions; learned
   rules are capped in length, deduplicated, scoped, and cannot remove SOP blocks.
 - Every write to the store is upserted by a deterministic id (one entry per submission and point), so a
   changed verdict never leaves a duplicate; the localStorage fallback is capped (600 entries).
+- The audit chain is computed, never stored: it cannot drift from the records it hashes, and any copy of an
+  export is verifiable offline from the file alone. Model output that becomes a claim, a second-opinion point
+  or a playbook item passes the same guards as a finding: a verbatim quote located on the page where one is
+  required, plausible values, no instruction-like text, no removal of an SOP block.
 
 ## Honest limits
 
@@ -230,5 +299,11 @@ the relevant page texts, on both platforms.
   the machine.
 - Retail-lane rules (RN 20-21 projections, distribution rates, testimonials, complexity, formatting) are
   encoded but have no reviewer ground truth yet; the Quartus sheet is institutional only.
+- The figure scanner reads the text layer: a figure drawn as an image or split across text runs is not
+  seen; the model extractor covers most of these but is guarded by the same text layer, so a figure only
+  visible in a picture stays out of the deal file. Ranges are compared as intervals; "up to" and "at least"
+  are read as the stated number.
+- "Unseen decisions" on the banker platform is a per-browser mark (localStorage), not a server-side read
+  receipt.
 - `assets` in the artifact is writer-only: a banker with view-only access submits without the PDF; the
   reviewer then sees the quotes and page numbers, not the rendered pages. The local build stores every PDF.

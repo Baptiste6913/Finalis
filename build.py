@@ -9,7 +9,7 @@ skipped with a notice otherwise) and copies the vendor files and the shim into w
 """
 import os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORDER = ["util.js","extract.js","rules.js","engine.js","prompts.js","review.js","store.js","pdfout.js","pdfedit.js","fix.js","exports.js","notify.js","calibration.js","fixture.js","sample_deck.js","ask.js","learn.js","ui.js","boot.js"]
+ORDER = ["util.js","extract.js","rules.js","engine.js","prompts.js","review.js","store.js","pdfout.js","pdfedit.js","fix.js","exports.js","notify.js","calibration.js","fixture.js","sample_deck.js","ask.js","learn.js","deal.js","audit.js","metrics.js","ui.js","boot.js"]
 shell = open(os.path.join(HERE, "shell.html"), encoding="utf-8").read()
 parts = []
 for f in ORDER:

@@ -53,6 +53,13 @@ const Store = (() => {
     }
     return lsGet(LS.subs, []).find((s) => s.id === id) || null;
   }
+  /* every submission the store holds (the queue subscription is capped at the most recent 60) */
+  async function listSubmissions(max) {
+    if (db) {
+      try { const snap = await db.collection('submissions').orderBy('created_at', 'desc').limit(max || 1000).get(); return snap.docs.map((d) => d.data()).filter(Boolean); } catch (e) { console.warn('db list failed', e); }
+    }
+    return lsGet(LS.subs, []).slice(0, max || 1000);
+  }
   function notify() { listeners.forEach((fn) => { try { fn(lsGet(LS.subs, [])); } catch (e) { /* ignore */ } }); }
   /* Subscribe to the inbox. Returns an unsubscribe function. */
   function watchSubmissions(fn) {
@@ -104,6 +111,16 @@ const Store = (() => {
     lsSet('mmat.learningMeta', next);
     return next;
   }
+  /* the playbook Claude wrote, kept apart from the log so that neither rewrite drops the other */
+  async function getPlaybook() {
+    if (db) { try { const s = await db.doc('learning/playbook').get(); if (s.exists) return s.data() || null; } catch (e) { /* ignore */ } }
+    return lsGet('mmat.playbook', null);
+  }
+  async function setPlaybook(pb) {
+    if (db) { try { if (pb) await db.doc('learning/playbook').set(pb); else await db.doc('learning/playbook').delete(); } catch (e) { /* ignore */ } }
+    try { if (pb) localStorage.setItem('mmat.playbook', JSON.stringify(pb)); else localStorage.removeItem('mmat.playbook'); } catch (e) { /* storage unavailable */ }
+    return pb;
+  }
   async function listCalibration(limit) {
     let list = [];
     if (db) {
@@ -141,8 +158,10 @@ const Store = (() => {
       try { const snap = await db.collection('calibration').limit(1000).get(); for (const d of snap.docs) { try { await db.doc('calibration/' + d.id).delete(); } catch (e) { /* ignore */ } } } catch (e) { /* ignore */ }
       try { await db.doc('learning/rules').set({ rules: [], updated_at: new Date().toISOString() }); } catch (e) { /* ignore */ }
       try { await db.doc('learning/meta').set({ log: [], updated_at: new Date().toISOString() }); } catch (e) { /* ignore */ }
+      try { await db.doc('learning/playbook').delete(); } catch (e) { /* ignore */ }
     }
     lsSet(LS.cal, []); lsSet('mmat.learnedRules', []); lsSet('mmat.learningMeta', {});
+    try { localStorage.removeItem('mmat.playbook'); } catch (e) { /* storage unavailable */ }
   }
-  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, addCalibration, upsertCalibration, getLearningMeta, setLearningMeta, listCalibration, getLearnedRules, setLearnedRules, getSettings, setSettings, clearLearning };
+  return { init, status, saveSubmission, updateSubmission, getSubmission, watchSubmissions, listSubmissions, addCalibration, upsertCalibration, getLearningMeta, setLearningMeta, listCalibration, getLearnedRules, setLearnedRules, getPlaybook, setPlaybook, getSettings, setSettings, clearLearning };
 })();

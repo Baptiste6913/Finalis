@@ -32,6 +32,8 @@ const Notify = (() => {
       'Material: ' + sub.file.name + ', ' + sub.file.pages + ' page' + (sub.file.pages === 1 ? '' : 's') + ', ' + (Prompts.DOC_LABELS[sub.form.docType] || sub.form.docType) + '.',
       'Lane: ' + sub.lane + ' (' + (sub.facts && sub.facts.laneReason ? sub.facts.laneReason : '') + '). Distribution: ' + ((sub.form.distribution || []).join(', ') || 'not stated') + '. Prepared by: ' + (sub.form.involvement || 'not stated') + '.',
       r.profile && r.profile.subject ? 'Subject: ' + r.profile.subject : '',
+      (sub.round || 1) > 1 ? 'ROUND ' + sub.round + ': resubmitted after a request for changes' + (sub.previous && sub.previous.since && Array.isArray(sub.previous.since.resolved) && Array.isArray(sub.previous.since.open) ? ' · since round ' + (sub.previous.round || 1) + ': ' + sub.previous.since.resolved.length + ' of ' + (+sub.previous.since.of || 0) + ' points resolved, ' + sub.previous.since.open.length + ' still open' : '') + '.' : '',
+      sub.consistency && Array.isArray(sub.consistency.contradictions) && sub.consistency.contradictions.length ? 'FIGURES THAT DO NOT AGREE (' + sub.consistency.contradictions.length + '): ' + sub.consistency.contradictions.slice(0, 5).map((x) => String((x && x.text) || '')).join(' ') : '',
       '',
       'ATTENTION POINTS (' + c.total + '): Tier A ' + c.A + ' · Tier B ' + c.B + ' · Tier C ' + c.C + ' · asserted to the banker ' + c.certain + ' · awaiting your verification ' + c.verify,
       ...(verify.length ? ['', 'TO VERIFY (' + verify.length + ') — not shown to the banker:', ...verify.map((f) => line(f, sub.responses && sub.responses[f.id]))] : []),
@@ -82,6 +84,7 @@ const Notify = (() => {
     rows.push(['Distribution', (sub.form.distribution || []).join(', ') || 'not stated']);
     rows.push(['Prepared by', (Prompts.INVOLVED_LABELS && Prompts.INVOLVED_LABELS[sub.form.involvement]) || sub.form.involvement || 'not stated']);
     if ((sub.version || 1) > 1) rows.push(['Version', 'v' + sub.version + ', corrected in the app (' + (sub.changes || []).length + ' edit' + ((sub.changes || []).length === 1 ? '' : 's') + ', ' + (sub.resolved || []).length + ' point' + ((sub.resolved || []).length === 1 ? '' : 's') + ' resolved)']);
+    if ((sub.round || 1) > 1) rows.push(['Round', String(sub.round) + (sub.previous && sub.previous.since && Array.isArray(sub.previous.since.resolved) && Array.isArray(sub.previous.since.open) ? ' (since round ' + (sub.previous.round || 1) + ': ' + sub.previous.since.resolved.length + ' of ' + (+sub.previous.since.of || 0) + ' points resolved, ' + sub.previous.since.open.length + ' still open)' : '')]);
     if (sub.readiness) rows.push(['Readiness', sub.readiness.score + ' / 100 · ' + sub.readiness.label]);
     if (sub.submitted_by && sub.submitted_by.name && !desk) rows.push(['Signed in as', sub.submitted_by.name + (sub.submitted_by.email ? ', ' + sub.submitted_by.email : '')]);
     if (desk) { rows.push(['Submitted by', (sub.submitter || 'unknown') + (sub.form.bankName ? ', ' + sub.form.bankName : '')]); rows.push(['Depth', sub.form.depth === 'default' ? 'Fast (one pass)' : 'Thorough (three passes)']); }
@@ -133,24 +136,54 @@ const Notify = (() => {
       b.push({ t: 'table', size: 8.8, cols: [{ w: 0.45, label: '#' }, { w: 0.9, label: 'Page' }, { w: 2.4, label: 'Correction' }, { w: 8.0, label: 'Text as it now reads' }], rows: sub.changes.map((ch, i) => [String(i + 1), 'p. ' + ch.page, (ch.label || ch.kind), ch.kind === 'whiteout' ? { text: 'Passage removed', grey: true } : String(ch.text || '').slice(0, 320)]) });
       if (sub.resolved && sub.resolved.length) b.push({ t: 'table', size: 8.8, cols: [{ w: 1.1, label: 'Rule' }, { w: 0.9, label: 'Page' }, { w: 6.2, label: 'Point resolved' }, { w: 3.5, label: 'How' }], rows: sub.resolved.map((r0) => [r0.rule, r0.page ? 'p. ' + r0.page : 'doc', r0.title, r0.how]) });
     };
+    const roundSection = () => {
+      const pv = sub.previous; if (!pv || typeof pv !== 'object') return;
+      const since = pv.since && Array.isArray(pv.since.resolved) && Array.isArray(pv.since.open) ? pv.since : null;
+      const dec = pv.decision && typeof pv.decision === 'object' ? pv.decision : null;
+      section(desk ? 'Previous round' : 'Since the previous round');
+      b.push({ t: 'p', text: 'Round ' + (pv.round || 1) + ' was submitted on ' + fmtDay(pv.created_at) + (dec ? ' and ' + (pv.status === 'approved' ? 'approved' : pv.status === 'escalated' ? 'escalated' : 'returned with a request for changes') + ' by ' + (dec.by || 'the reviewer') + ' on ' + fmtDay(dec.at) : '') + '.' });
+      if (dec && dec.message) b.push({ t: 'kv', k: desk ? 'Message sent' : 'Reviewer message', v: String(dec.message) });
+      if (since) {
+        const of = +since.of || 0;
+        b.push({ t: 'p', text: since.resolved.length + ' of ' + of + ' point' + (of === 1 ? '' : 's') + ' that stood on round ' + (pv.round || 1) + ' ' + (since.resolved.length === 1 ? 'is' : 'are') + ' resolved in this version; ' + since.open.length + ' still open.' });
+        const cell = (x) => [String(x.rule || ''), x.page ? 'p. ' + x.page : 'doc', String(x.title || '')];
+        const rows = since.open.filter(Boolean).map((x) => [{ sev: 'open' }].concat(cell(x))).concat(since.resolved.filter(Boolean).map((x) => [{ sev: 'done' }].concat(cell(x))));
+        if (rows.length) b.push({ t: 'table', size: 8.8, cols: [{ w: 1.2, label: 'Status' }, { w: 1, label: 'Rule' }, { w: 0.9, label: 'Page' }, { w: 8.5, label: 'Point from the previous round' }], rows });
+      }
+    };
+    const dealSection = () => {
+      const claims = Array.isArray(sub.claims) ? sub.claims.filter((x) => x && x.label) : [];
+      const cs0 = sub.consistency && typeof sub.consistency === 'object' ? sub.consistency : {};
+      const cs = { contradictions: (Array.isArray(cs0.contradictions) ? cs0.contradictions : []).filter((x) => x && Array.isArray(x.values) && x.values.length >= 2), file: Array.isArray(cs0.file) ? cs0.file : [], changed: (Array.isArray(cs0.changed) ? cs0.changed : []).filter((x) => x && x.text) };
+      if (!claims.length && !cs.contradictions.length) return;
+      section(desk ? 'Deal file: figures and consistency' : 'The figures you commit to');
+      if ((cs.contradictions || []).length) { b.push({ t: 'p', text: (cs.contradictions.length === 1 ? 'One figure does' : cs.contradictions.length + ' figures do') + ' not agree' + (desk ? ': a misleading-statement risk under Rule 2210(d), to reconcile with the banker first.' : ': reconcile them, Compliance will ask which one is right.'), bold: true }); b.push({ t: 'table', size: 8.8, cols: [{ w: 2.2, label: 'Figure' }, { w: 4.5, label: 'Here' }, { w: 4.9, label: desk ? 'Elsewhere' : 'Also stated as' }], rows: cs.contradictions.map((x) => [x.label, x.values[0].value + ' (p. ' + x.values[0].page + ')', x.values[1].value + ' (' + (x.values[1].doc ? x.values[1].doc + ', ' : '') + 'p. ' + x.values[1].page + ')']) }); }
+      else if (claims.length) b.push({ t: 'p', text: 'Every figure agrees with the others in the document' + (cs.file.length ? ' and with the ' + cs.file.length + ' earlier document' + (cs.file.length === 1 ? '' : 's') + ' of this deal (' + cs.file.map((f) => String(f.name || '')).join(', ') + ')' : '') + '.', muted: true });
+      cs.changed.forEach((x) => b.push({ t: 'p', text: 'Changed since the previous round: ' + x.text, muted: true }));
+      if (claims.length) b.push({ t: 'table', size: 8.8, cols: [{ w: 2.4, label: 'Figure' }, { w: 1.6, label: 'Value' }, { w: 0.8, label: 'Page' }, { w: 6.8, label: 'Passage' }], rows: claims.slice(0, 30).map((c0) => [c0.label, c0.value, String(c0.page || ''), { text: c0.quote ? '“' + c0.quote.slice(0, 160) + '”' : '', grey: true }]) });
+    };
     if (!desk) {
       section('What this document is');
       b.push({ t: 'p', text: p.subject ? p.subject : 'Described by the pre-review as: ' + (p.material_kind || 'a marketing communication') + '.' });
       b.push({ t: 'p', text: 'The pre-review raises ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ' on this document; ' + highs.length + ' high ' + (highs.length === 1 ? 'point needs' : 'points need') + ' an answer before submission.' });
       changesSection();
+      roundSection();
       section('Points to answer before submission');
       if (highs.length) { b.push(indexTable(sub, highs, false, 1)); highs.forEach((f, i) => b.push(pointDetail(sub, f, i + 1, false))); }
       else b.push({ t: 'p', text: 'None: no high point was asserted on this document.', muted: true });
       section('Points to read');
       if (others.length) b.push(indexTable(sub, others, false, highs.length + 1)); else b.push({ t: 'p', text: 'None.', muted: true });
       others.forEach((f, i) => b.push(pointDetail(sub, f, highs.length + i + 1, false)));
+      dealSection();
       section('After submission');
       b.push({ t: 'p', text: 'The document, the attention points, your answers and a brief go to the Finalis reviewer platform, a separate application.' + (c.verify ? ' ' + c.verify + ' further candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the reviewer only.' : '') + ' The reviewer reads your answers, then approves or requests changes through the usual Compliance channel. This pre-review is advisory: it is not an approval and it changes no status.' });
       return b;
     }
 
     // ---- the desk brief: everything
+    roundSection();
     changesSection();
+    dealSection();
     if (sub.memory && ((sub.memory.similar || []).length || sub.memory.hints)) {
       section('Reviewer memory');
       if ((sub.memory.similar || []).length) b.push({ t: 'table', size: 8.8, cols: [{ w: 4.2, label: 'Similar submission' }, { w: 1.2, label: 'Alike' }, { w: 2.2, label: 'Reviewed by' }, { w: 1.8, label: 'Decision' }, { w: 2.4, label: 'Confirmed / dismissed' }], rows: sub.memory.similar.slice(0, 6).map((x) => [x.name, x.sameDoc ? 'same file' : Math.round(x.score * 100) + ' %', (x.reviewers || []).join(', ') || '–', x.decision ? (x.status === 'approved' ? 'Approved' : x.status === 'escalated' ? 'Escalated' : 'Changes requested') : 'open', Array.from(new Set(x.confirmed || [])).join(', ') + (x.dismissed && x.dismissed.length ? ' / ' + Array.from(new Set(x.dismissed)).join(', ') : '')]) });

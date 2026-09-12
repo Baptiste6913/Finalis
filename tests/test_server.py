@@ -68,12 +68,20 @@ try:
     P = 8794
     checks['api_locked_without_session'] = req(P, 'GET', '/api/db/query?collection=submissions')[0] == 401 and req(P, 'GET', '/_blob/' + '0' * 32)[0] == 401
     checks['reviewer_needs_passcode'] = req(P, 'POST', '/api/login', body={'role': 'reviewer', 'email': 'r@finalis.com', 'passcode': 'nope'})[0] == 401
+    checks['login_needs_email'] = req(P, 'POST', '/api/login', body={'role': 'banker', 'email': '', 'name': 'B'})[0] == 400 and req(P, 'POST', '/api/login', body={'role': 'banker', 'email': 'not-an-email', 'name': 'B'})[0] == 400
     st, j, h = req(P, 'POST', '/api/login', body={'role': 'banker', 'email': 'B@Bank.com', 'name': 'B'})
     bcookie = h.get('Set-Cookie', '').split(';')[0]
     checks['banker_session'] = st == 200 and bcookie.startswith('prescreen_session=') and 'HttpOnly' in h.get('Set-Cookie', '')
     B = {'Cookie': bcookie}
-    checks['banker_cannot_read_learning'] = req(P, 'GET', '/api/learning/export', headers=B)[0] == 403 and req(P, 'GET', '/_blob/' + '0' * 32, headers=B)[0] == 403
+    checks['banker_cannot_read_learning'] = req(P, 'GET', '/api/learning/export', headers=B)[0] == 403 and req(P, 'GET', '/api/assets', headers=B)[0] == 403
+    # a banker reads back the file they uploaded (to reopen it for the next round), never another banker's
+    st, ja, _ = req(P, 'POST', '/api/assets', raw=b'%PDF-1.4 mine', headers={'Content-Type': 'application/pdf', 'Cookie': bcookie})
+    st2, j2, h2 = req(P, 'POST', '/api/login', body={'role': 'banker', 'email': 'other@bank.com', 'name': 'O'})
+    ocookie = h2.get('Set-Cookie', '').split(';')[0]
+    st3, jo, _ = req(P, 'POST', '/api/assets', raw=b'%PDF-1.4 theirs', headers={'Content-Type': 'application/pdf', 'Cookie': ocookie})
+    checks['banker_reads_own_file_only'] = st == 200 and st3 == 200 and req(P, 'GET', '/_blob/' + ja['id'], headers=B)[0] == 200 and req(P, 'GET', '/_blob/' + jo['id'], headers=B)[0] == 403 and req(P, 'GET', '/_blob/' + '0' * 32, headers=B)[0] == 404
     checks['banker_cannot_write_learning'] = req(P, 'PUT', '/api/db/doc', body={'path': 'learning/rules', 'data': {'rules': []}}, headers=B)[0] == 403
+    checks['banker_cannot_touch_asset_index'] = req(P, 'PUT', '/api/db/doc', body={'path': 'assets/index', 'data': {'items': []}}, headers=B)[0] == 403 and req(P, 'GET', '/api/db/doc?path=assets/index', headers=B)[0] == 403
     req(P, 'PUT', '/api/db/doc', body={'path': 'submissions/s1', 'data': {'id': 's1', 'submitted_by': {'email': 'b@bank.com'}, 'status': 'submitted'}}, headers=B)
     req(P, 'PUT', '/api/db/doc', body={'path': 'submissions/s2', 'data': {'id': 's2', 'submitted_by': {'email': 'other@bank.com'}, 'status': 'submitted'}}, headers=B)
     req(P, 'PUT', '/api/db/doc', body={'path': 'submissions/s3', 'data': {'id': 's3', 'submitted_by': 'not-an-object'}}, headers=B)
@@ -85,10 +93,11 @@ try:
     st, j, h = req(P, 'POST', '/api/login', body={'role': 'reviewer', 'email': 'r@finalis.com', 'passcode': 'finalis-2026'})
     R = {'Cookie': h.get('Set-Cookie', '').split(';')[0]}
     checks['reviewer_session'] = st == 200 and req(P, 'GET', '/api/learning/export', headers=R)[0] == 200
+    checks['reviewer_reads_any_file'] = req(P, 'GET', '/_blob/' + ja['id'], headers=R)[0] == 200 and req(P, 'GET', '/_blob/' + jo['id'], headers=R)[0] == 200
     st, j, _ = req(P, 'GET', '/api/db/query?collection=submissions', headers=R)
     checks['reviewer_sees_all'] = st == 200 and len((j or {}).get('docs', [])) == 3
     checks['logout'] = req(P, 'POST', '/api/logout', headers=R)[0] == 200 and req(P, 'GET', '/api/learning/export', headers=R)[0] == 401
-    fails = [req(P, 'POST', '/api/login', body={'role': 'reviewer', 'passcode': 'x'})[0] for _ in range(6)]
+    fails = [req(P, 'POST', '/api/login', body={'role': 'reviewer', 'email': 'r@finalis.com', 'name': 'R', 'passcode': 'x'})[0] for _ in range(6)]
     checks['login_rate_limited'] = fails[0] == 401 and 429 in fails and fails.index(429) >= 4  # one wrong passcode was already spent above
 finally:
     srv.terminate()

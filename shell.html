@@ -412,6 +412,7 @@ body[data-platform="desk"] .avatar { background:var(--primary-soft); color:var(-
   .appbar { gap:8px; padding:0 12px; }
   .appbar .logo .divider, .appbar .logo .product, .appbar .crumb { display:none; }
   .appbar .seg button { padding:5px 8px; font-size:12px; }
+  .btn.mine .txt { display:none; }
   .avatar-wrap { flex:none; }
   .chatdock { right:8px; bottom:8px; width:calc(100vw - 16px); }
 }
@@ -580,6 +581,66 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
 .cd-chips button { font:12px var(--font); padding:4px 9px; border-radius:999px; border:1px solid var(--border-2); background:var(--surface); color:var(--text-2); cursor:pointer; }
 .cd-chips button:hover { border-color:var(--brand); color:var(--primary-text); }
 #btn-chat[aria-pressed="true"] { color:var(--primary-text); background:var(--primary-soft); }
+/* ---- my submissions (banker) ---- */
+.btn.mine { position:relative; }
+.btn.mine .badge { margin-left:2px; }
+.mrow { display:grid; grid-template-columns:minmax(0,2.4fr) 120px 150px minmax(0,1.6fr) auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); font-size:13.5px; }
+.mrow:last-child { border-bottom:0; }
+.mrow.h { background:var(--surface-2); color:var(--text-3); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.mrow .t { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mrow .s { color:var(--text-3); font-size:12.5px; }
+.mrow .msg { font-size:12.5px; color:var(--text-2); line-height:1.45; max-height:3.2em; overflow:hidden; }
+.mrow .acts { display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
+.mrow.unseen .t::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--danger); margin-right:7px; vertical-align:1px; }
+.rbadge { display:inline-block; font-size:10.5px; font-weight:700; color:var(--violet); background:var(--violet-bg); border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:1px; }
+.tag.carried { background:var(--violet-bg); color:var(--violet); }
+.roundnote { border:1px solid var(--warn-line); background:var(--warn-bg); border-radius:10px; padding:10px 12px; margin:0 0 12px; font-size:13px; color:var(--text-2); }
+.roundnote b { color:var(--warn); display:block; margin-bottom:3px; }
+.roundnote .q { white-space:pre-wrap; margin-top:4px; color:var(--text-2); }
+.roundchip { display:flex; gap:10px; align-items:center; margin-top:10px; padding:9px 12px; border:1px solid var(--warn-line); background:var(--warn-bg); border-radius:8px; font-size:12.5px; color:var(--text-2); }
+.roundchip .grow { flex:1; }
+.contra.round { border-left-color:var(--primary); background:var(--primary-soft); } .contra.round b { color:var(--primary-text); }
+@media (max-width: 980px) { .mrow { grid-template-columns:1fr; gap:6px; } .mrow.h { display:none; } .mrow .acts { justify-content:flex-start; } }
+/* ---- deal file (claims) ---- */
+.claims { display:grid; gap:4px; }
+.claim { display:flex; gap:8px; align-items:baseline; font-size:12.5px; padding:5px 0; border-bottom:1px solid var(--border); }
+.claim:last-child { border-bottom:0; }
+.claim .k { flex:0 0 150px; color:var(--text-3); }
+.claim .v { font-weight:600; color:var(--text); }
+.claim .pg { color:var(--text-4); font-size:12px; }
+.contra { border-left:3px solid var(--danger); background:var(--danger-bg); border-radius:0 8px 8px 0; padding:8px 10px; margin:6px 0; font-size:12.5px; color:var(--text-2); }
+.contra b { color:var(--danger); }
+.contra.deal { border-left-color:var(--warn); background:var(--warn-bg); } .contra.deal b { color:var(--warn); }
+/* ---- metrics ---- */
+.mgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px; margin-bottom:14px; }
+.mbars { display:grid; gap:7px; }
+.mbar { display:grid; grid-template-columns:minmax(130px,1.5fr) minmax(0,3fr) 72px; gap:10px; align-items:center; font-size:12.5px; }
+.mbar .l { color:var(--text-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mbar .b { height:8px; background:var(--surface-3); border-radius:4px; overflow:hidden; }
+.mbar .b i { display:block; height:100%; background:var(--primary); border-radius:4px; }
+.mbar .b i.warn { background:var(--warn); } .mbar .b i.ok { background:var(--success); }
+.mbar .n { text-align:right; color:var(--text-2); font-variant-numeric:tabular-nums; font-size:12px; white-space:nowrap; }
+.trendrow { display:flex; gap:6px; align-items:flex-end; height:90px; margin-top:6px; }
+.trendrow > div { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; min-width:0; }
+.trendrow i { display:block; width:100%; max-width:34px; background:var(--primary); border-radius:3px 3px 0 0; }
+.trendrow small { font-size:10px; color:var(--text-4); white-space:nowrap; }
+.audit-ok { color:var(--success); } .audit-bad { color:var(--danger); }
+.hash { font:11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; word-break:break-all; color:var(--text-3); }
+/* ---- playbook ---- */
+.playbook { display:grid; gap:10px; }
+.playbook .pbs { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+.playbook .pbs h4 { font-size:13.5px; margin-bottom:6px; }
+.playbook .pbi { font-size:13px; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text-2); }
+.playbook .pbi:last-child { border-bottom:0; }
+.playbook .pbi small { display:block; color:var(--text-4); font-size:11.5px; margin-top:2px; }
+/* ---- second opinion (reviewer) ---- */
+.sop { border:1.5px solid var(--violet); border-radius:12px; padding:10px 12px; margin:0 0 12px; background:var(--surface); }
+.sop .sh { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px; } .sop .sh b { color:var(--violet); }
+.sop .pt { font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text-2); cursor:pointer; }
+.sop .pt:last-child { border-bottom:0; } .sop .pt i { color:var(--text-3); }
+/* ---- memory search ---- */
+.msearch { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.msearch input { flex:1; min-width:220px; padding:7px 10px; }
 </style>
 
 <div id="app">
@@ -610,6 +671,7 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
     <div class="logo"><span class="brand" id="brand-logo"></span><span class="divider"></span><span class="product" id="product-name">Banker platform</span></div>
     <div class="crumb"><svg class="i s" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><b id="crumb-root">Marketing materials</b><span id="crumb-ai" hidden><svg class="i s" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg><b>AI Prescreen</b></span></div>
     <div class="spacer"></div>
+    <button class="btn ghost sm mine" id="btn-mine" type="button" aria-label="My submissions" hidden><svg class="i s" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span class="txt">My submissions</span> <span class="badge" id="mine-count" hidden>0</span></button>
     <nav class="seg" aria-label="Platform" title="Two separate platforms share this demo page: bankers submit on theirs, reviewers work on theirs">
       <button id="mode-banker" aria-pressed="true">Banker</button>
       <button id="mode-reviewer" aria-pressed="false">Reviewer <span class="badge" id="inbox-count" hidden>0</span></button>
@@ -648,6 +710,7 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
             <div class="dropcap">PDF, DOCX, PNG, or JPEG — max 10MB</div>
             <div class="filecard" id="filechip" hidden><span class="fi"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="grow"><div class="fn" id="filechip-name"></div><div class="fm" id="filechip-meta"></div></span><button class="btn ghost sm" id="filechip-remove" type="button">Remove</button></div>
             <div class="helper" id="form-status" hidden></div>
+            <div class="roundchip" id="round-chip" hidden></div>
             <div class="altrow"><span>No file at hand?</span><button class="btn xs" type="button" id="paste-toggle">Paste text instead</button><span id="sample-slot"></span></div>
             <div id="pastebox" hidden style="margin-top:10px"><textarea id="paste-text" placeholder="Paste the post, email or page text here" aria-label="Pasted text"></textarea></div>
           </div>
@@ -747,6 +810,20 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
     <div class="done-wrap"><div class="modal"><div class="modal-body" id="done-card" style="padding-bottom:22px"></div></div></div>
   </section>
 
+  <!-- ===== My submissions (banker) ===== -->
+  <section class="view" id="view-mine" hidden>
+    <div class="inbox-wrap">
+      <div class="inbox-head">
+        <div><h1>My submissions</h1><p>Everything you sent to Finalis Compliance from this platform, with the reviewer's decision when it is in. A request for changes reopens the document here: correct it, run the pre-review again and resubmit as the next round.</p></div>
+        <div class="grow"></div>
+        <button class="btn sm" type="button" id="btn-mine-back"><svg class="i s" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Back</button>
+        <button class="btn sm primary" type="button" id="btn-mine-new"><svg class="i s" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New submission</button>
+      </div>
+      <div class="kpis" id="mine-kpis"></div>
+      <div class="table" id="mine-list"></div>
+    </div>
+  </section>
+
   <!-- ===== Reviewer inbox ===== -->
   <section class="view" id="view-inbox" hidden>
     <div class="inbox-wrap">
@@ -762,7 +839,7 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
         <select id="inbox-sort" aria-label="Sort"><option value="priority">Sort: priority</option><option value="newest">Sort: newest</option><option value="readiness">Sort: readiness</option></select>
         <input type="search" id="inbox-search" placeholder="Search document, banker, firm" aria-label="Search submissions">
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin:-8px 0 12px"><span class="helper" id="store-status" style="margin:0;flex:1"></span><button class="btn sm" type="button" id="btn-learning"><svg class="i s" viewBox="0 0 24 24"><path d="M12 20l9-5-9-5-9 5 9 5z"/><path d="M12 12l9-5-9-5-9 5 9 5z"/></svg>Learning</button></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:-8px 0 12px;flex-wrap:wrap"><span class="helper" id="store-status" style="margin:0;flex:1"></span><button class="btn sm" type="button" id="btn-metrics"><svg class="i s" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Metrics and audit</button><button class="btn sm" type="button" id="btn-learning"><svg class="i s" viewBox="0 0 24 24"><path d="M12 20l9-5-9-5-9 5 9 5z"/><path d="M12 12l9-5-9-5-9 5 9 5z"/></svg>Learning</button></div>
       <div class="table" id="inbox-list"></div>
     </div>
   </section>
@@ -781,6 +858,17 @@ button.mc-row { cursor:pointer; } button.mc-row:hover { background:var(--primary
         <button class="btn sm" type="button" id="btn-learning-back"><svg class="i s" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Inbox</button>
       </div>
       <div id="learning-body"></div>
+    </div>
+  </section>
+  <!-- ===== Metrics and audit (reviewer) ===== -->
+  <section class="view" id="view-metrics" hidden>
+    <div class="inbox-wrap">
+      <div class="inbox-head">
+        <div><h1>Metrics and audit</h1><p>What the desk is getting from the pre-review, computed from the submissions themselves: first-pass approvals, readiness at submission, corrections made in the app, rounds, time to decision, the rules that keep coming back per firm. The audit export lays every event out as a SHA-256 hash chain for the firm's books and records.</p></div>
+        <div class="grow"></div>
+        <button class="btn sm" type="button" id="btn-metrics-back"><svg class="i s" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Inbox</button>
+      </div>
+      <div id="metrics-body"></div>
     </div>
   </section>
   <div id="dialog-root"></div>

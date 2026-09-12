@@ -60,7 +60,7 @@ async def main():
             suppressed: r.suppressed.length, steps: S.steps.map(s=>s.key+':'+s.status) };
         }''')
         print(json.dumps(st, indent=1))
-        checks = {'findings': st['n'] >= 9 and st['calib']['recall'] >= 8, 'steps': st['steps'][-1] == 'assemble:done'}
+        checks = {'findings': st['n'] >= 9 and st['calib']['recall'] >= 8, 'steps': 'assemble:done' in st['steps'] and st['steps'][-1] == 'claims:done'}
         await page.screenshot(path=os.path.join(OUT, 'shot_work.png'), full_page=False)
         # gate: try submit before answers
         print('submit disabled before answers:', await page.evaluate("document.getElementById('btn-submit').disabled"))

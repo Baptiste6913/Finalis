@@ -88,7 +88,7 @@ _SESSIONS = {}  # token -> {"role", "email", "name", "at"}; only used when PRESC
 SESSION_COOKIE = "prescreen_session"
 SESSION_TTL = 12 * 3600
 REVIEWER_COLLECTIONS = ("submissions", "calibration")
-REVIEWER_PREFIXES = ("calibration/", "learning/", "settings/")
+REVIEWER_PREFIXES = ("calibration/", "learning/", "settings/", "assets/")  # the asset index included: its owner field decides who may read a file
 BANKER_COLLECTIONS = ("submissions", "settings")
 
 
@@ -556,7 +556,10 @@ class Handler(SimpleHTTPRequestHandler):
             meta = db.get("learning/meta") or {}
             return self._json(200, {"version": 2, "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "verdicts": verdicts, "learned_rules": rules, "meta": meta, "submissions": len(subs)})
         if u.path.startswith("/_blob/"):
-            if not self._require("reviewer"):
+            # the file behind a submission: the reviewer platform reads any of them, a banker only the ones
+            # uploaded under their own sign-in (to reopen a document for a resubmission)
+            sess = self._require()
+            if not sess:
                 return None
             aid = os.path.basename(u.path)
             if not re.fullmatch(r"[0-9a-f]{32}", aid):
@@ -566,6 +569,8 @@ class Handler(SimpleHTTPRequestHandler):
             fp = os.path.join(ASSETS, aid)
             if not meta or not os.path.isfile(fp):
                 return self._json(404, {"code": "not_found", "message": "no such asset"})
+            if sess["role"] == "banker" and not sess.get("open") and str(meta.get("owner") or "").lower() != sess["email"]:
+                return self._json(403, {"code": "not_granted", "message": "not your file"})
             with open(fp, "rb") as f:
                 data = f.read()
             ctype = meta.get("contentType") if meta.get("contentType") in ASSET_TYPES else "application/octet-stream"
@@ -599,8 +604,10 @@ class Handler(SimpleHTTPRequestHandler):
             if req is None:
                 return None
             role = "reviewer" if req.get("role") == "reviewer" else "banker"
-            email = str(req.get("email", ""))[:200].lower()
+            email = str(req.get("email", ""))[:200].strip().lower()
             name = str(req.get("name", ""))[:200]
+            if PASSCODE and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+                return self._json(400, {"ok": False, "code": "invalid_argument", "message": "A work email is required to sign in"})
             if PASSCODE and role == "reviewer":
                 ip = self.client_address[0]
                 now = time.time()
@@ -660,7 +667,8 @@ class Handler(SimpleHTTPRequestHandler):
                     return self._json(422, {"code": "invalid_json", "message": "the answer held no JSON value", "text": out.get("text", "")[:4000]})
             return self._json(200, out)
         if u.path == "/api/assets":
-            if not self._require():
+            sess = self._require()
+            if not sess:
                 return None
             ctype = self.headers.get("Content-Type", "application/octet-stream").split(";")[0].strip().lower()
             if ctype not in ASSET_TYPES:
@@ -676,7 +684,7 @@ class Handler(SimpleHTTPRequestHandler):
                 f.write(data)
             with _lock:
                 idx = db_get("assets/index") or {"items": []}
-                idx["items"].append({"id": aid, "url": "/_blob/" + aid, "contentType": ctype, "sizeBytes": len(data), "name": name, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+                idx["items"].append({"id": aid, "url": "/_blob/" + aid, "contentType": ctype, "sizeBytes": len(data), "name": name, "owner": sess.get("email", ""), "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
                 db_put("assets/index", idx)
             return self._json(200, {"id": aid, "url": "/_blob/" + aid, "sizeBytes": len(data), "contentType": ctype})
         if u.path == "/api/learning/import":

@@ -17,6 +17,14 @@ next to the original, the candidates to verify are walked with the keyboard, and
 drafted from the verdicts. Both platforms open on a sign-in screen and share one question box that answers
 from the document, the rulebook and the pre-review.
 
+The loop is closed: the reviewer's decision comes back to the banker under **My submissions**, a request for
+changes reopens the document for the next round with the reviewer's message, and the reviewer sees round 2
+against round 1 (what was resolved, what is still open). The pre-review also reads the **figures** the
+document commits to (targets, fund size, fees, carry, minimums) and says when they do not agree, with each
+other or with the earlier documents of the same deal. The desk gets a **playbook** written from its own
+verdicts and comments, a search over its memory, a **second opinion** after an approval, **metrics** computed
+from the submissions, and an **audit trail** exported as a SHA-256 hash chain.
+
 Everything runs locally: one Python file serves the page and calls Claude **through your own Claude Code
 login**. No API key, no install beyond Python and Claude Code. What leaves your machine is what the model
 needs, sent under your own account: the document text, the form, and on the reviewer side the reviewers'
@@ -114,6 +122,25 @@ in `.env` to models you do have — the server also retries automatically with y
    them with the keyboard (`C` confirm, `D` dismiss, `J`/`K`). The decision bar drafts the message to the
    banker from your verdicts (**Draft with Claude**), then **Approve**, **Request changes** or **Escalate**;
    the Brief tab shows the timeline and **Export the full brief as PDF**.
+9. **Request changes** with a message, then switch back to the banker: the **My submissions** button in the
+   header carries a badge, the list shows the status and the reviewer's message, **Details** the points that
+   stood. **Correct and resubmit** reopens the document with the message on top: run the pre-review again,
+   correct the document in the app (*Fix in the document*, then *Re-check*), and the points that stood on
+   round 1 are tagged *Still open from round 1* or listed as resolved, the Summary shows *Since round 1*, and
+   the submission goes out as **round 2** (when the file was not stored, the form asks for the corrected
+   version and says it goes out as the next round). On the reviewer
+   platform the queue shows the round badge, the brief the previous round and the tally, the timeline both
+   rounds; after an **Approve**, **Second opinion** has a sceptical second reader argue what could still be
+   wrong (advisory; nothing changes unless you reopen).
+10. The Summary tab lists **the figures you commit to** (target return, multiple, fund size, hard cap,
+   minimum, preferred return, fees, carry, term) with the page of each; when two of them do not agree, or one
+   differs from an earlier document of the same deal, the banker is told before Compliance is. On the reviewer
+   platform the Memory card has *From the deal file* and the brief PDF a *Deal file* section.
+11. **Metrics and audit** (reviewer inbox): first-pass approval rate, readiness by week, corrections made in
+   the app, rounds, time to decision, the rules that keep coming back per firm, decisions per reviewer, all
+   computed from the submissions; **Export the audit trail** writes every event as a hash chain and **Verify an
+   exported file** recomputes it. **Learning** has *Ask the desk memory* (a search over every verdict, comment
+   and decision) and the **Desk playbook** (computed from the record, or written by Claude; exports as PDF).
 
 The banker platform and the reviewer platform are two separate applications. This demo page hosts both behind
 one switch so you can play both roles; the accent colour, the header and the tabs change with the side you
@@ -134,6 +161,16 @@ are on, and nothing reaches the reviewer before the banker submits.
 ![The banker's Summary: the document in two lines, what Compliance will ask, nothing else](docs/screens/shot_summary_banker.jpg)
 
 ![The same submission on the reviewer platform: the full brief](docs/screens/shot_desk_brief.jpg)
+
+![My submissions: the decision and the reviewer's message come back to the banker; Correct and resubmit opens the next round](docs/screens/shot_mine.jpg)
+
+![Round 2 in the workspace: the reviewer's message on top, the points still open from round 1 tagged](docs/screens/shot_round2.jpg)
+
+![The figures the document commits to, and one that does not agree](docs/screens/shot_deal.jpg)
+
+![After an approval: the second opinion, the previous round in the brief and the timeline](docs/screens/shot_second_opinion.jpg)
+
+![Metrics and audit: the desk's numbers computed from the submissions, the audit trail as a hash chain](docs/screens/shot_metrics.jpg)
 
 ## 5. What is asserted, and what waits for a human
 
@@ -188,11 +225,19 @@ two reviewers.
 
 The **Learning** view lists the reviewers (what each one confirms, dismisses and says, the rules learned from
 them), the learned rules with their scope, the track record per rule, what the pre-review learned in order,
-and exports the whole state as JSON. After a week of use the state carries the desk's verdicts, comments and
+and exports the whole state as JSON. **Ask the desk memory** searches every verdict, comment and decision
+message (rule ids exactly, words over the passage, the reason, the document and the reviewer). The **Desk
+playbook** writes what the desk has learned up as a document a new reviewer reads on day one: what the desk
+sends and what it sets aside (with the reasons given), the standing rules and reviewer preferences, how each
+reviewer works, where the reviewers differ, how decisions are worded; a computed version is always there,
+*Write the playbook with Claude* turns it into prose from the same record (reviewer text is data, never
+instructions; anything that would remove an SOP block is dropped), and it exports as PDF. After a week of use the state carries the desk's verdicts, comments and
 decisions, and the pre-review is calibrated on them; `tests/test_learning.py` drives the whole loop with a
 stubbed Claude.
 
 ![The Learning view: reviewers, what they said, the rules learned from them](docs/screens/shot_learning.jpg)
+
+![The desk playbook, computed from the reviewers' record](docs/screens/shot_playbook.jpg)
 
 ## 7. Speed, cost, and what it costs you
 
@@ -233,6 +278,9 @@ src/pdfedit.js       the in-browser PDF editor: incremental updates on the uploa
                      xref streams with object streams), white boxes and Helvetica text, no library
 src/fix.js           the fixes proposed per point, the corrected build, the re-check, the readiness score
 src/exports.js       PowerPoint and Word writers (Office Open XML in a STORE zip, no library)
+src/deal.js          the deal file: the figures a document commits to, and their consistency
+src/audit.js         the audit trail as a SHA-256 hash chain, with its verifier
+src/metrics.js       the desk metrics, derived from the submissions
 build.py             assembles shell.html + src/*.js into dist/ and web/
 web/index.html       the local build served by server.py        (generated)
 dist/prescreen.html  the same app as a standalone claude.ai artifact page (generated)
@@ -260,6 +308,10 @@ python3 tests/test_login.py   # sign-in, keep me signed in, prefill, sign out, r
 python3 tests/test_desk.py    # reviewer queue, focus mode with the keyboard, decision, timeline, chat dock
 python3 tests/test_learning.py # every verdict and comment recorded with identity, decision, digest, adaptation to the reviewer
 python3 tests/test_memory.py  # personal and shared memory with two reviewers, disagreements flagged
+python3 tests/test_loop.py    # My submissions, the next round, the reviewer's round view, the second opinion, the brief sections
+python3 tests/test_deal.py    # the figure scanner, ranges and tiers, contradictions inside a document and across the deal file
+python3 tests/test_playbook.py # the desk memory search, the computed and the written playbook, its guards, the PDF
+python3 tests/test_dashboard.py # the metrics from a seeded inbox, the audit chain, tamper detection, the export
 python3 tests/test_platforms.py # the banker sees asserted points only, the reviewer sees everything
 python3 tests/test_landing.py # the modal: Submit disabled without a file, the setup step, back and forth
 python3 tests/test_more.py    # DOCX, a pasted post, an image upload, a 400 px viewport, dark theme
@@ -269,7 +321,7 @@ python3 tests/lint_modules.py # cross-module check: every Module.member used exi
 python3 tests/run_all.py      # the whole suite, one line per test; --quick skips test_office, test_pdf and test_local
 ```
 
-Every test ends with `ALL OK` or `FAILURES` and a non-zero exit code; `run_all.py` reports 17/17.
+Every test ends with `ALL OK` or `FAILURES` and a non-zero exit code; `run_all.py` reports 21/21.
 
 None of these call a model. Beyond Chromium (`pip install -r tests/requirements.txt`, then
 `python -m playwright install chromium`): `test_pdfedit`, `test_edit` and `test_pdf` need `qpdf` and
@@ -315,8 +367,11 @@ Submissions, the uploaded PDFs and the learning state live in `data/` next to th
 delete the folder and nothing remains. The server binds to 127.0.0.1 by default and refuses requests whose
 Host is not local, cross-origin requests, and mutating requests that do not come from the page. On a shared
 install set `PRESCREEN_PASSCODE`: every sign-in then opens a server session, the reviewer role needs the
-passcode, bankers only see their own submissions through the API, and the demo switch between the platforms
-is off. The `claude` CLI is always run with tools off, one turn, no session and a minimal environment, so
+passcode, every sign-in needs a work email, bankers only see their own submissions and their own uploaded files
+through the API (files uploaded before version 1.1 carry no owner and are not reopened for bankers: the form
+asks for the corrected version instead), and the demo switch between the platforms is off. The audit export is a hash chain over every event (submitted, verdict,
+comment, decision): keep it under the firm's books-and-records retention and verify any copy from the file
+alone; the chain proves the integrity of what is in the file, so write down the head hash at export time. The `claude` CLI is always run with tools off, one turn, no session and a minimal environment, so
 nothing in a document can drive an action. Sign-in is an identity, not an authentication: put Finalis's own
 login (SSO) in front of the server for production.
 

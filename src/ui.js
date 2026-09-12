@@ -9,6 +9,7 @@ const UI = (() => {
     steps: [], reference: false, calib: null, settings: {}, railOpen: false, zoom: 1, page: 1, expanded: {}, ai: {},
     phase: 'landing', prefill: {},
     edits: [], editing: null, version: 1, resolved: [], history: [], correctedBytes: null, correctedDirty: false, user: null,
+    resubmitOf: null, sinceRound: null, seen: {}, secondOpinion: null,
   };
   const DOC_CACHE = new Map();
   const $ = (id) => document.getElementById(id);
@@ -42,7 +43,7 @@ const UI = (() => {
     website: 'Websites and blogs carry the general blog disclosure; public channel: retail lane.',
     other: 'The deal-deck rules apply by default; the reviewer decides the treatment.',
   };
-  const STEP_LABELS = { extract: 'Read the file', blocks: 'Required blocks', transcribe: 'Transcribe the image', profile: 'Read the whole document', findings: 'Review under the rulebook', verify: 'Second pass: senior check', assemble: 'Assemble the pre-review' };
+  const STEP_LABELS = { extract: 'Read the file', blocks: 'Required blocks', transcribe: 'Transcribe the image', profile: 'Read the whole document', findings: 'Review under the rulebook', verify: 'Second pass: senior check', assemble: 'Assemble the pre-review', claims: 'Check the figures' };
   const RESP = { fixed: 'Fixed in the new version', covered: 'Already covered', disagree: 'Disagree' };
   const isMobile = () => window.matchMedia('(max-width: 980px)').matches;
   function svg(name) { const t = document.createElement('template'); t.innerHTML = ICON[name]; return t.content.firstChild; }
@@ -51,12 +52,12 @@ const UI = (() => {
   /* ---------- views ---------- */
   function show(view) {
     S.view = view;
-    ['login', 'form', 'work', 'done', 'inbox', 'learning'].forEach((v) => { $('view-' + v).hidden = v !== view; });
+    ['login', 'form', 'work', 'done', 'inbox', 'learning', 'mine', 'metrics'].forEach((v) => { $('view-' + v).hidden = v !== view; });
     document.body.setAttribute('data-view', view);
     renderChrome();
     window.scrollTo(0, 0);
   }
-  const STASH_KEYS = ['doc', 'form', 'facts', 'result', 'responses', 'steps', 'calib', 'reference', 'submission', 'ack', 'active', 'tab', 'filter', 'expanded', 'ai', 'phase', 'prefill', 'edits', 'editing', 'version', 'resolved', 'history', 'correctedBytes', 'correctedDirty'];
+  const STASH_KEYS = ['doc', 'form', 'facts', 'result', 'responses', 'steps', 'calib', 'reference', 'submission', 'ack', 'active', 'tab', 'filter', 'expanded', 'ai', 'phase', 'prefill', 'edits', 'editing', 'version', 'resolved', 'history', 'correctedBytes', 'correctedDirty', 'resubmitOf', 'sinceRound'];
   function setMode(mode) {
     S.focus = null; if ($('chatdock')) { $('chatdock').hidden = true; $('btn-chat').setAttribute('aria-pressed', 'false'); }
     if (mode === S.mode) { if (mode === 'reviewer' && S.viewing) { S.viewing = null; renderInbox(); show('inbox'); } return; }
@@ -85,11 +86,14 @@ const UI = (() => {
     $('am-switch').hidden = lockedPlatforms();
     const seg = document.querySelector('.appbar .seg'); if (seg) seg.hidden = lockedPlatforms();
     $('product-name').textContent = desk ? 'Reviewer platform' : 'Banker platform';
-    $('crumb-root').textContent = desk ? 'Inbox' : 'Marketing materials';
+    $('crumb-root').textContent = desk ? (S.view === 'metrics' ? 'Metrics and audit' : S.view === 'learning' ? 'Learning' : 'Inbox') : 'Marketing materials';
     const ai = $('crumb-ai');
-    ai.querySelector('b').textContent = desk ? 'Submission' : 'AI Prescreen';
-    ai.hidden = !((S.view === 'work' || S.view === 'done') && (desk ? !!S.viewing : true));
+    ai.querySelector('b').textContent = desk ? 'Submission' : (S.view === 'mine' ? 'My submissions' : 'AI Prescreen');
+    ai.hidden = !((S.view === 'work' || S.view === 'done' || S.view === 'mine') && (desk ? !!S.viewing : true));
     $('tab-summary').textContent = desk ? 'Brief' : 'Summary';
+    // the banker's own submissions and the decisions not yet seen
+    const mine = $('btn-mine');
+    if (mine) { mine.hidden = desk || !S.user || S.view === 'login'; const n = unseenDecisions().length; $('mine-count').hidden = !n; $('mine-count').textContent = String(n); }
   }
 
   /* ---------- the Marketing materials modal (landing) ---------- */
@@ -146,10 +150,7 @@ const UI = (() => {
       else if (kind === 'docx') extracted = await Extract.docx(bytes);
       else extracted = Extract.image(file);
       S.doc = Object.assign({ kind, name, size: file.size, file, bytes, sha }, extracted);
-      $('filechip').hidden = false;
-      $('filechip-name').textContent = name;
-      const textPages = S.doc.pages.filter((p) => p.textLayer).length;
-      $('filechip-meta').textContent = U.fmtBytes(file.size) + ' · ' + S.doc.pages.length + (kind === 'pdf' ? ' pages' : kind === 'docx' ? ' sections' : ' image') + (kind === 'pdf' && textPages < S.doc.pages.length ? ' · ' + (S.doc.pages.length - textPages) + ' without text layer' : '');
+      renderFileChip();
       setStatus('');
       $('pastebox').hidden = true;
     } catch (e) {
@@ -159,6 +160,13 @@ const UI = (() => {
     }
     updateSubmit();
   }
+  function renderFileChip() {
+    const d = S.doc; if (!d) return;
+    $('filechip').hidden = false;
+    $('filechip-name').textContent = d.name;
+    const textPages = d.pages.filter((p) => p.textLayer).length;
+    $('filechip-meta').textContent = U.fmtBytes(d.size) + ' · ' + d.pages.length + (d.kind === 'pdf' ? ' pages' : d.kind === 'docx' ? ' sections' : ' image') + (d.kind === 'pdf' && textPages < d.pages.length ? ' · ' + (d.pages.length - textPages) + ' without text layer' : '');
+  }
   function removeFile() {
     if (S.doc && S.doc.imageUrl) URL.revokeObjectURL(S.doc.imageUrl);
     S.doc = null; $('filechip').hidden = true; $('file-input').value = '';
@@ -166,12 +174,28 @@ const UI = (() => {
     updateSubmit();
   }
   function resetForm() {
+    if (S.running && S.abort) S.abort.abort();
+    runToken += 1; S.running = false; S.abort = null; // a run that was still going must not write into the fresh state
     removeFile(); $('paste-text').value = ''; $('pastebox').hidden = true; $('notes').value = ''; $('notes-count').textContent = '0';
     $('involved').value = ''; $('doc-type').value = 'deal-deck'; $('doc-type-hint').textContent = DOC_HINTS['deal-deck'];
     document.querySelectorAll('#dist-menu input').forEach((i) => { i.checked = false; });
     renderDistLabel(); toggleDistMenu(false);
     S.result = null; S.facts = null; S.responses = {}; S.submission = null; S.ack = false; S.expanded = {}; S.ai = {}; S.phase = 'landing'; S.prefill = {}; S.form = {}; S.edits = []; S.editing = null; S.version = 1; S.resolved = []; S.history = []; S.correctedBytes = null;
+    S.resubmitOf = null; S.sinceRound = null; S.secondOpinion = null;
+    renderRoundChip();
     updateSubmit();
+  }
+  /* the form says when the next upload goes out as the next round of an earlier submission */
+  function renderRoundChip() {
+    const chip = $('round-chip'); if (!chip) return;
+    const p = S.resubmitOf;
+    chip.hidden = !p;
+    if (!p) return;
+    chip.innerHTML = '';
+    chip.append(el('span', { class: 'grow', text: 'Round ' + ((p.round || 1) + 1) + ' of ' + (p.file && p.file.name ? p.file.name : 'the previous submission') + ': the file you upload here is sent as the next round, with the reviewer\'s message.' }));
+    const cancel = el('button', { class: 'btn xs', type: 'button', text: 'Not a resubmission' });
+    cancel.addEventListener('click', () => { S.resubmitOf = null; S.sinceRound = null; renderRoundChip(); U.toast('This will be a new submission'); });
+    chip.append(cancel);
   }
   function bindForm() {
     const dz = $('dropzone');
@@ -232,10 +256,11 @@ const UI = (() => {
     const ic = $('wh-status-ic');
     ic.innerHTML = '';
     if (S.phase === 'setup' && !S.viewing) { $('wh-status-text').textContent = 'Document loaded · answer two questions to start'; return; }
-    if (S.result && !S.result.meta.error) { const ok = el('span', { class: 'ok' }); ok.append(svg('checkCircle')); ic.append(ok); }
-    else if (failed && !running) { const w = el('span', { style: 'color:var(--danger);display:inline-flex' }); w.append(svg('alert')); ic.append(w); }
+    if (running) ic.append(el('span', { class: 'spin' }));
+    else if (S.result && !S.result.meta.error) { const ok = el('span', { class: 'ok' }); ok.append(svg('checkCircle')); ic.append(ok); }
+    else if (failed) { const w = el('span', { style: 'color:var(--danger);display:inline-flex' }); w.append(svg('alert')); ic.append(w); }
     else ic.append(el('span', { class: 'spin' }));
-    $('wh-status-text').textContent = S.result ? (S.result.meta.error ? 'Required blocks only' : (S.reference ? 'Reference pre-review' : 'Pre-review complete' + modelSuffix(S.result.meta))) : failed ? 'Stopped: ' + failed.label : running ? running.label + (running.detail ? ' · ' + running.detail : '') : 'Preparing';
+    $('wh-status-text').textContent = running ? running.label + (running.detail ? ' · ' + running.detail : '') : S.result ? (S.result.meta.error ? 'Required blocks only' : (S.reference ? 'Reference pre-review' : 'Pre-review complete' + modelSuffix(S.result.meta))) : failed ? 'Stopped: ' + failed.label : 'Preparing';
   }
   function shortModel(m) { return String(m || '').replace(/^cli:/, '').replace(/^claude-/, '').replace(/-\d{8}$/, ''); }
   function modelSuffix(meta) {
@@ -281,6 +306,7 @@ const UI = (() => {
   }
   function renderSetup(body) {
     const w = el('div', { class: 'setup' });
+    { const rn = roundNote(); if (rn) w.append(rn); }
     w.append(el('h3', { text: 'Before the pre-review' }));
     w.append(el('p', { class: 'intro', text: 'Finalis AI Prescreen reads the whole document and lists what Compliance will look at. The audience decides which checklist applies; the rest fills the disclaimer texts.' }));
     const f1 = el('div', { class: 'field' });
@@ -335,7 +361,7 @@ const UI = (() => {
     if (!setup.audience) { U.toast('Select the intended audience.'); const a = $('audience'); if (a) a.focus(); return; }
     const form = Object.assign({}, S.form, setup);
     S.form = form; S.result = null; S.responses = {}; S.steps = []; S.reference = false; S.calib = null; S.active = null; S.tab = 'disclosures'; S.filter = 'all'; S.expanded = {}; S.ai = {}; S.ack = false;
-    S.phase = 'review'; S.edits = []; S.editing = null; S.version = 1; S.resolved = []; S.history = []; S.correctedBytes = null; S.correctedDirty = false; S.chat = []; S.focus = null;
+    S.phase = 'review'; S.edits = []; S.editing = null; S.version = 1; S.resolved = []; S.history = []; S.correctedBytes = null; S.correctedDirty = false; S.chat = []; S.focus = null; S.sinceRound = null; S.secondOpinion = null;
     renderRail();
     setStep('extract', { status: 'done', detail: S.doc.pages.length + (S.doc.kind === 'pdf' ? ' pages read' : S.doc.kind === 'image' ? ' image' : ' sections') });
     setStep('blocks', { status: 'run' });
@@ -356,6 +382,7 @@ const UI = (() => {
         S.result = Review.deterministicOnly(S.facts, S.form, S.doc.pages);
         setStep('profile', { status: 'fail', detail: 'Claude is not available in this view: required blocks only' });
       }
+      attachClaims({ claims: Deal.scan(S.doc.pages), source: 'scan' });
       finishRun();
       return;
     }
@@ -374,6 +401,19 @@ const UI = (() => {
       S.result = result;
       result.meta.learning = S.learningUsed;
       setStep('assemble', { status: 'done', detail: result.findings.length + ' attention points' });
+      // the figures the document commits to: a failure or a stop here never costs the finished pre-review
+      setStep('claims', { status: 'run', detail: 'Reading the figures the document commits to' });
+      const steps = S.steps; const pages = S.doc.pages;
+      let ex;
+      try { ex = await Deal.extract(S.caps.sample, pages, { signal: S.abort.signal, cache: !noCache, maxBytes: Math.min(65536, (S.caps.limits && S.caps.limits.maxPromptBytes) || 65536) }); }
+      catch (e) { ex = { claims: Deal.scan(pages), source: 'scan', error: e && e.code ? e.code : 'error' }; }
+      if (token !== runToken || S.mode !== 'banker') {
+        // the banker switched platform meanwhile: the finished pre-review is stashed with the figures the scan read, and the step is closed on the stashed steps
+        result.claims = ex.claims; result.claimsSource = 'scan';
+        const st = steps.find((x) => x.key === 'claims'); if (st) { st.status = 'done'; st.detail = ex.claims.length + ' figures (text scan)'; }
+        return;
+      }
+      attachClaims(ex);
     } catch (e) {
       if (token !== runToken || S.mode !== 'banker') return;
       console.warn('pre-review failed', e);
@@ -390,6 +430,7 @@ const UI = (() => {
       S.result = Review.deterministicOnly(S.facts, S.form, S.doc.pages);
       S.result.meta.error = S.lastError;
       setStep('assemble', { status: 'fail', detail: code === 'cancelled' ? 'Stopped by you' : S.lastError });
+      attachClaims({ claims: Deal.scan(S.doc.pages), source: 'scan' });
     } finally { if (token === runToken) { S.running = false; S.abort = null; } }
     if (token !== runToken || S.mode !== 'banker') return;
     finishRun();
@@ -399,8 +440,42 @@ const UI = (() => {
     if (S.result) {
       const c = Review.counts(S.result.findings);
       if (S.tab !== 'summary') S.tab = c.A + c.B ? 'disclosures' : 'language';
+      S.sinceRound = S.resubmitOf ? carriedSince(S.resubmitOf, S.result.findings) : null;
     }
     renderHead(); renderStatus(); drawMarks(); renderRail();
+  }
+  /* the deal file: the figures found, checked against each other and against the other documents of the same deal */
+  function attachClaims(ex) {
+    if (!S.result) return;
+    const claims = (ex && ex.claims) || [];
+    S.result.claims = claims; S.result.claimsSource = ex && ex.source === 'model+scan' ? 'model+scan' : 'scan';
+    S.result.consistency = Deal.consistency(dealShape(), claims, dealPool());
+    const n = S.result.consistency.contradictions.length;
+    setStep('claims', { status: 'done', detail: claims.length + ' figure' + (claims.length === 1 ? '' : 's') + ' found' + (n ? ', ' + n + ' that do not agree' : ', consistent') + (ex && ex.source === 'scan' && S.caps.sample ? ' (text scan only' + (ex.error ? ', ' + ex.error : '') + ')' : '') });
+  }
+  /* the documents a submission is compared with: the banker's own on the banker platform, the whole desk on the reviewer's */
+  function dealPool() { return S.mode === 'reviewer' ? S.inbox : mineList(); }
+  function dealShape() {
+    return { id: 'draft', form: S.form, lane: S.facts ? S.facts.lane : '', file: { name: S.doc ? S.doc.name : '', sha: S.doc ? S.doc.sha : '' }, result: { profile: S.result ? S.result.profile : {} }, findings: S.result ? S.result.findings : [], thread: S.resubmitOf ? (S.resubmitOf.thread || S.resubmitOf.id) : null, previous: S.resubmitOf ? { id: S.resubmitOf.id } : null };
+  }
+  /* round n of a submission: which of the points that stood on the previous round are still here, which are gone */
+  function samePassage(a, b) {
+    const qa = U.normalize(a.quote || ''); const qb = U.normalize(b.quote || '');
+    if (!qa || !qb) return !qa && !qb && (a.page || null) === (b.page || null);
+    if (qa === qb) return true;
+    const short = qa.length < qb.length ? qa : qb; const long = qa.length < qb.length ? qb : qa;
+    return (short.length >= 20 && long.includes(short)) || U.ratio(qa.slice(0, 200), qb.slice(0, 200)) >= 80;
+  }
+  function carriedSince(prev, findings) {
+    const verdicts = prev.verdicts || {};
+    const stood = (prev.findings || []).filter((f) => !(verdicts[f.id] && verdicts[f.id].verdict === 'incorrect') && (Review.isCertain(f) || (verdicts[f.id] && verdicts[f.id].verdict === 'correct')));
+    const open = []; const resolved = []; const taken = new Set();
+    stood.forEach((pf) => {
+      const hit = findings.find((f) => !taken.has(f.id) && f.rule === pf.rule && samePassage(f, pf)); // never by id: ids are positional and change between runs
+      if (hit) { taken.add(hit.id); hit.carried = { round: prev.round || 1, id: pf.id }; open.push({ id: hit.id, rule: pf.rule, title: pf.title, page: hit.page || pf.page || null }); }
+      else resolved.push({ id: pf.id, rule: pf.rule, title: pf.title, page: pf.page || null });
+    });
+    return { round: prev.round || 1, of: stood.length, open, resolved };
   }
 
   /* ---------- toolbar ---------- */
@@ -631,8 +706,11 @@ const UI = (() => {
     renderGate();
     body.scrollTop = keep;
   }
+  /* the submission as the PDF sees it: on the reviewer platform the open submission carries the desk-wide deal file */
+  function pdfShape(sub) { return sub && sub === S.viewing && S.result && S.result.consistency ? Object.assign({}, sub, { consistency: S.result.consistency }) : sub; }
   async function savePdf(sub, kind) {
     if (!S.caps.downloads) { U.toast('Downloads are not available in this view'); return; }
+    sub = pdfShape(sub);
     try { await S.caps.downloads.save({ filename: Notify.reportFilename(sub, kind), data: Notify.reportPdf(sub, kind) }); U.toast(kind === 'desk' ? 'Brief saved as PDF' : 'Summary saved as PDF'); }
     catch (e) { if (!e || (e.code !== 'cancelled' && e.code !== 'declined')) U.toast('Could not save the PDF' + (e && e.message ? ': ' + e.message : '')); }
   }
@@ -690,7 +768,9 @@ const UI = (() => {
     if (S.result && S.result.meta.truncated) { const n = el('div', { class: 'note amber', style: 'margin-bottom:10px' }); n.append(el('span', { text: 'The model\'s answer was cut short; some points may be missing.' })); body.append(n); }
     if (!S.result && !S.running) return;
     if (S.focus) { const fcd = focusCard(); if (fcd) { body.append(fcd); return; } }
-    if (S.viewing) { const mc = memoryCard(); if (mc) body.append(mc); }
+    { const rn = roundNote(); if (rn) body.append(rn); }
+    if (S.viewing) { const so = secondOpinionCard(); if (so) body.append(so); const mc = memoryCard(); if (mc) body.append(mc); }
+    if (S.tab === 'disclosures' && S.filter === 'all') { const cn = contradictionNote(); if (cn) body.append(cn); }
     { const fc = fixCard(); if (fc) body.append(fc); const eb = editBar(); if (eb) body.append(eb); }
     const filters = el('div', { class: 'filters' });
     const opts = S.tab === 'language' ? [['all', 'All'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']] : [['all', 'All'], ['high', 'High'], ['A', 'Required'], ['B', 'Triggered']];
@@ -735,6 +815,60 @@ const UI = (() => {
     return el('div', { class: 'helper', style: 'margin:-2px 4px 10px', text: 'Possible points the pre-review was not certain enough to assert. The banker did not see them. Confirm the ones you would send, dismiss the others; each verdict trains the next pre-reviews.' });
   }
   function verifyTag() { return el('span', { class: 'tag vtag', text: 'To verify' }); }
+  function carriedTag(f) { return el('span', { class: 'tag carried', title: 'This point stood on round ' + f.carried.round + ' and is still here', text: 'Still open from round ' + f.carried.round }); }
+  /* a resubmission carries the reviewer's request for changes into the workspace */
+  function roundNote() {
+    const p = S.resubmitOf; if (!p || S.mode !== 'banker' || S.viewing) return null;
+    const n = el('div', { class: 'roundnote' });
+    n.append(el('b', { text: 'Round ' + ((p.round || 1) + 1) + ' · the reviewer requested changes on round ' + (p.round || 1) + (p.decision && p.decision.by ? ' (' + p.decision.by + ', ' + U.fmtDate(p.decision.at) + ')' : '') }));
+    if (p.decision && p.decision.message) n.append(el('div', { class: 'q', text: p.decision.message }));
+    else n.append(el('span', { text: 'No message was attached to the request; the points that stood on the previous round are marked once the pre-review has run.' }));
+    if (S.sinceRound) n.append(el('div', { class: 'helper', text: 'Since round ' + S.sinceRound.round + ': ' + S.sinceRound.resolved.length + ' of ' + S.sinceRound.of + ' point' + (S.sinceRound.of === 1 ? '' : 's') + ' resolved, ' + S.sinceRound.open.length + ' still open (tagged on the cards).' }));
+    return n;
+  }
+  /* figures that do not agree, on the disclosures tab: the summary holds the whole deal file */
+  function contradictionNote() {
+    const c = S.result && S.result.consistency; if (!c || !Array.isArray(c.contradictions) || !c.contradictions.length) return null;
+    const n = el('div', { class: 'note amber', style: 'margin-bottom:10px;cursor:pointer' });
+    n.append(svg('alert'), el('span', { class: 'grow', text: c.contradictions.length + ' figure' + (c.contradictions.length === 1 ? ' does' : 's do') + ' not agree' + ((c.deal || []).length ? ' (' + c.deal.length + ' with the deal file)' : '') + ': see the Summary tab.' }));
+    n.addEventListener('click', () => { S.tab = 'summary'; renderRail(); });
+    return n;
+  }
+  /* the deal file card: the figures the document commits to, and the contradictions found */
+  function dealCard(desk) {
+    const r = S.result; if (!r || !Array.isArray(r.claims)) return null;
+    const c0 = r.consistency || {};
+    const c = { contradictions: (Array.isArray(c0.contradictions) ? c0.contradictions : []).filter((x) => x && Array.isArray(x.values) && x.values.length >= 2), deal: Array.isArray(c0.deal) ? c0.deal : [], file: Array.isArray(c0.file) ? c0.file : [], changed: Array.isArray(c0.changed) ? c0.changed : [] };
+    if (!r.claims.length && !c.contradictions.length && !c.file.length) return null;
+    const card = el('div', { class: 'summary-card' });
+    card.append(el('h4', { text: desk ? 'Deal file: the figures this document commits to' : 'The figures you commit to' }));
+    if (c.contradictions.length) {
+      c.contradictions.forEach((x) => { const d = el('div', { class: 'contra' + (x.kind === 'deal' ? ' deal' : '') }); d.append(el('b', { text: x.kind === 'deal' ? 'Differs from the deal file · ' : 'Does not agree within the document · ' }), document.createTextNode(x.text)); const go = el('button', { class: 'pgbtn', type: 'button', text: 'p. ' + x.values[0].page }); go.addEventListener('click', (e) => { e.stopPropagation(); scrollToPage(x.values[0].page); }); d.append(document.createTextNode(' '), go); card.append(d); });
+      card.append(el('p', { class: 'helper', style: 'margin:4px 0 8px', text: desk ? 'A figure the banker states twice with different values, or differently from an earlier document of the same deal, is a misleading-statement risk under Rule 2210(d): ask which one is right before anything else.' : 'Reconcile these before you submit: Compliance will ask which figure is right.' }));
+    } else if (r.claims.length) card.append(el('p', { class: 'helper', style: 'margin:0 0 8px', text: 'Every figure agrees with the others in the document' + ((c.file || []).length ? ' and with the ' + c.file.length + ' earlier document' + (c.file.length === 1 ? '' : 's') + ' of this deal' : '') + '.' }));
+    if (r.claims.length) {
+      const list = el('div', { class: 'claims' });
+      r.claims.slice(0, 24).forEach((x) => { const row = el('div', { class: 'claim' }); row.append(el('span', { class: 'k', text: x.label }), el('span', { class: 'v', text: x.value }), el('span', { class: 'pg', text: 'p. ' + x.page })); row.style.cursor = 'pointer'; row.title = x.quote; row.addEventListener('click', () => scrollToPage(x.page)); list.append(row); });
+      card.append(list);
+      card.append(el('p', { class: 'helper', style: 'margin:8px 0 0', text: (r.claimsSource === 'model+scan' ? 'Read by the model and the text scan; every figure is quoted from its page.' : 'Read by the text scan of the pages; every figure is quoted from its page.') + (r.claims.length > 24 ? ' ' + (r.claims.length - 24) + ' more in the PDF summary.' : '') }));
+    } else card.append(el('p', { class: 'helper', style: 'margin:0', text: 'No target, fee, size or track-record figure was found in the text.' }));
+    (c.changed || []).forEach((x) => { const d = el('div', { class: 'contra round' }); d.append(el('b', { text: 'Changed since the previous round · ' }), document.createTextNode(x.text)); card.append(d); });
+    if ((c.file || []).length) card.append(el('p', { class: 'helper', style: 'margin:8px 0 0', text: 'Compared with: ' + c.file.map((f) => f.name + ' (' + (f.at || '').slice(0, 10) + (f.thread ? ', round ' + f.round : '') + ', ' + f.figures + ' figure' + (f.figures === 1 ? '' : 's') + ')').join('; ') + '.' }));
+    return card;
+  }
+  /* what changed since the previous round (both platforms) */
+  function sinceRoundCard() {
+    const sr = S.sinceRound; if (!sr || !Array.isArray(sr.open) || !Array.isArray(sr.resolved)) return null;
+    const card = el('div', { class: 'summary-card' });
+    card.append(el('h4', { text: 'Since round ' + sr.round }));
+    const g = el('div', { class: 'grid' });
+    [[String(sr.resolved.length), 'resolved', 'var(--success)'], [String(sr.open.length), 'still open', sr.open.length ? 'var(--danger)' : 'var(--success)'], [String(sr.of), 'stood on round ' + sr.round, 'var(--text-2)']].forEach(([n, l, col]) => { const st = el('div', { class: 'stat' }); st.append(el('div', { class: 'n', style: 'color:' + col, text: n }), el('div', { class: 'l', text: l })); g.append(st); });
+    card.append(g);
+    const goto = (id) => { const f = allFindings().find((x) => x.id === id); if (f) { S.tab = tierOfTab(f); selectFinding(f, { scrollPage: true, scrollPanel: true }); renderRail(); } };
+    sr.open.forEach((x) => { const row = el('div', { class: 'sub-item', style: 'cursor:pointer' }); row.append(el('span', { class: 'tag carried', text: 'open' }), document.createTextNode(' ' + x.rule + (x.page ? ' · p. ' + x.page : '') + ' · ' + x.title)); row.addEventListener('click', () => goto(x.id)); card.append(row); });
+    sr.resolved.forEach((x) => { const row = el('div', { class: 'sub-item' }); row.append(el('span', { class: 'tag ok', text: 'resolved' }), document.createTextNode(' ' + x.rule + (x.page ? ' · p. ' + x.page : '') + ' · ' + x.title)); card.append(row); });
+    return card;
+  }
   function verifyNote(f) {
     const n = el('div', { class: 'verify-note' });
     n.append(el('b', { text: 'Not asserted to the banker' }), document.createTextNode(f.why_verify ? ' · ' + f.why_verify + '.' : '.'));
@@ -799,6 +933,7 @@ const UI = (() => {
     if (!Review.isCertain(f)) row.append(verifyTag());
     else if (f.action === 'escalate') row.append(el('span', { class: 'tag violet', text: 'Escalate' }));
     if (f.unverified) row.append(el('span', { class: 'tag medium', text: 'Quote not found' }));
+    if (f.carried) row.append(carriedTag(f));
     row.append(pageBtn(f));
     c.append(row);
     if (!Review.isCertain(f)) c.append(verifyNote(f));
@@ -829,6 +964,7 @@ const UI = (() => {
     else if (f.action === 'escalate') row.append(el('span', { class: 'tag violet', text: 'Escalate' }));
     row.append(riskTag(f.severity));
     if (!Review.isCertain(f)) row.append(verifyTag());
+    if (f.carried) row.append(carriedTag(f));
     row.append(pageBtn(f));
     c.append(row);
     if (f.quote) c.append(el('div', { class: 'kv', html: '<b>Trigger:</b> <i>“' + U.esc(f.quote) + '”</i>' }));
@@ -1243,7 +1379,8 @@ const UI = (() => {
     const p = m.personal; const d = m.desk;
     const hasPersonal = p.habits.length || p.missed.length || p.differs.length;
     const hasDesk = d.similar.length || d.hints || d.differs.length;
-    if (!hasPersonal && !hasDesk) return null;
+    const cs = S.result && S.result.consistency; const hasDeal = !!(cs && Array.isArray(cs.contradictions) && ((cs.file || []).length || cs.contradictions.length));
+    if (!hasPersonal && !hasDesk && !hasDeal) return null;
     const card = el('div', { class: 'memcard' });
     const head = el('div', { class: 'mc-head' }); head.append(svg('bulb'), el('b', { text: 'Memory' }), el('span', { class: 'helper', style: 'margin:0', text: 'yours, and the reviewers\'' })); card.append(head);
     const goto = (id) => { const f = allFindings().find((x) => x.id === id); if (f) { S.tab = tierOfTab(f); selectFinding(f, { scrollPage: true, scrollPanel: true }); renderRail(); } };
@@ -1262,6 +1399,41 @@ const UI = (() => {
       if (d.hints) card.append(row('', d.hints + ' point' + (d.hints === 1 ? '' : 's') + ' of this submission ' + (d.hints === 1 ? 'was' : 'were') + ' seen by colleagues on similar material; their verdicts sit under each point.'));
       d.differs.slice(0, 6).forEach((x) => card.append(row('warn', '<span class="code">' + U.esc(where(x)) + '</span> you ' + (x.now === 'correct' ? 'confirmed' : 'dismissed') + ' it, ' + U.esc(x.by) + ' ' + (x.theirs === 'correct' ? 'confirmed' : 'dismissed') + ' a similar point' + (x.doc ? ' on ' + U.esc(x.doc) : '') + (x.reason ? ': “' + U.esc(x.reason.slice(0, 120)) + '”' : '') + '. Keep yours or align; either way write why.', x.id)));
     }
+    if (hasDeal) {
+      card.append(sec('From the deal file', (cs.file || []).length ? (cs.file.length + ' earlier document' + (cs.file.length === 1 ? '' : 's') + ' of this deal') : ''));
+      (cs.file || []).slice(0, 4).forEach((x) => card.append(row('', '<b>' + U.esc(x.name) + '</b> · ' + U.esc(U.fmtDate(x.at)) + (x.thread ? ' · round ' + U.esc(String(x.round)) : '') + ' · <b>' + U.esc(STATUS_LABEL[x.status] || 'New') + '</b> · ' + U.esc(String(x.figures)) + ' figure' + (x.figures === 1 ? '' : 's'))));
+      cs.contradictions.slice(0, 6).forEach((x) => { const r = row('warn', '<b>' + U.esc(x.label) + '</b> ' + U.esc(x.text)); r.style.cursor = 'pointer'; r.addEventListener('click', () => scrollToPage(x.values[0].page)); card.append(r); });
+      (cs.changed || []).slice(0, 4).forEach((x) => card.append(row('', '<b>' + U.esc(x.label) + '</b> ' + U.esc(x.text))));
+      if (!cs.contradictions.length) card.append(row('', 'Every figure agrees with the earlier documents of this deal.'));
+    }
+    return card;
+  }
+  /* ---------- reviewer platform: second opinion after an approval ---------- */
+  async function runSecondOpinion(sub) {
+    if (!S.caps.sample || !S.viewing || S.viewing !== sub) return;
+    S.secondOpinion = { busy: true, points: [], verdict: '' };
+    renderGate(); renderRail();
+    try {
+      const r = await Ask.secondOpinion(S.caps.sample, sub, aiCtx());
+      if (S.viewing !== sub) return;
+      S.secondOpinion = Object.assign({ busy: false }, r);
+      sub.secondOpinion = r;
+      try { await Store.updateSubmission(sub.id, { secondOpinion: r }); } catch (e) { /* the opinion still shows for this session */ }
+      U.toast(r.points.length ? 'Second opinion: ' + r.points.length + ' point' + (r.points.length === 1 ? '' : 's') + ' to look at' : 'Second opinion: nothing further stands out');
+    } catch (e) { if (S.viewing !== sub) return; S.secondOpinion = null; U.toast('Claude could not give a second opinion' + (e && e.message ? ': ' + e.message : '')); }
+    renderGate(); renderRail();
+  }
+  function secondOpinionCard() {
+    const so = S.secondOpinion; if (!so || !S.viewing) return null;
+    const card = el('div', { class: 'sop' });
+    const h = el('div', { class: 'sh' }); h.append(svg('spark'), el('b', { text: so.busy ? 'Second opinion · reading the material again' : 'Second opinion after approval' }), el('span', { class: 'grow' }));
+    if (!so.busy) { const x = el('button', { class: 'btn ghost icon', type: 'button', 'aria-label': 'Dismiss' }); x.append(svg('x')); x.addEventListener('click', () => { const sub = S.viewing; S.secondOpinion = null; sub.secondOpinion = null; Store.updateSubmission(sub.id, { secondOpinion: null }).catch(() => {}); renderGate(); renderRail(); }); h.append(x); }
+    card.append(h);
+    if (so.busy) { card.append(el('div', { class: 'helper', style: 'margin:0', text: 'A deliberately sceptical second reader looks for what could still embarrass the firm. Nothing changes unless you reopen a point.' })); return card; }
+    if (so.verdict) card.append(el('div', { class: 'helper', style: 'margin:0 0 6px', text: so.verdict }));
+    if (!so.points.length) card.append(el('div', { class: 'helper', style: 'margin:0', text: 'Nothing further with a verbatim passage on the page.' }));
+    so.points.forEach((pt) => { const d = el('div', { class: 'pt' }); d.append(el('span', { class: 'tag ' + pt.severity, text: pt.severity }), document.createTextNode(' ' + (pt.rule ? pt.rule + ' · ' : '') + 'p. ' + pt.page + ' · ' + pt.concern + ' '), el('i', { text: '“' + pt.quote.slice(0, 120) + '”' })); d.addEventListener('click', () => scrollToPage(pt.page)); card.append(d); });
+    card.append(el('div', { class: 'helper', style: 'margin:6px 0 0', text: 'Advisory. The approval stands unless you request changes; a reopened point is recorded like any decision.' }));
     return card;
   }
   /* reviewer platform: what the banker changed in the app, with a switch to the original file when it is at hand */
@@ -1357,6 +1529,8 @@ const UI = (() => {
       S.resolved = (S.resolved || []).concat(rc.resolved);
       rc.resolved.forEach((f) => { S.responses[f.id] = { status: 'fixed', note: 'Resolved in v' + v + ': ' + f.resolved.how }; });
       S.version = v; S.edits = []; S.editing = null; S.correctedBytes = null; S.correctedDirty = false; S.active = null;
+      S.sinceRound = S.resubmitOf ? carriedSince(S.resubmitOf, S.result.findings) : null;
+      attachClaims({ claims: Deal.scan(S.doc.pages), source: 'scan' });
       renderViewer(); renderHead(); renderStatus(); renderRail();
       setStatus('');
       U.toast('Version ' + v + ' checked: ' + rc.resolved.length + ' point' + (rc.resolved.length === 1 ? '' : 's') + ' resolved, ' + rc.findings.length + ' open');
@@ -1448,10 +1622,12 @@ const UI = (() => {
     if (c.verify) lines.push(c.verify + ' further candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the Finalis reviewer only; nothing for you to do.');
     lines.forEach((t) => ask.append(el('p', { class: 'helper', style: 'margin:8px 0 0', text: t })));
     body.append(ask);
+    { const sr = sinceRoundCard(); if (sr) body.append(sr); }
+    { const dc = dealCard(false); if (dc) body.append(dc); }
 
     const next = el('div', { class: 'summary-card' });
     next.append(el('h4', { text: 'When you submit' }));
-    next.append(el('p', { class: 'helper', style: 'margin:0', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis reviewer platform, a separate application you do not see. The reviewer checks the remaining candidates, then approves or requests changes. This pre-review is advisory: it is not an approval and it changes no status.' }));
+    next.append(el('p', { class: 'helper', style: 'margin:0', text: 'Your document, these points, your answers and a machine-written brief go to the Finalis reviewer platform, a separate application you do not see. The reviewer checks the remaining candidates, then approves or requests changes; the decision comes back under My submissions. This pre-review is advisory: it is not an approval and it changes no status.' }));
     body.append(next);
     if (Calibration.isReferenceDeck(S.doc.pages) && !S.reference && S.caps.sample) {
       const b2 = el('button', { class: 'btn sm', type: 'button', text: 'Show the reference pre-review instead' });
@@ -1463,6 +1639,7 @@ const UI = (() => {
   function renderSummaryDesk(body, findings, r) {
     const sub = S.viewing;
     const c = Review.counts(findings);
+    { const so = secondOpinionCard(); if (so) body.append(so); }
     const st = el('div', { class: 'summary-card' });
     const h = el('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:10px' });
     const ic = el('span', { style: 'display:inline-flex;color:var(--success)' }); ic.append(svg('checkCircle'));
@@ -1473,6 +1650,7 @@ const UI = (() => {
     [['high', c.high, 'High'], ['medium', c.medium, 'Medium'], ['low', c.low, 'Low']].forEach(([k, n, l]) => { const s2 = el('div', { class: 'stat' }); s2.append(el('div', { class: 'n', style: 'color:var(--' + (k === 'high' ? 'danger' : k === 'medium' ? 'warn' : 'success') + ')', text: String(n) }), el('div', { class: 'l', text: l + ' risk' })); grid.append(s2); });
     st.append(grid);
     st.append(el('p', { class: 'helper', text: 'Required blocks ' + c.A + ' · triggered disclosures ' + c.B + ' · language ' + c.C + (r.suppressed && r.suppressed.length ? ' · ' + r.suppressed.length + ' candidates set aside' : '') }));
+    if ((sub.round || 1) > 1) st.append(el('p', { class: 'helper', style: 'margin:0 0 6px', text: 'Round ' + sub.round + ' of this document: the banker resubmitted after the desk requested changes' + (sub.previous && sub.previous.decision && sub.previous.decision.by ? ' (' + sub.previous.decision.by + ', ' + U.fmtDate(sub.previous.decision.at) + ')' : '') + '.' }));
     { const tl = el('div', { class: 'gc', style: 'padding-top:8px' }); tl.append(el('h5', { text: 'Timeline' }), timelineBlock(sub)); st.append(tl); }
     if (!r.meta.deterministicOnly) {
       const a = el('div', { class: 'gc', style: 'padding-top:8px' });
@@ -1492,6 +1670,8 @@ const UI = (() => {
     bk.append(kvRow('Answered', answered + ' point' + (answered === 1 ? '' : 's')));
     if (sub.form && sub.form.notes) bk.append(kvRow('Banker notes', sub.form.notes));
     body.append(bk);
+    { const sr = sinceRoundCard(); if (sr) body.append(sr); }
+    { const dc = dealCard(true); if (dc) body.append(dc); }
     if (S.calib) body.append(scoreCard(S.calib));
     if (r.gut_check && !r.meta.deterministicOnly) {
       const gc = el('div', { class: 'summary-card' });
@@ -1577,12 +1757,16 @@ const UI = (() => {
     g.append(ack, row);
   }
   function currentSubmissionShape() {
+    const prev = S.resubmitOf;
     return {
       id: S.submission ? S.submission.id : 'draft', created_at: new Date().toISOString(), status: 'draft', submitter: S.form.submitter || '',
       file: { name: S.doc.name, size: S.doc.size, sha: S.doc.sha, pages: S.doc.pages.length, kind: S.doc.kind },
       form: S.form, lane: S.facts.lane, facts: { lane: S.facts.lane, laneReason: S.facts.laneReason },
       result: { profile: S.result.profile, suppressed: S.result.suppressed, gut_check: S.result.gut_check, brief: S.result.brief, banker_message: S.result.banker_message, meta: S.result.meta },
       findings: S.result.findings, responses: S.responses,
+      claims: S.result.claims || [], consistency: S.result.consistency || null,
+      round: prev ? (prev.round || 1) + 1 : 1, thread: prev ? (prev.thread || prev.id) : null,
+      previous: prev ? { id: prev.id, round: prev.round || 1, created_at: prev.created_at, status: prev.status, decision: prev.decision ? { kind: prev.decision.kind, message: prev.decision.message || '', by: prev.decision.by || '', at: prev.decision.at } : null, since: S.sinceRound ? { of: S.sinceRound.of, resolved: S.sinceRound.resolved, open: S.sinceRound.open } : null } : null,
     };
   }
   async function submit() {
@@ -1598,6 +1782,9 @@ const UI = (() => {
     sub.original = S.history && S.history.length ? { name: S.history[0].doc.name, sha: S.history[0].doc.sha, pages: S.history[0].doc.pages.length } : null;
     sub.readiness = Fix.readiness(S.result.findings, S.responses, { all: false });
     sub.submitted_by = S.user ? { name: S.user.name, email: S.user.email, firm: S.user.firm } : null;
+    // rounds: a resubmission after a request for changes keeps the thread and carries what was resolved since (shape set by currentSubmissionShape)
+    const prev = S.resubmitOf;
+    sub.thread = sub.thread || id;
     if (S.doc.kind === 'pdf' && S.doc.bytes) DOC_CACHE.set(S.doc.sha, { pages: S.doc.pages, pdf: S.doc.pdf, bytes: S.doc.bytes, name: S.doc.name });
     (S.history || []).forEach((h) => { if (h.doc && h.doc.sha && h.doc.kind === 'pdf') DOC_CACHE.set(h.doc.sha, { pages: h.doc.pages, pdf: h.doc.pdf, bytes: h.doc.bytes, name: h.doc.name }); });
     if (S.caps.assets && S.doc.kind === 'pdf' && S.doc.bytes) {
@@ -1607,10 +1794,12 @@ const UI = (() => {
     const msg = Notify.compose(sub);
     sub.notification = { to, subject: msg.subject, body: msg.body, sent_at: new Date().toISOString() };
     const saved = await Store.saveSubmission(sub);
+    if (prev) { try { await Store.updateSubmission(prev.id, { superseded_by: id }); } catch (e) { console.warn('previous round not linked', e); } }
     S.submission = sub;
     renderDone(sub, saved.mode);
     show('done');
-    U.toast('Submitted · feedback sent to the reviewer');
+    renderChrome();
+    U.toast(prev ? 'Round ' + sub.round + ' submitted · the reviewer is notified' : 'Submitted · feedback sent to the reviewer');
   }
   function renderDone(sub, mode) {
     const card = $('done-card');
@@ -1618,25 +1807,115 @@ const UI = (() => {
     const c = Review.counts(sub.findings);
     const answered = Object.keys(sub.responses).filter((k) => sub.responses[k].status !== 'none').length;
     const ic = el('div', { class: 'done-ic' }); ic.append(svg('checkCircle'));
-    card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: 'Sent to Finalis Compliance' }));
+    card.append(ic, el('h1', { style: 'font-size:20px;margin-bottom:6px', text: (sub.round || 1) > 1 ? 'Round ' + sub.round + ' sent to Finalis Compliance' : 'Sent to Finalis Compliance' }));
     card.append(el('p', { class: 'lede', text: sub.file.name + ' · ' + (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' attention point' + (c.certain === 1 ? '' : 's') + ', ' + answered + ' answered' + (c.verify ? ' · ' + c.verify + ' possible point' + (c.verify === 1 ? '' : 's') + ' left to the reviewer' : '') + '.' + (sub.readiness ? ' Readiness ' + sub.readiness.score + '/100.' : '') }));
     if ((sub.version || 1) > 1) card.append(el('p', { class: 'helper', style: 'margin:-6px 0 12px', text: 'You submitted version ' + sub.version + ', corrected in the app: ' + (sub.changes || []).length + ' change' + ((sub.changes || []).length === 1 ? '' : 's') + ', ' + (sub.resolved || []).length + ' point' + ((sub.resolved || []).length === 1 ? '' : 's') + ' resolved before submission. The reviewer sees the corrections outlined on the pages and can compare with the original.' }));
+    if (sinceOf(sub)) card.append(el('p', { class: 'helper', style: 'margin:-6px 0 12px', text: 'Since round ' + (sub.previous.round || 1) + ': ' + sinceOf(sub).resolved.length + ' of ' + sinceOf(sub).of + ' point' + (sinceOf(sub).of === 1 ? '' : 's') + ' resolved, ' + sinceOf(sub).open.length + ' still open. The reviewer sees both rounds side by side.' }));
     const n = el('div', { class: 'note green', style: 'margin-bottom:16px' });
     n.append(svg('inbox'), el('span', { class: 'grow', text: 'The Finalis reviewer' + (sub.notification.to ? ' (' + sub.notification.to + ')' : '') + ' received your document, the pre-review, your answers and the brief' + (mode === 'shared' ? '.' : ' (in this browser\'s demo inbox; open this page in the Claude app to reach the shared inbox).') + ' The reviewer platform is a separate application: you will hear back from the reviewer, not from this page.' }));
     card.append(n);
     const steps = el('div', { class: 'nextsteps' });
-    [['1', 'The reviewer checks the remaining candidates', c.verify ? c.verify + ' candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the reviewer only.' : 'Nothing was left for the reviewer to verify on this document.'], ['2', 'The reviewer reads your answers', answered + ' answer' + (answered === 1 ? '' : 's') + ' travel with the submission.'], ['3', 'Approval or a request for changes', 'Comes back through the usual Compliance channel. This pre-review is advisory and is not an approval.']].forEach(([k, t, d]) => { const row = el('div'); row.append(el('span', { text: k }), el('div', { html: '<b>' + U.esc(t) + '</b><br>' + U.esc(d) })); steps.append(row); });
+    [['1', 'The reviewer checks the remaining candidates', c.verify ? c.verify + ' candidate' + (c.verify === 1 ? '' : 's') + ' the pre-review was not certain about ' + (c.verify === 1 ? 'goes' : 'go') + ' to the reviewer only.' : 'Nothing was left for the reviewer to verify on this document.'], ['2', 'The reviewer reads your answers', answered + ' answer' + (answered === 1 ? '' : 's') + ' travel with the submission.'], ['3', 'Approval or a request for changes', 'Comes back under My submissions on this platform, with the reviewer\'s message; a request for changes reopens the document here for the next round. This pre-review is advisory and is not an approval.']].forEach(([k, t, d]) => { const row = el('div'); row.append(el('span', { text: k }), el('div', { html: '<b>' + U.esc(t) + '</b><br>' + U.esc(d) })); steps.append(row); });
     card.append(el('div', { class: 'label', text: 'What happens next' }), steps);
     const row = el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center' });
     const again = el('button', { class: 'btn primary', type: 'button', text: 'New submission' });
     again.addEventListener('click', () => { resetForm(); show('form'); });
-    row.append(again);
+    const mine = el('button', { class: 'btn', type: 'button', text: 'My submissions' });
+    mine.addEventListener('click', () => renderMine());
+    row.append(again, mine);
     if (S.caps.downloads && S.doc && S.doc.kind === 'pdf' && S.doc.bytes && (sub.version || 1) > 1) { const cp = el('button', { class: 'btn', type: 'button' }); cp.append(svg('download'), document.createTextNode('Corrected PDF (v' + sub.version + ')')); cp.addEventListener('click', () => S.caps.downloads.save({ filename: S.doc.name, data: S.doc.bytes })); row.append(cp); }
     { const ob = officeButtons(); if (ob) { ob.style.marginTop = '0'; row.append(ob); } }
     if (S.caps.downloads) { const ex = el('button', { class: 'btn', type: 'button' }); ex.append(svg('download'), document.createTextNode('Download my summary (PDF)')); ex.addEventListener('click', () => savePdf(sub, 'banker')); row.append(ex); }
     row.append(el('span', { style: 'flex:1' }));
     if (!lockedPlatforms()) { const inbox = el('button', { class: 'btn ghost', type: 'button', text: 'Open the reviewer platform (demo)' }); inbox.addEventListener('click', () => setMode('reviewer')); row.append(inbox); }
     card.append(row);
+  }
+
+  /* ---------- banker platform: my submissions and the next round ---------- */
+  function loadSeen() { try { const v = JSON.parse(localStorage.getItem('prescreen.seen') || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
+  function saveSeen() { try { localStorage.setItem('prescreen.seen', JSON.stringify(S.seen || {})); } catch (e) { /* storage unavailable */ } }
+  function mineList() {
+    const email = S.user && S.user.email ? String(S.user.email).toLowerCase() : '';
+    if (!email) return [];
+    return S.inbox.filter((x) => x && x.submitted_by && x.submitted_by.email && String(x.submitted_by.email).toLowerCase() === email).slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  }
+  /* decisions the banker has not opened yet (per browser) */
+  function unseenDecisions() { return mineList().filter((x) => x.decision && x.decision.at && (S.seen || {})[x.id] !== x.decision.at); }
+  const MINE_STATUS = { submitted: 'With the reviewer', changes: 'Changes requested', approved: 'Approved', escalated: 'Escalated to the CCO' };
+  function renderMine() { S.viewing = null; show('mine'); renderMineList(); }
+  /* back to whatever the banker was doing: the confirmation, the workspace, or the form */
+  function leaveMine() { if (S.submission) show('done'); else if (S.doc && S.phase !== 'landing') { show('work'); renderWorkspace(); } else show('form'); }
+  function renderMineList() {
+    const list = $('mine-list'); list.innerHTML = '';
+    const mine = mineList();
+    const k = $('mine-kpis'); k.innerHTML = '';
+    const open = mine.filter((x) => x.status === 'submitted').length; const approved = mine.filter((x) => x.status === 'approved').length; const changes = mine.filter((x) => x.status === 'changes').length;
+    const avg = mine.length ? Math.round(mine.reduce((n, x) => n + subReadiness(x).score, 0) / mine.length) : null;
+    [[mine.length, 'sent'], [open, 'with the reviewer'], [changes, 'changes requested'], [approved, 'approved'], [avg === null ? '–' : avg, 'average readiness']].forEach(([v, l]) => { const c = el('div', { class: 'kpi' }); c.append(el('b', { text: String(v) }), el('span', { text: l })); k.append(c); });
+    const head = el('div', { class: 'mrow h' });
+    ['Document', 'Submitted', 'Status', 'From the reviewer', ''].forEach((t) => head.append(el('span', { text: t })));
+    list.append(head);
+    if (!mine.length) { list.append(el('div', { class: 'empty', text: 'Nothing sent yet from this sign-in. Submit a document and it appears here with the reviewer\'s decision.' })); return; }
+    const unseen = new Set(unseenDecisions().map((x) => x.id));
+    mine.forEach((sub) => {
+      const row = el('div', { class: 'mrow' + (unseen.has(sub.id) ? ' unseen' : '') });
+      const d = el('div'); const t = el('div', { class: 't', text: sub.file.name });
+      if ((sub.version || 1) > 1) t.append(el('span', { class: 'vbadge', text: 'v' + sub.version }));
+      if ((sub.round || 1) > 1) t.append(el('span', { class: 'rbadge', text: 'Round ' + sub.round }));
+      const c = Review.counts(sub.findings || []); const rd = subReadiness(sub);
+      d.append(t, el('div', { class: 's', text: (sub.lane === 'institutional' ? 'Institutional' : 'Retail') + ' · ' + c.certain + ' point' + (c.certain === 1 ? '' : 's') + ' · readiness ' + rd.score + (sub.superseded_by ? ' · superseded by a later round' : '') }));
+      const when = el('div', { class: 's', text: U.fmtDate(sub.created_at) });
+      const status = el('span', { class: 'tag ' + (STATUS_TAG[sub.status] || 'info'), text: MINE_STATUS[sub.status] || 'With the reviewer' });
+      const msg = el('div', { class: 'msg', text: sub.decision ? (sub.decision.message ? sub.decision.message : (STATUS_LABEL[sub.status] || 'Decided') + ' by ' + (sub.decision.by || 'the reviewer') + ', no message') : 'The reviewer has not decided yet.' });
+      const acts = el('div', { class: 'acts' });
+      const det = el('button', { class: 'btn sm', type: 'button', text: 'Details' }); det.addEventListener('click', () => openMineDetails(sub)); acts.append(det);
+      if (S.caps.downloads) { const pdf = el('button', { class: 'btn sm', type: 'button', title: 'Download the summary as PDF' }); pdf.append(svg('download'), document.createTextNode('PDF')); pdf.addEventListener('click', () => savePdf(sub, 'banker')); acts.append(pdf); }
+      if (sub.status === 'changes' && !sub.superseded_by) { const rs = el('button', { class: 'btn sm primary', type: 'button', text: 'Correct and resubmit' }); rs.addEventListener('click', () => resubmit(sub)); acts.append(rs); }
+      row.append(d, when, status, msg, acts);
+      list.append(row);
+    });
+    // opening the list is how a decision is marked as seen
+    mine.forEach((x) => { if (x.decision && x.decision.at) S.seen[x.id] = x.decision.at; });
+    saveSeen(); renderChrome();
+  }
+  function openMineDetails(sub) {
+    openDialog(sub.file.name + ' · ' + (MINE_STATUS[sub.status] || 'With the reviewer'), (body) => {
+      if (sub.decision) { body.append(el('h3', { text: (STATUS_LABEL[sub.status] || 'Decision') + ' by ' + (sub.decision.by || 'the reviewer') + ' · ' + U.fmtDate(sub.decision.at) })); body.append(el('div', { class: 'mailpreview', text: sub.decision.message || 'No message was attached to the decision.' })); }
+      else body.append(el('p', { text: 'Submitted ' + U.fmtDate(sub.created_at) + '. The reviewer has not decided yet; you will see the decision here.' }));
+      const verdicts = sub.verdicts || {};
+      const stood = (sub.findings || []).filter((f) => (Review.isCertain(f) && !(verdicts[f.id] && verdicts[f.id].verdict === 'incorrect')) || (verdicts[f.id] && verdicts[f.id].verdict === 'correct'));
+      if (sub.decision && stood.length) { body.append(el('h3', { text: 'Points that stood (' + stood.length + ')' })); stood.forEach((f) => body.append(el('div', { class: 'rb', html: '<b>' + U.esc(f.rule + (f.page ? ' · p. ' + f.page : '') + ' · ' + f.title) + '</b>' + U.esc(f.text_to_add ? 'Add: ' + f.text_to_add.slice(0, 240) : f.rewrite ? 'Rewrite: ' + f.rewrite.slice(0, 240) : f.issue || '') + (verdicts[f.id] && verdicts[f.id].reason ? '<div class="m" style="margin-top:4px;color:var(--text-3)">Reviewer: ' + U.esc(verdicts[f.id].reason.slice(0, 240)) + '</div>' : '') }))); }
+      if (sinceOf(sub)) body.append(el('p', { text: 'Round ' + (sub.round || 2) + ': ' + sinceOf(sub).resolved.length + ' of ' + sinceOf(sub).of + ' earlier points resolved, ' + sinceOf(sub).open.length + ' still open at submission.' }));
+      body.append(el('h3', { text: 'Timeline' }), timelineBlock(sub));
+    });
+  }
+  /* the next round: reopen the document with the reviewer's message, correct it in the app, run the pre-review again, submit */
+  let resubmitBusy = false;
+  async function resubmit(sub) {
+    if (S.mode !== 'banker' || resubmitBusy) return;
+    resubmitBusy = true;
+    try { await reopen(sub); } finally { resubmitBusy = false; }
+  }
+  async function reopen(sub) {
+    let doc = null;
+    const cached = DOC_CACHE.get(sub.file.sha);
+    if (cached && cached.bytes) doc = { kind: 'pdf', name: sub.file.name, size: cached.bytes.length, sha: sub.file.sha, file: new File([cached.bytes], sub.file.name, { type: 'application/pdf' }), pages: cached.pages, pdf: cached.pdf, bytes: cached.bytes };
+    else if (sub.file.assetId && sub.file.kind === 'pdf') {
+      try { const res = await fetch(sub.file.assetUrl || ('/_blob/' + sub.file.assetId)); if (res.ok) { const bytes = new Uint8Array(await res.arrayBuffer()); const ex = await Extract.pdf(bytes); doc = Object.assign({ kind: 'pdf', name: sub.file.name, size: bytes.length, sha: sub.file.sha, file: new File([bytes], sub.file.name, { type: 'application/pdf' }), bytes }, ex); DOC_CACHE.set(sub.file.sha, { pages: ex.pages, pdf: ex.pdf, bytes, name: sub.file.name }); } } catch (e) { console.warn('file not reopened', e); }
+    }
+    resetForm();
+    S.resubmitOf = { id: sub.id, thread: sub.thread || sub.id, round: sub.round || 1, created_at: sub.created_at, status: sub.status, decision: sub.decision || null, findings: sub.findings || [], verdicts: sub.verdicts || {}, file: sub.file };
+    const f = sub.form || {};
+    $('doc-type').value = f.docType || 'deal-deck'; $('doc-type-hint').textContent = DOC_HINTS[$('doc-type').value] || '';
+    document.querySelectorAll('#dist-menu input').forEach((i) => { i.checked = (f.distribution || []).includes(i.value); });
+    renderDistLabel();
+    $('involved').value = f.involvement || ''; $('notes').value = f.notes || ''; $('notes-count').textContent = String((f.notes || '').length);
+    S.prefill = { audience: f.audience || '', bankName: f.bankName || '', submitter: f.submitter || '' };
+    renderRoundChip();
+    if (!doc) { show('form'); updateSubmit(); U.toast('The file is not stored here: upload the corrected version'); return; }
+    S.doc = doc; renderFileChip(); updateSubmit();
+    await submitLanding();
+    U.toast('Round ' + ((sub.round || 1) + 1) + ' · run the pre-review, then correct the document in the app');
   }
 
   /* ---------- reviewer inbox ---------- */
@@ -1665,7 +1944,9 @@ const UI = (() => {
     S.result = { profile: sub.result.profile, findings, suppressed: sub.result.suppressed || [], gut_check: sub.result.gut_check, brief: sub.result.brief, banker_message: sub.result.banker_message, meta: sub.result.meta || {} };
     S.steps = []; S.reference = !!(sub.result.meta && sub.result.meta.reference);
     S.calib = Calibration.isReferenceDeck(pages) && !(sub.result.meta && sub.result.meta.deterministicOnly) ? Calibration.score(findings) : null;
-    S.memory = null;
+    S.memory = null; S.secondOpinion = sub.secondOpinion && Array.isArray(sub.secondOpinion.points) ? Object.assign({}, sub.secondOpinion, { busy: false }) : null;
+    S.sinceRound = sinceOf(sub) ? Object.assign({ round: sub.previous.round || 1 }, sinceOf(sub)) : null;
+    if (Array.isArray(sub.claims)) { S.result.claims = sub.claims; S.result.consistency = Deal.consistency(sub, sub.claims, S.inbox); } // desk-wide view for this session; the stored record keeps what the banker saw
     renderViewer(); renderHead(); renderStatus(); renderRail();
     refreshMemory(false);
   }
@@ -1724,7 +2005,7 @@ const UI = (() => {
     rows.forEach((sub) => {
       const c = Review.counts(sub.findings || []);
       const row = el('div', { class: 'trow' });
-      const d = el('div'); const t = el('div', { class: 't', text: sub.file.name }); if ((sub.version || 1) > 1) t.append(el('span', { class: 'vbadge', text: 'v' + sub.version + ' · ' + (sub.changes || []).length + ' edits' })); d.append(t, el('div', { class: 's', text: U.fmtDate(sub.created_at) + ' · ' + (sub.file.pages || 0) + ' p.' + (sub.resolved && sub.resolved.length ? ' · ' + sub.resolved.length + ' resolved before submission' : '') }));
+      const d = el('div'); const t = el('div', { class: 't', text: sub.file.name }); if ((sub.version || 1) > 1) t.append(el('span', { class: 'vbadge', text: 'v' + sub.version + ' · ' + (sub.changes || []).length + ' edits' })); if ((sub.round || 1) > 1) t.append(el('span', { class: 'rbadge', text: 'Round ' + sub.round })); d.append(t, el('div', { class: 's', text: U.fmtDate(sub.created_at) + ' · ' + (sub.file.pages || 0) + ' p.' + (sub.resolved && sub.resolved.length ? ' · ' + sub.resolved.length + ' resolved before submission' : '') + (sinceOf(sub) ? ' · since round ' + (sub.previous.round || 1) + ': ' + sinceOf(sub).resolved.length + ' of ' + sinceOf(sub).of + ' resolved' : '') + (sub.superseded_by ? ' · superseded by a later round' : '') }));
       const by = el('div'); by.append(el('div', { text: sub.submitter || 'unknown', style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }), el('div', { class: 's', text: sub.form && sub.form.bankName ? sub.form.bankName : '' }));
       const lane = el('span', { class: 'tag grey', text: sub.lane === 'institutional' ? 'Institutional' : 'Retail' });
       const rd = subReadiness(sub); const rp = el('span', { class: 'ready ' + rd.band }); rp.append(el('b', { text: String(rd.score) }), document.createTextNode(' ' + rd.label));
@@ -1777,7 +2058,7 @@ const UI = (() => {
     why.textContent = (pending ? pending + ' point' + (pending === 1 ? '' : 's') + ' awaiting your verification · ' : 'Every pending point verified · ') + verdicts + ' verdict' + (verdicts === 1 ? '' : 's') + ' recorded';
     wrap.append(why);
     if (pending && !S.focus) { const fb = el('button', { class: 'btn sm', type: 'button', style: 'align-self:flex-start' }); fb.append(svg('spark'), document.createTextNode('Verify one by one (keyboard)')); fb.addEventListener('click', () => startFocus()); wrap.append(fb); }
-    if (sub.decision) { const dd = el('div', { class: 'decided' }); dd.append(svg('checkCircle'), el('span', { html: '<b>' + U.esc(STATUS_LABEL[sub.status] || sub.status) + '</b> by ' + U.esc(sub.decision.by || '') + ' · ' + U.esc(U.fmtDate(sub.decision.at)) })); wrap.append(dd); }
+    if (sub.decision) { const dd = el('div', { class: 'decided' }); dd.append(svg('checkCircle'), el('span', { html: '<b>' + U.esc(STATUS_LABEL[sub.status] || sub.status) + '</b> by ' + U.esc(sub.decision.by || '') + ' · ' + U.esc(U.fmtDate(sub.decision.at)) })); if (sub.status === 'approved' && S.caps.sample && S.doc && S.doc.kind !== 'text' && !(S.secondOpinion && !S.secondOpinion.busy)) { const so = el('button', { class: 'btn xs', type: 'button', style: 'margin-left:auto', id: 'btn-second' }); so.append(svg('spark'), document.createTextNode(S.secondOpinion && S.secondOpinion.busy ? 'Reading…' : 'Second opinion')); so.disabled = !!(S.secondOpinion && S.secondOpinion.busy); so.addEventListener('click', () => runSecondOpinion(sub)); dd.append(so); } wrap.append(dd); }
     const ta = el('textarea', { id: 'decision-msg', placeholder: 'Message to the banker (drafted by Claude from your verdicts, or write your own)' });
     ta.value = S.decisionDraft !== undefined ? S.decisionDraft : (sub.decision && sub.decision.message) || '';
     ta.addEventListener('input', () => { S.decisionDraft = ta.value; });
@@ -1859,9 +2140,17 @@ const UI = (() => {
     else if (k === 'k' || k === 'arrowleft') { ev.preventDefault(); focusStep(-1); }
     else if (k === 'escape') { ev.preventDefault(); stopFocus(); }
   }
+  /* the since-round tally of a stored submission, only when it has the expected shape */
+  function sinceOf(sub) { const sc = sub && sub.previous && sub.previous.since; return sc && Array.isArray(sc.resolved) && Array.isArray(sc.open) ? { of: +sc.of || 0, resolved: sc.resolved, open: sc.open } : null; }
   function timelineBlock(sub) {
     const ul = el('ul', { class: 'timeline' });
     const add = (t, s, when) => { const li = el('li'); li.append(el('b', { text: t })); if (s) li.append(document.createTextNode(' ' + s)); li.append(el('small', { text: U.fmtDate(when) })); ul.append(li); };
+    if (sub.previous && typeof sub.previous === 'object') {
+      const pv = sub.previous; const since = sinceOf(sub);
+      add('Round ' + (pv.round || 1) + ' submitted', 'the earlier version of this document', pv.created_at);
+      if (pv.decision && typeof pv.decision === 'object') add(STATUS_LABEL[pv.status] || 'Decided', 'by ' + (pv.decision.by || 'the reviewer') + (pv.decision.message ? ' · message sent' : ''), pv.decision.at);
+      if (since) add('Round ' + (sub.round || 2) + ' prepared', since.resolved.length + ' of ' + since.of + ' points resolved, ' + since.open.length + ' still open', sub.created_at);
+    }
     if (sub.original) add('Uploaded', sub.original.name + ' · pre-reviewed in the app', sub.created_at);
     if ((sub.version || 1) > 1) add('Corrected in the app', (sub.changes || []).length + ' edits, ' + (sub.resolved || []).length + ' points resolved, version ' + sub.version, sub.created_at);
     add('Submitted', 'by ' + (sub.submitter || 'the banker') + ' · readiness ' + (sub.readiness ? sub.readiness.score : '–'), sub.created_at);
@@ -1923,6 +2212,24 @@ const UI = (() => {
     const demoted = Object.values(st.byRule).filter((r) => r.status !== 'active').length;
     grid.append(stat(st.total, 'verdicts recorded'), stat(comments, 'comments and decision messages read'), stat(profiles.length, 'reviewer' + (profiles.length === 1 ? '' : 's') + ' teaching'), stat(rules.length, 'learned calibration rules'), stat(rulesTracked, 'rules with a track record'), stat(demoted, 'rules demoted or set aside'));
     body.append(grid);
+    // ask the desk memory
+    body.append(el('div', { class: 'label', text: 'Ask the desk memory' }));
+    const ms = el('form', { class: 'msearch', id: 'memory-search' });
+    const mi = el('input', { type: 'search', id: 'memory-q', placeholder: 'e.g. B6 logos portfolio companies, or “track record” dismissed', 'aria-label': 'Search the desk memory' });
+    const mb = el('button', { class: 'btn sm', type: 'submit', text: 'Search' });
+    ms.append(mi, mb); body.append(ms);
+    const mout = el('div', { class: 'table', id: 'memory-results', style: 'margin-bottom:14px' }); mout.hidden = true; body.append(mout);
+    ms.addEventListener('submit', async (ev) => {
+      ev.preventDefault(); const q = mi.value.trim(); mout.innerHTML = ''; mout.hidden = !q; if (!q) return;
+      const hits = await Learn.search(q, 12);
+      if (!hits.length) { mout.append(el('div', { class: 'empty', text: 'Nothing in the desk memory matches. Verdicts, comments and decision messages are searched by rule id and by words.' })); return; }
+      hits.forEach((h) => { const e = h.entry; const item = el('div', { class: 'rule-item' }); const g = el('div', { class: 'grow' }); g.append(el('div', { html: (e.rule ? '<span class="code">' + U.esc(e.rule) + '</span> ' : '') + (e.type === 'decision' ? '<span class="tag grey">' + U.esc(e.kind === 'approve' ? 'approved' : e.kind === 'escalate' ? 'escalated' : 'changes requested') + '</span> ' : e.verdict ? '<span class="tag ' + (e.verdict === 'correct' ? 'ok' : 'high') + '">' + (e.verdict === 'correct' ? 'confirmed' : 'dismissed') + '</span> ' : '<span class="tag grey">comment</span> ') + '<i>' + U.esc((e.quote || e.title || '').slice(0, 140)) + '</i>' }), el('div', { class: 'm', text: [e.reviewer && e.reviewer.name ? e.reviewer.name : '', e.docName, e.lane, e.docType, e.page ? 'p. ' + e.page : '', e.reason ? '— ' + e.reason.slice(0, 200) : e.message ? '— ' + e.message.replace(/\s+/g, ' ').slice(0, 200) : '', U.fmtDate(e.at), 'match: ' + h.why].filter(Boolean).join(' · ') })); item.append(g); mout.append(item); });
+    });
+    // the desk playbook
+    body.append(el('div', { class: 'label', text: 'Desk playbook (what the reviewers have taught, written up for the desk)' }));
+    const pbWrap = el('div', { id: 'playbook', style: 'margin-bottom:14px' });
+    body.append(pbWrap);
+    renderPlaybook(pbWrap);
     // how it learns, in one paragraph, with the last digest
     const how = el('div', { class: 'note blue', style: 'margin-bottom:14px;display:block' });
     how.append(el('div', { html: '<b>How the pre-review learns.</b> Every verdict and every comment on the reviewer platform is recorded with the reviewer\'s name. Before each pre-review the closest precedents (same rule, same lane, similar passage, the reviewer the submission goes to first) are put in front of the model; an identical passage the desk dismissed is set aside before the banker sees it; a rule this reviewer keeps rejecting is left to the reviewer instead of asserted. After each decision, Claude reads the new comments and decision messages (the digest) and writes durable calibration rules, desk-wide or for one reviewer.' + (meta.lastDigestAt ? ' Last digest ' + U.esc(U.fmtDate(meta.lastDigestAt)) + (meta.lastSummary ? ': ' + U.esc(meta.lastSummary) : '') : ' No digest has run yet.') }));
@@ -2023,6 +2330,30 @@ const UI = (() => {
     });
     body.append(vt);
   }
+  async function renderPlaybook(wrap, opts) {
+    wrap.innerHTML = '';
+    wrap.append(el('div', { class: 'empty', text: opts && opts.model ? 'Claude is writing the playbook from the reviewer record…' : 'Loading the playbook…' }));
+    let pb;
+    try { pb = await Learn.playbook(opts && opts.model ? S.caps.sample : null, { rebuild: !!(opts && opts.model) }); }
+    catch (e) { wrap.innerHTML = ''; wrap.append(el('div', { class: 'note red', text: 'The playbook could not be written: ' + (e && (e.message || e.code) || 'error') })); return; }
+    if (opts && opts.model && pb.skipped) U.toast(pb.skipped);
+    else if (opts && opts.model && pb.error) U.toast('Claude could not write the playbook (' + pb.error + '); the computed version shows');
+    wrap.innerHTML = '';
+    const tools = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px' });
+    const write = el('button', { class: 'btn sm primary', type: 'button', id: 'btn-playbook-write' }); write.append(svg('spark'), document.createTextNode(pb.source === 'model' ? 'Rewrite with Claude' : 'Write the playbook with Claude')); write.disabled = !S.caps.sample;
+    write.addEventListener('click', () => renderPlaybook(wrap, { model: true }));
+    tools.append(write);
+    if (pb.source === 'model') { const drop = el('button', { class: 'btn sm', type: 'button', text: 'Discard Claude\'s version', id: 'btn-playbook-discard' }); drop.addEventListener('click', async () => { await Learn.discardPlaybook(); renderPlaybook(wrap); }); tools.append(drop); }
+    const exp = el('button', { class: 'btn sm', type: 'button', id: 'btn-playbook-pdf' }); exp.append(svg('download'), document.createTextNode('Export as PDF')); exp.disabled = !S.caps.downloads;
+    exp.addEventListener('click', async () => { try { await S.caps.downloads.save({ filename: 'desk-playbook-' + new Date().toISOString().slice(0, 10) + '.pdf', data: PdfOut.blob({ title: 'Desk playbook', brand: 'finalis', product: 'Reviewer platform', kicker: 'Desk playbook', date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), accent: [0.06, 0.48, 0.42], footerLeft: 'Internal. Written from the reviewers\' verdicts, comments and decisions; the desk decides.', footerRight: 'Playbook', blocks: Learn.playbookBlocks(pb) }) }); U.toast('Playbook saved as PDF'); } catch (e) { if (!e || (e.code !== 'cancelled' && e.code !== 'declined')) U.toast('Could not save the PDF'); } });
+    tools.append(exp, el('span', { class: 'helper', style: 'margin:0', text: (pb.source === 'model' ? 'Written by Claude' : 'Computed from the record') + (pb.at ? ' · ' + U.fmtDate(pb.at) : '') + (pb.basis ? ' · ' + pb.basis.verdicts + ' verdicts, ' + pb.basis.comments + ' comments, ' + pb.basis.decisions + ' decisions' : '') }));
+    wrap.append(tools);
+    const box = el('div', { class: 'playbook' });
+    if (pb.summary) box.append(el('div', { class: 'note blue', style: 'display:block', text: pb.summary }));
+    if (!(pb.sections || []).length) box.append(el('div', { class: 'empty', text: 'The playbook fills in as the reviewers record verdicts, comments and decisions.' }));
+    (pb.sections || []).forEach((sec) => { const d = el('div', { class: 'pbs' }); d.append(el('h4', { text: sec.title })); (sec.items || []).forEach((it) => { const i = el('div', { class: 'pbi', text: it.text }); if (it.evidence) i.append(el('small', { text: 'Evidence: ' + it.evidence })); d.append(i); }); box.append(d); });
+    wrap.append(box);
+  }
   async function replayCalibration(btn) {
     const out = $('replay-out');
     out.innerHTML = '';
@@ -2050,6 +2381,59 @@ const UI = (() => {
       out.append(el('div', { class: 'helper', text: (S.caps.sample ? 'Live run, balanced model, learning state applied.' : 'Claude is not available in this view: the reference pre-review was scored instead.') }));
     } catch (e) { status.remove(); out.append(el('div', { class: 'note red', text: 'Replay failed: ' + (e && (e.message || e.code) || 'error') })); }
     btn.disabled = false;
+  }
+
+  /* ---------- reviewer platform: metrics and audit ---------- */
+  async function renderMetrics() {
+    S.viewing = null;
+    show('metrics');
+    const body = $('metrics-body');
+    if (!$('metrics-stats')) { body.innerHTML = ''; body.append(el('div', { id: 'metrics-stats' }), el('div', { id: 'metrics-audit' })); renderAuditCard($('metrics-audit')); }
+    await renderMetricsStats();
+    renderChrome();
+  }
+  /* every submission the store holds, not only the queue's most recent ones */
+  async function allSubmissions() { try { const all = await Store.listSubmissions(1000); return all.length >= S.inbox.length ? all : S.inbox; } catch (e) { return S.inbox; } }
+  async function renderMetricsStats() {
+    const subs = await allSubmissions();
+    if (S.view !== 'metrics') return;
+    const body = $('metrics-stats'); body.innerHTML = '';
+    const m = Metrics.compute(subs);
+    const k = el('div', { class: 'kpis' });
+    const kpi = (v, l) => { const c = el('div', { class: 'kpi' }); c.append(el('b', { text: v === null || v === undefined ? '–' : String(v) }), el('span', { text: l })); return c; };
+    k.append(kpi(m.submissions, 'submission' + (m.submissions === 1 ? '' : 's') + ' · ' + m.open + ' open'), kpi(m.firstPass.rate === null ? null : m.firstPass.rate + '%', 'approved on the first round (' + m.firstPass.approved + ' of ' + m.firstPass.decided + ' decided)'), kpi(m.readiness.avg, 'average readiness at submission'), kpi(m.corrected.rate === null ? null : m.corrected.rate + '%', 'corrected in the app before submission (' + m.corrected.edits + ' edits, ' + m.corrected.resolved + ' points resolved)'), kpi(m.rounds.rate === null ? null : m.rounds.rate + '%', 'needed a second round (' + m.rounds.multi + ' of ' + m.rounds.threads + ' threads)'), kpi(Metrics.hours(m.decisionTime.median), 'median time to decision' + (m.decisionTime.n ? ' (' + m.decisionTime.n + ' decided)' : '')), kpi(m.points.certain === null ? null : m.points.certain, 'asserted points per submission' + (m.points.pending !== null ? ' · ' + m.points.pending + ' to verify' : '')), kpi(m.answers.rate === null ? null : m.answers.rate + '%', 'high points answered by bankers (' + m.answers.answered + ' of ' + m.answers.asked + ')'), kpi(m.withContradictions, 'submission' + (m.withContradictions === 1 ? '' : 's') + ' with figures that do not agree'));
+    body.append(k);
+    if (!m.submissions) body.append(el('div', { class: 'empty', text: 'No submissions yet: the metrics compute from the submissions the reviewer platform holds.' }));
+    const grid = el('div', { class: 'mgrid' });
+    const card = (title, sub2) => { const c = el('div', { class: 'summary-card', style: 'margin:0' }); c.append(el('h4', { text: title })); if (sub2) c.append(el('p', { class: 'helper', style: 'margin:-4px 0 8px', text: sub2 })); return c; };
+    const bars = (rows, opts) => { const w = el('div', { class: 'mbars' }); const max = Math.max(1, ...rows.map((r) => r.n)); rows.forEach((r) => { const b = el('div', { class: 'mbar' }); const bar = el('div', { class: 'b' }); bar.append(el('i', { class: r.cls || '', style: 'width:' + Math.round((r.n / max) * 100) + '%' })); b.append(el('span', { class: 'l', text: r.label, title: r.label }), bar, el('span', { class: 'n', text: r.text || String(r.n) })); w.append(b); }); if (!rows.length) w.append(el('div', { class: 'helper', style: 'margin:0', text: (opts && opts.empty) || 'Nothing yet.' })); return w; };
+    { const c = card('Readiness at submission, by week', 'Average readiness score of the submissions received each week; the pre-review is doing its job when this rises and rounds fall.'); const t = el('div', { class: 'trendrow' }); m.trend.forEach((w) => { const d = el('div'); d.append(el('small', { text: String(w.readiness) }), el('i', { style: 'height:' + Math.max(4, Math.round((w.readiness / 100) * 64)) + 'px', title: w.week + ': readiness ' + w.readiness + ', ' + w.n + ' submission' + (w.n === 1 ? '' : 's') }), el('small', { text: w.week.slice(5) })); t.append(d); }); if (!m.trend.length) t.append(el('div', { class: 'helper', style: 'margin:0', text: 'Nothing yet.' })); c.append(t); grid.append(c); }
+    { const c = card('Where the submissions stand'); c.append(bars([{ label: 'With the reviewer', n: m.status.submitted }, { label: 'Changes requested', n: m.status.changes, cls: 'warn' }, { label: 'Approved', n: m.status.approved, cls: 'ok' }, { label: 'Escalated', n: m.status.escalated }])); grid.append(c); }
+    { const c = card('Rules the pre-review raises', 'Times raised across all submissions; confirmed and dismissed are the desk\'s verdicts on them.'); c.append(bars(m.rules.slice(0, 10).map((r) => ({ label: r.rule + ' ' + (RULES.CATEGORY_NAMES[r.rule] || '') + (r.confirmed || r.dismissed ? ' · ' + r.confirmed + ' confirmed, ' + r.dismissed + ' dismissed' : ''), n: r.raised })))); grid.append(c); }
+    { const c = card('Decisions per reviewer'); c.append(bars(m.reviewers.map((r) => ({ label: r.name + ' · ' + r.approved + ' approved, ' + r.changes + ' changes, ' + r.escalated + ' escalated', n: r.decisions })), { empty: 'No decision recorded yet.' })); grid.append(c); }
+    body.append(grid);
+    body.append(el('div', { class: 'label', text: 'Per firm: volume, readiness, the rules that keep coming back' }));
+    const ft = el('div', { class: 'table', style: 'margin-bottom:18px' });
+    if (!m.firms.length) ft.append(el('div', { class: 'empty', text: 'Nothing yet.' }));
+    m.firms.forEach((f) => { const item = el('div', { class: 'rule-item' }); const g = el('div', { class: 'grow' }); g.append(el('div', { html: '<b>' + U.esc(f.firm) + '</b> <span class="m">' + f.subs + ' submission' + (f.subs === 1 ? '' : 's') + ' · readiness ' + U.esc(String(f.readiness)) + ' · ' + f.approved + ' approved, ' + f.changes + ' changes requested</span>' })); if (f.top.length) g.append(el('div', { class: 'm', html: 'Keeps coming back: ' + f.top.map((r) => '<span class="code">' + U.esc(r.rule) + '</span> ' + r.n + '×').join(' · ') })); item.append(g); ft.append(item); });
+    body.append(ft);
+  }
+  function renderAuditCard(wrap) {
+    wrap.innerHTML = '';
+    wrap.append(el('div', { class: 'label', text: 'Audit trail (books and records)' }));
+    const au = el('div', { class: 'summary-card' });
+    au.append(el('p', { class: 'helper', style: 'margin:0 0 10px', text: 'Every event on every submission the store holds (submitted, verdict, comment, decision), in time order, each record carrying the SHA-256 of the previous one and a seal closing the file: a record altered, removed, inserted or reordered in the exported file breaks every hash that follows. Export it to the firm\'s retention store and write down the head hash; verify any copy here from the file alone.' }));
+    const row = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' });
+    const exp = el('button', { class: 'btn sm primary', type: 'button', id: 'btn-audit-export' }); exp.append(svg('download'), document.createTextNode('Export the audit trail (.json)'));
+    const out = el('div', { id: 'audit-out', style: 'margin-top:10px;font-size:12.5px' });
+    exp.addEventListener('click', async () => { exp.disabled = true; try { const ch = await Audit.chain(await allSubmissions(), { by: S.user ? { name: S.user.name, email: S.user.email } : null }); const text = JSON.stringify(ch, null, 2); out.innerHTML = ''; out.append(el('div', { html: '<b>' + ch.count + ' record' + (ch.count === 1 ? '' : 's') + '</b> (' + (ch.count - 1) + ' event' + (ch.count === 2 ? '' : 's') + ' and the seal) over ' + ch.submissions + ' submission' + (ch.submissions === 1 ? '' : 's') + ' · head hash <span class="hash">' + U.esc(ch.head) + '</span>' })); if (S.caps.downloads) { try { await S.caps.downloads.save({ filename: Audit.filename(), data: text }); U.toast('Audit trail exported'); } catch (e) { if (!e || (e.code !== 'cancelled' && e.code !== 'declined')) U.copyText(text); } } else U.copyText(text); } catch (e) { U.toast('The audit trail could not be built' + (e && e.message ? ': ' + e.message : '')); } exp.disabled = false; });
+    const vin = el('input', { type: 'file', accept: 'application/json,.json', hidden: '', id: 'audit-file' });
+    const head = el('input', { type: 'text', id: 'audit-head', placeholder: 'Head hash you wrote down (optional)', 'aria-label': 'Expected head hash', style: 'flex:1;min-width:220px;padding:6px 9px;font:12px ui-monospace, SFMono-Regular, Menlo, monospace' });
+    const ver = el('button', { class: 'btn sm', type: 'button', id: 'btn-audit-verify', text: 'Verify an exported file' }); ver.addEventListener('click', () => vin.click());
+    vin.addEventListener('change', async () => { const f = vin.files && vin.files[0]; if (!f) return; out.innerHTML = ''; try { const r = await Audit.verify(JSON.parse(await f.text()), head.value); out.append(el('div', { class: r.ok ? 'audit-ok' : 'audit-bad', html: (r.ok ? '<b>Chain intact</b> · ' + r.events + ' event' + (r.events === 1 ? '' : 's') + ' verified' + (head.value.trim() ? ', head as written down' : '') + ' · head <span class="hash">' + U.esc(r.head) + '</span>' : '<b>Chain broken</b> · ' + U.esc(r.error || '') + ' (' + r.checked + ' record' + (r.checked === 1 ? '' : 's') + ' verified before the break)') })); } catch (e) { out.append(el('div', { class: 'audit-bad', text: 'Not an audit export.' })); } vin.value = ''; });
+    row.append(exp, ver, head, vin);
+    au.append(row, out);
+    wrap.append(au);
   }
 
   /* ---------- dialogs ---------- */
@@ -2115,6 +2499,11 @@ const UI = (() => {
     });
     $('btn-learning').addEventListener('click', () => renderLearning());
     $('btn-learning-back').addEventListener('click', () => { renderInbox(); show('inbox'); });
+    $('btn-metrics').addEventListener('click', () => renderMetrics());
+    $('btn-metrics-back').addEventListener('click', () => { renderInbox(); show('inbox'); });
+    $('btn-mine').addEventListener('click', () => renderMine());
+    $('btn-mine-back').addEventListener('click', () => leaveMine());
+    $('btn-mine-new').addEventListener('click', () => { resetForm(); show('form'); });
     $('reviewer-email').addEventListener('change', async () => { S.settings = await Store.setSettings({ reviewerEmail: $('reviewer-email').value.trim() }); });
     bindChat();
     window.addEventListener('resize', () => { if (!isMobile()) { $('rail').style.display = ''; $('viewer').style.display = ''; } if (S.view === 'work') { applyZoom(); rerenderVisible(); } });
@@ -2190,11 +2579,15 @@ const UI = (() => {
     await Store.init(caps);
     S.settings = await Store.getSettings();
     if (S.settings.reviewerEmail) $('reviewer-email').value = S.settings.reviewerEmail;
+    S.seen = loadSeen();
     Store.watchSubmissions((list) => {
       S.inbox = list.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       const n = S.inbox.filter((s) => s.status === 'submitted').length;
       $('inbox-count').hidden = !n; $('inbox-count').textContent = String(n);
       if (S.view === 'inbox') renderInbox();
+      else if (S.view === 'mine') renderMineList();
+      else if (S.view === 'metrics') renderMetricsStats();
+      if (S.view !== 'login') renderChrome();
     });
     if (!caps.sample) $('form-foot').textContent = 'Claude is not available in this view: the pre-review will check the required blocks only' + (typeof SAMPLE_DECK_B64 !== 'undefined' ? ', and the calibration deck shows the reference pre-review.' : '.');
     bindLogin();
